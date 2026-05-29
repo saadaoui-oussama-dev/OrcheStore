@@ -1,0 +1,48 @@
+{
+  "name": "orchestore",
+  "version": "0.1.0",
+  "description": "A function-oriented architecture built on top of Redux Toolkit for simplifying and automating application development.",
+  "author": "Oussama Saadaoui",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "types": "./src/index.d.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "homepage": "https://github.com/saadaoui-oussama-dev/OrcheStore#readme",
+  "bugs": {
+    "url": "https://github.com/saadaoui-oussama-dev/OrcheStore/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saadaoui-oussama-dev/OrcheStore.git"
+  },
+  "keywords": [
+    "orchestore",
+    "store",
+    "slice",
+    "state",
+    "global-store",
+    "global-state",
+    "typed-store",
+    "typed-state",
+    "react",
+    "react-store",
+    "react-state",
+    "react-redux",
+    "redux",
+    "redux-toolkit",
+    "frontend",
+    "typescript",
+    "orchestration",
+    "state-management",
+    "state-orchestration"
+  ]
+}
