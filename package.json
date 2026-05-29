@@ -5,16 +5,19 @@
   "author": "Oussama Saadaoui",
   "license": "MIT",
   "type": "module",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup"
+  },
   "exports": {
     ".": {
-      "import": "./src/index.js",
-      "types": "./src/index.d.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
-    "src"
+    "dist"
   ],
   "homepage": "https://github.com/saadaoui-oussama-dev/OrcheStore#readme",
   "bugs": {
@@ -44,5 +47,9 @@
     "orchestration",
     "state-management",
     "state-orchestration"
-  ]
+  ],
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
+  }
 }
