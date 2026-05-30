@@ -7,6 +7,6 @@
     "noEmit": true,
     "ignoreDeprecations": "6.0"
   },
-  "include": ["src"],
+  "include": ["src", "types"],
   "exclude": ["node_modules"]
 }

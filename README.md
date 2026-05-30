@@ -839,7 +839,7 @@ this.root.auth.getState().isAuthenticated;
 
 ## Root Store Type Extension
 
-Overriding `OrcheStore.Define.root` provides full root store typing throughout the application.
+Overriding `OrcheStore.Slots.root` provides full root store typing throughout the application.
 
 > Under active development: this currently causes a circular type inference limitation.
 
@@ -854,7 +854,7 @@ export const store = defineStore({
 
 declare global {
   namespace OrcheStore {
-    interface Define {
+    interface Slots {
       root: typeof store;
     }
   }
@@ -909,14 +909,14 @@ this.global.notify("success", "Saved!");
 
 ## Utilities Type Extension
 
-Overriding `OrcheStore.Define.global` provides full typing everywhere.
+Overriding `OrcheStore.Slots.global` provides full typing everywhere.
 
 ```ts
 import type { NavigateFunction } from "react-router";
 
 declare global {
   namespace OrcheStore {
-    interface Define {
+    interface Slots {
       global: {
         navigate: NavigateFunction;
 
@@ -1053,19 +1053,19 @@ No manual type declarations required.
 
 ## Framework Type Extensions
 
-OrcheStore also exposes user-definable type slots through `OrcheStore.Define`.
+OrcheStore also exposes user-definable type slots through `OrcheStore.Slots`.
 
 These slots allow application-specific types to be injected into the framework and become available everywhere with full type safety.
 
 | Slot                       | Purpose                 |
 | -------------------------- | ----------------------- |
-| `OrcheStore.Define.root`   | Root store typing       |
-| `OrcheStore.Define.global` | Global utilities typing |
+| `OrcheStore.Slots.root`   | Root store typing       |
+| `OrcheStore.Slots.global` | Global utilities typing |
 
 ```ts
 declare global {
   namespace OrcheStore {
-    interface Define {
+    interface Slots {
       root: typeof store;
 
       global: {

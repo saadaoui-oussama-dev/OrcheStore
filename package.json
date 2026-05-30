@@ -5,10 +5,14 @@
   "author": "Oussama Saadaoui",
   "license": "MIT",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./src/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "check": "tsc --noEmit",
+    "lint": "eslint .",
+    "prepublishOnly": "npm run build"
   },
   "exports": {
     ".": {
@@ -28,6 +32,11 @@
     "type": "git",
     "url": "https://github.com/saadaoui-oussama-dev/OrcheStore.git"
   },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
+  },
   "keywords": [
     "orchestore",
     "store",
@@ -43,14 +52,11 @@
     "react-redux",
     "redux",
     "redux-toolkit",
+    "redux-automation",
     "frontend",
     "typescript",
     "orchestration",
     "state-management",
     "state-orchestration"
-  ],
-  "devDependencies": {
-    "tsup": "^8.5.1",
-    "typescript": "^6.0.3"
-  }
+  ]
 }
