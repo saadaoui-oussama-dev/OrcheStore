@@ -19,7 +19,7 @@ if (globalThis.console?.clear) {
 }
 
 const diagnosticsMessage =
-  "[OrcheStore] Development diagnostics are enabled. Warnings and errors from OrcheStore are not shown in production builds.\nRuntime exceptions that stop code execution may still occur.\nPlease resolve all OrcheStore warnings and errors before deploying to production.";
+  "[OrcheStore] Development diagnostics are enabled. Warnings and errors from OrcheStore are not shown in production builds.\nRuntime exceptions that stop code execution may still occur.\nPlease resolve all OrcheStore warnings and errors before deploying to production.\n";
 
 const inform = () => {
   if (informed) return;
