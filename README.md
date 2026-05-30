@@ -1,10 +1,53 @@
+# Table of Contents
+
+- [Introduction](#orchestore)
+  - [Core Principles](#core-principles)
+  - [Why OrcheStore?](#why-orchestore)
+  - [Redux Toolkit Comparison](#redux-toolkit-comparison)
+  - [Architecture Overview](#architecture-overview)
+
+- [Quick Example](#quick-example)
+
+- [Slice Layers](#slice-layers)
+  - [name](#name)
+  - [state](#state)
+  - [Mutations](#mutations)
+  - [Methods](#methods)
+  - [Computed State](#computed-state)
+  - [Nested Slices](#nested-slices)
+    - [Runtime Paths](#runtime-paths)
+
+- [State Access & Subscriptions](#state-access--subscriptions)
+  - [State Snapshots](#state-snapshots)
+  - [State Subscriptions](#state-subscriptions)
+  - [Draft State](#draft-state)
+
+- [Store Integration](#store-integration)
+  - [Creating the Store](#creating-the-store)
+  - [Store Provider](#store-provider)
+  - [Accessing Slices through Store](#accessing-slices-through-store)
+  - [Accessing Store from Slices](#accessing-store-from-slices)
+  - [Root Store Type Extension](#root-store-type-extension)
+
+- [Global Utilities](#global-utilities)
+  - [Accessing Global Utilities](#accessing-global-utilities)
+  - [Utilities Type Extension](#utilities-type-extension)
+  - [Providing Runtime Utilities](#providing-runtime-utilities)
+  - [Using Global Utilities in Slices](#using-global-utilities-in-slices)
+
+- [TypeScript Inference](#typescript-inference)
+
+- [Status](#status)
+
+---
+
 # OrcheStore
 
 > A function-oriented state orchestration architecture built on top of Redux Toolkit.
 
-OrcheStore simplifies and automates common state management patterns in the React, Redux, and TypeScript ecosystem.
+OrcheStore simplifies and automates common state management patterns in React, Redux Toolkit, and TypeScript applications by unifying state and behavior into directly callable runtime modules.
 
-Instead of distributing application logic across reducers, actions, thunks, selectors, middleware, hooks, and utility files, OrcheStore brings state and behavior together into directly callable runtime modules.
+Instead of distributing logic across reducers, actions, thunks, selectors, hooks, middleware, and utility files, OrcheStore organizes related functionality into cohesive slice modules.
 
 The goal is simple:
 
@@ -21,9 +64,7 @@ The goal is simple:
 - Maintain strong TypeScript inference
 - Scale naturally through composition
 
----
-
-# Why OrcheStore?
+## Why OrcheStore?
 
 Redux Toolkit significantly improves the Redux developer experience, but many applications still require developers to coordinate logic across multiple concepts:
 
@@ -35,15 +76,14 @@ Redux Toolkit significantly improves the Redux developer experience, but many ap
 - hooks
 - utility functions
 
-As applications grow, state management often becomes less about solving business problems and more about connecting infrastructure together.
+As applications grow, state management often becomes less about solving business problems and more about connecting infrastructure.
 
 OrcheStore reduces that coordination overhead by exposing state management through unified slice modules.
 
-A slice is more than a state container.
-
-It is a runtime module that can encapsulate:
+A slice is more than a state container. It is a runtime module that can encapsulate:
 
 - state
+- computed state
 - mutations
 - methods
 - selectors
@@ -52,34 +92,66 @@ It is a runtime module that can encapsulate:
 
 This allows state and application logic to evolve together within the same domain boundary.
 
-The result is a simpler architecture with fewer moving parts, less boilerplate, and a more direct development experience.
-
----
-
-# What OrcheStore Automates
-
-Traditional Redux applications often require developers to manually create and connect multiple layers of infrastructure.
-
-OrcheStore automates many of these patterns by default:
+Many common Redux patterns are automated by default:
 
 | Traditional Redux Pattern     | OrcheStore                |
 | ----------------------------- | ------------------------- |
 | Action creators               | Direct callable mutations |
-| Thunks                        | Methods                   |
+| Thunks                        | Built-in methods          |
 | Dispatch calls                | Direct function calls     |
-| PayloadAction wrappers        | Native function arguments |
+| `PayloadAction` wrappers      | Native function arguments |
 | Cross-slice imports           | Root store access         |
 | Shared service wiring         | Global utilities          |
 | Manual state tree composition | Nested slices             |
 | Complex type declarations     | Automatic inference       |
 
-This allows developers to focus on application behavior rather than framework plumbing.
+The result is a simpler architecture with fewer moving parts, less boilerplate, and a more direct development experience.
+
+Developers can focus on application behavior rather than framework plumbing.
+
+## Redux Toolkit Comparison
+
+OrcheStore builds on top of Redux Toolkit while providing a higher-level API for organizing state and behavior.
+
+| Feature                        | OrcheStore | Redux Toolkit |
+| ------------------------------ | ---------- | ------------- |
+| Direct callable mutations      | ✅          | ❌             |
+| Multiple mutation arguments    | ✅          | ❌             |
+| Dispatch required              | ❌          | ✅             |
+| `PayloadAction` wrappers       | ❌          | ✅             |
+| Built-in orchestration methods | ✅          | ❌             |
+| Nested slice composition       | ✅          | ⚠️ Manual     |
+| Automatic path generation      | ✅          | ⚠️ Manual     |
+| Global utilities               | ✅          | ❌             |
+| Unified slice API              | ✅          | ❌             |
+| Per-slice React hooks          | ✅          | ❌             |
+| Deep TypeScript inference      | ✅          | ⚠️ Partial    |
+
+OrcheStore does not replace Redux Toolkit. Instead, it builds on top of it by automating common patterns and providing a more cohesive developer experience.
+
+## Architecture Overview
+
+| Layer       | Responsibility                 |
+| ----------- | ------------------------------ |
+| `name`      | Unique slice identifier        |
+| `path`      | Hierarchical slice path        |
+| `state`     | Slice data storage definition  |
+| `mutations` | Synchronous state transitions  |
+| `methods`   | Orchestration and side effects |
+| `computed`  | Derived and computed state     |
+| `children`  | Nested slice composition       |
+| `getState`  | Imperative state access        |
+| `useSelect` | Reactive state subscriptions   |
 
 ---
 
-# Example: OrcheStore vs Redux Toolkit
+# Quick Example
 
-OrcheStore exposes direct callable mutations and built-in orchestration methods.
+**Comparing OrcheStore with Redux Toolkit**
+
+## Slice Creation
+
+✔️ OrcheStore centrelize unified options API.
 
 ```tsx
 import { createSlice } from "orchestore";
@@ -104,24 +176,24 @@ export const counter = createSlice({
   },
 
   methods: {
-    // Built-in orchestration layer for async workflows
+    // Reusable async method inside slice
+    sleep(delay: number) {
+      return new Promise((resolve) => setTimeout(resolve, delay));
+    },
+
+    // Orchestration layer with full slice access via `this`
     async incrementAfter(amount: number, delay: number) {
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await this.sleep(delay);
       this.increment(amount);
     },
   },
 });
-
-// Direct callable APIs
-counter.increment(4);
-counter.incrementLimited(1, 50);
-counter.incrementAfter(5, 1000);
 ```
 
-Redux Toolkit separates reducers, actions, dispatching, and async workflows into multiple APIs.
+⛔ Redux Toolkit splits logic between reducers, extra reducers, actions, and async workflows.
 
 ```tsx
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 
 export const counter = createSlice({
   name: "counter",
@@ -146,9 +218,9 @@ export const counter = createSlice({
   },
 });
 
+// Separate APIs for async workflows
 export const incrementAfter = createAsyncThunk(
   "counter/incrementAfter",
-
   async (
     { amount, delay }: { amount: number; delay: number },
     { dispatch }
@@ -158,104 +230,33 @@ export const incrementAfter = createAsyncThunk(
     dispatch(counter.actions.increment(amount));
   }
 );
+```
+
+## Slice Usage
+
+✔️ OrcheStore exposes direct callable mutations and methods.
+
+```ts
+counter.increment(4);
+counter.incrementLimited(1, 50);
+counter.incrementAfter(5, 1000);
+```
+
+⛔ Redux Toolkit follows dispatch-based execution
+
+```ts
+import { useDispatch } from "react-redux";
 
 const dispatch = useDispatch();
 
-// Dispatch-based execution
 dispatch(counter.actions.increment(4));
-
 dispatch(counter.actions.incrementLimited({ amount: 1, max: 50 }));
-
 dispatch(incrementAfter({ amount: 5, delay: 1000 }));
 ```
 
----
+## Store Integration & Context Providing
 
-# Table of Contents
-
-- [Core Concepts](#core-concepts)
-- [Quick Example](#quick-example)
-- [Creating Slices](#creating-slices)
-
-  - [name](#name)
-  - [state](#state)
-
-- [Slice Runtime API](#slice-runtime-api)
-
-  - [state](#runtime-state)
-  - [path](#path)
-  - [root](#root)
-  - [global](#global)
-  - [useSelect](#useSelect)
-
-- [Slice Logic Layers](#slice-logic-layers)
-
-  - [Mutations](#mutations)
-  - [Methods](#methods)
-  - [Selectors](#selectors)
-  - [Nested Slices](#nested-slices)
-
-- [Store Integration](#store-integration)
-- [Runtime Type Extensions](#runtime-type-extensions)
-- [TypeScript Inference](#typescript-inference)
-- [Redux Toolkit Comparison](#redux-toolkit-comparison)
-- [Architecture Overview](#architecture-overview)
-- [Design Goals](#design-goals)
-- [Status](#status)
-
----
-
-# Core Concepts
-
-A store slice consists of:
-
-| Layer       | Responsibility                    |
-| ----------- | --------------------------------- |
-| `name`      | Unique slice identifier           |
-| `path`      | Hierarchical slice path           |
-| `state`     | Reactive slice data storage       |
-| `mutations` | Synchronous state transitions     |
-| `methods`   | Async orchestration and workflows |
-| `selectors` | Derived and computed state        |
-| `useSelect` | React subscription hook           |
-| `children`  | Nested slice composition          |
-
----
-
-# Quick Example
-
-## Slice Creation
-
-```ts
-import { createSlice } from "orchestore";
-
-export const counter = createSlice({
-  name: "counter",
-
-  state: {
-    value: 0,
-  },
-
-  mutations: {
-    increment(state, amount: number) {
-      state.value += amount;
-    },
-  },
-
-  methods: {
-    async incrementAfter(amount: number, delay = 1000) {
-      await this.sleep(delay);
-      this.increment(amount);
-      return this.state.value;
-    },
-    async sleep(delay: number) {
-      return await new Promise((resolve) => setTimeout(resolve, delay));
-    },
-  },
-});
-```
-
-## Store Integration
+✔️ OrcheStore exposes fully typed slice APIs directly.
 
 ```ts
 import { defineStore } from "orchestore";
@@ -267,8 +268,6 @@ export const store = defineStore({
   },
 });
 ```
-
-## React Usage
 
 ```tsx
 import { StoreProvider } from "orchestore";
@@ -282,11 +281,51 @@ export default function App() {
 }
 ```
 
+⛔ Redux Toolkit requires manual store configuration and type wiring.
+
+```ts
+import { configureStore } from "@reduxjs/toolkit";
+import { counter } from "./counterSlice";
+import { useDispatch, useSelector } from "react-redux";
+
+export const store = configureStore({
+  reducer: {
+    counter: counter.reducer,
+  },
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
+export const useAppSelector = useSelector.withTypes<RootState>();
+```
+
 ```tsx
+import { Provider } from "react-redux";
+import { store } from "./store/index";
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <CounterComponent />
+    </Provider>
+  );
+}
+```
+
+## React Usage
+
+OrcheStore exposes direct usable child slices through a unified store instance.
+
+```tsx
+// store.counter is equivalent to counter, import only one and use it
+import { store } from "./store/index";
 import { counter } from "./store/counterSlice";
 
 export function CounterComponent() {
   const value = counter.useSelect((state) => state.value);
+  const alias = store.counter.useSelect((state) => state.value);
 
   return (
     <>
@@ -294,7 +333,7 @@ export function CounterComponent() {
 
       <button onClick={() => counter.increment(1)}>Increment</button>
 
-      <button onClick={() => counter.incrementAfter(1, 1000)}>Increment Later</button>
+      <button onClick={() => store.counter.incrementAfter(1, 1000)}>Increment Later</button>
     </>
   );
 }
@@ -314,17 +353,15 @@ const counter = createSlice({
 
   state: {},
 
+  computed: {},
+
   mutations: {},
 
   methods: {},
 
-  selectors: {},
-
   children: {},
 });
 ```
-
----
 
 ## name
 
@@ -341,8 +378,7 @@ const counter = createSlice({
 The name is exposed at runtime:
 
 ```ts
-console.log(counter.name);
-// "counter"
+console.log(counter.name); // "counter"
 ```
 
 It is also accessible inside methods:
@@ -355,7 +391,7 @@ methods: {
 }
 ```
 
-### Rules
+**Rules:**
 
 - Slice names should not contain `"."`, because dots are reserved for nested slice paths
 - Two slices cannot share the same name
@@ -377,9 +413,7 @@ const counter = createSlice({
 });
 ```
 
-### Lazy State Initialization
-
-State may also be initialized lazily.
+State can also be initialized lazily by providing a function.
 
 The initializer runs only once before the first state access.
 
@@ -393,7 +427,7 @@ const counter = createSlice({
 });
 ```
 
-Useful for:
+**Useful for:**
 
 - expensive initialization
 - persisted state restoration
@@ -401,117 +435,17 @@ Useful for:
 
 ---
 
-## Runtime state
-
-`slice.state` always returns the latest immutable runtime snapshot.
-
-State can only be updated through mutations.
-
-```ts
-counter.state.value;
-```
-
-Available:
-
-- outside React
-- inside methods
-- inside selectors (`slice.useSelect` and `store.useSelect`)
-
-Each access returns the current snapshot at the moment of access.
-
-Previously captured snapshots are not updated after future mutations.
-
-```ts
-mutations: {
-  changeTo(state, value: string) {
-    state.value = value;
-  },
-},
-
-methods: {
-  logValue() {
-    this.changeTo("John");
-    const snapshot = this.state;
-    this.changeTo("Alice");
-    console.log(snapshot); // { value: "John" }
-    console.log(this.state); // { value: "Alice" }
-  }
-}
-```
-
----
-
-## Runtime path
-
-Every slice exposes a fully qualified hierarchical path.
-
-```ts
-store.counter.name;
-// "counter"
-
-store.counter.path;
-// "counter"
-```
-
-Nested slices automatically inherit hierarchical paths.
-
-```ts
-store.admin.users.name;
-// "users"
-
-store.admin.users.path;
-// "admin.users"
-```
-
----
-
-## root
-
-Every slice has access to the root store instance.
-
-```ts
-this.root.auth.state.user;
-```
-
-Useful for:
-
-- cross-slice coordination
-- avoiding circular imports
-- application-wide orchestration
-
----
-
-## global
-
-Slices have access to injected runtime utilities through `global`.
-
-Utilities are injected using `provideGlobalUtils`.
-
-See the [Global Utilities](#global-utilities) section.
-
-```ts
-this.global.notify("success", "Saved!");
-```
-
-Useful for:
-
-- frequently used utilities
-- runtime values that are otherwise difficult to access from slices
-- integrations with React hooks and third-party libraries
-
----
-
 ## Mutations
 
 Mutations are synchronous state transition functions.
 
-### Characteristics
+**Characteristics:**
 
 - receive mutable draft state as the first parameter
 - support multiple user-defined arguments
 - directly callable from the exposed slices or store
 
-### Responsibilities
+**Responsibilities:**
 
 Mutations should contain:
 
@@ -521,7 +455,7 @@ Mutations should contain:
 
 For anything else, use methods instead.
 
-### Example
+**Example:**
 
 ```ts
 const counter = createSlice({
@@ -547,7 +481,7 @@ counter.increment(1, 50);
 
 Methods are the orchestration layer of a slice.
 
-### Characteristics
+**Characteristics:**
 
 - receive any number of arguments
 - can return synchronous values or Promises
@@ -557,7 +491,7 @@ Methods are the orchestration layer of a slice.
 
 Methods are not serialized, replayable, or represented in Redux DevTools action history.
 
-### Responsibilities
+**Responsibilities:**
 
 Methods are designed for centralizing any slice-related logic:
 
@@ -568,12 +502,26 @@ Methods are designed for centralizing any slice-related logic:
 - side effects such as `localStorage`, `sessionStorage` and DOM manipulation
 - Slice-related React hooks such as `slice.useSelect`, tanstack `useQuery` and `useMutation`
 
+**Restrictions:**
+
 Methods should NOT:
 
-- include slice-unrelated logic .
+- include slice-unrelated logic.
 - mutate state directly. use mutations instead.
 
-### Example
+Prefer:
+
+```ts
+this.increment(1);
+```
+
+Instead of:
+
+```ts
+this.getState().value++;
+```
+
+**Example:**
 
 ```ts
 const counter = createSlice({
@@ -594,7 +542,6 @@ const counter = createSlice({
       await new Promise((resolve) => setTimeout(resolve, delay));
       this.increment(amount);
       this.global.logger.info("Counter incremented");
-      return this.state.value;
     },
   },
 });
@@ -602,54 +549,39 @@ const counter = createSlice({
 
 ---
 
-## Selectors
+## ~~Computed State~~
 
-Selectors provide reusable derived state.
+This currently not supported
+
+~~The `computed` property provides reusable derived state.~~
 
 ```ts
-const counter = createSlice({
-  name: "counter",
+// const counter = createSlice({
+//   name: "counter",
 
-  state: {
-    value: 10,
-  },
+//   state: {
+//     value: 10,
+//   },
 
-  selectors: {
-    doubled(state) {
-      return state.value * 2;
-    },
+//   computed: {
+//     doubled(state) {
+//       return state.value * 2;
+//     },
 
-    multiplied(state, amount: number) {
-      return state.value * amount;
-    },
-  },
-});
-```
-
----
-
-## useSelect
-
-Slices expose a React hook for reactive state selection.
-
-Internally powered by Redux Toolkit's `useSelector`.
-
-```tsx
-const value = counter.useSelect((state) => state.value);
-
-const canEdit = users.useSelect((state, rootState) => {
-  return (
-    rootState.auth.isAuthenticated &&
-    state.permissions.includes("edit_user")
-  );
-});
+//     multiplied(state, amount: number) {
+//       return state.value * amount;
+//     },
+//   },
+// });
 ```
 
 ---
 
 ## Nested Slices
 
-Slices can contain child slices.
+Slices can be composed by registering other slices through the `children` property.
+
+This allows related state and behavior to be organized into a hierarchical structure while preserving full type inference.
 
 ```ts
 import { counter } from "./counterSlice";
@@ -667,47 +599,188 @@ export const app = createSlice({
 });
 ```
 
-### Rules
+**Rules:**
 
-- A slice instance cannot be registered multiple times within the same state tree
-- Existing slice instances cannot be wrapped again using `createSlice`
-- Child slices must be registered through the `children` field
+- A slice instance can only be registered once within the same state tree
+- Existing slice instances cannot be wrapped again with `createSlice`
+- Child slices must be registered through the `children` property
 
-### Accessing Nested Slices
+**Accessing Child Slices:**
+
+Child slices are exposed directly on their parent slice.
 
 ```ts
 app.counter.increment(1);
 
-console.log(app.counter.state);
+console.log(app.counter.getState());
 ```
 
-Deeply nested slices are fully supported.
+Deeply nested slice hierarchies are fully supported.
 
 ```ts
-store.admin.users.permissions.grant(...);
+admin.users.permissions.grant(...);
 
-store.admin.users.permissions.state;
+console.log(admin.users.permissions.getState());
 ```
 
-Preferred state access pattern:
+### Runtime Paths
+
+Every slice exposes a unique runtime path through `path`.
 
 ```ts
-app.counter.state;
-store.admin.users.permissions.state;
+store.counter.name; // "counter"
+store.counter.path; // "counter"
 ```
 
-Avoid deeply traversing nested state objects directly:
+Nested slices automatically inherit their parent path.
 
 ```ts
-app.state.counter;
-store.admin.users.state.permissions;
-store.admin.state.users.permissions;
-store.state.admin.users.permissions;
+store.admin.users.name; // "users"
+store.admin.users.path; // "admin.users"
+
+store.admin.users.permissions.name; // "permissions"
+store.admin.users.permissions.path; // "admin.users.permissions"
+```
+
+Paths are generated automatically from the slice hierarchy.
+
+OrcheStore builds on the same concepts as Redux Toolkit's `reducerPath` and `injectInto`, but automates path generation, reducer registration, and nested slice composition.
+
+No manual path configuration or reducer injection is required.
+
+---
+
+# State Access & Subscriptions
+
+OrcheStore provides multiple ways to access state depending on the context.
+
+| API                 | Purpose                                                  |
+| ------------------- | -------------------------------------------------------- |
+| `slice.getState()`  | Read the current state snapshot                          |
+| `slice.useSelect()` | Subscribe to state changes inside React                  |
+| Draft state         | Temporary state access available during state evaluation |
+
+## State Snapshots
+
+`getState()` returns the latest immutable state snapshot.
+
+Use it whenever you need to read state imperatively outside of React subscriptions.
+
+```ts
+counter.getState().value;
+```
+
+**Available:**
+
+- outside React
+- inside methods
+
+**Notes:**
+
+Each call returns the current state at the moment it is executed.
+
+Previously captured snapshots are not updated after future mutations.
+
+```ts
+methods: {
+  logValue() {
+    this.changeValue("John");
+
+    const snapshot = this.getState();
+
+    this.changeValue("Alice");
+
+    console.log(snapshot.value); // "John"
+    console.log(this.getState().value); // "Alice"
+  }
+}
 ```
 
 ---
 
+## State Subscriptions
+
+`useSelect()` provides reactive state subscriptions for React components.
+
+Internally, it is powered by Redux Toolkit's `useSelector`, while exposing a fully typed, slice-scoped API.
+
+**Available:**
+
+- inside React components
+- inside slice methods that serve as custom React hooks
+
+**Notes:**
+
+Components automatically re-render when the selected value changes.
+
+```tsx
+const value = counter.useSelect((state) => state.value);
+```
+
+Selectors can also access root state and computed values.
+
+```tsx
+const canEdit = users.useSelect((state) => {
+  return (
+    state.root.auth.isAuthenticated &&
+    state.permissions.list.includes("edit_user")
+  );
+});
+```
+
+---
+
+## Draft State
+
+Draft state provides temporary access to slice state during state evaluation.
+
+It is context-dependent and only available within specific APIs:
+
+- Inside Mutations
+
+Mutations receive a mutable draft state that can be updated directly.
+
+```ts
+mutations: {
+  setName(state, name: string) {
+    state.name = name;
+  }
+}
+```
+
+~~- Inside Computed State~~
+
+~~Computed functions receive a read-only draft state extended with additional runtime helpers.~~
+
+```ts
+// computed: {
+//   fullName(state) {
+//     return `${state.firstName} ${state.lastName}`;
+//   }
+// }
+```
+
+- Inside useSelect
+
+Selectors receive a read-only draft state extended with additional runtime helpers.
+
+```tsx
+const displayName = users.useSelect((state) => {
+  return state.computed.fullName;
+});
+```
+
+**Available additions include:**
+
+- `state.root` — root state access
+
+~~- `state.computed` — computed state access~~
+
+---
+
 # Store Integration
+
+## Creating the Store
 
 Create the root store using `defineStore`.
 
@@ -724,7 +797,9 @@ export const store = defineStore({
 });
 ```
 
-## React Integration
+## Store Provider
+
+Wrapping the application component inside this provider is required.
 
 ```tsx
 import { StoreProvider } from "orchestore";
@@ -738,29 +813,35 @@ export default function App() {
 }
 ```
 
-## Accessing Slices Through Store
+## Accessing Slices through Store
+
+The root store behaves similarly to a parent slice and exposes all registered slices.
 
 ```ts
 store.counter.increment(1);
 
-console.log(store.counter.state);
+console.log(store.counter.getState());
 ```
 
-The root store behaves similarly to a parent slice.
+## Accessing Store from Slices
 
----
+Every slice has access to the root store instance through `this.root`.
 
-# Runtime Type Extensions
+```ts
+this.root.auth.getState().isAuthenticated;
+```
 
-OrcheStore supports TypeScript declaration merging for extending runtime APIs.
+**Useful for:**
 
----
+- cross-slice coordination
+- avoiding circular imports
+- application-wide orchestration
 
-## Root Store
+## Root Store Type Extension
 
-Overriding `OrcheStore.Define.root` provides full typing everywhere.
+Overriding `OrcheStore.Define.root` provides full root store typing throughout the application.
 
-Under active development: This still cause a circular type inference problem
+> Under active development: this currently causes a circular type inference limitation.
 
 ```ts
 import { defineStore } from "orchestore";
@@ -780,23 +861,53 @@ declare global {
 }
 ```
 
-#### Rules
+```ts
+this.root; // Before: any
+this.root; // After: fully typed store
+```
+
+**Rules:**
 
 - `root` must be a store instance created using `defineStore`
-- `typeof store | null | undefined` resolves to `typeof store`
-- any other type resolves to `any`
-
-### Root Store Access
-
-The root store is accessible from methods through `this`.
-
-```ts
-this.root.counter.state;
-```
+- `null` and `undefined` are excluded automatically
+  - `typeof store | null | undefined` is equivalent to `typeof store`
+- Invalid types fall back to `any`
 
 ---
 
-## Global utilities
+# Global Utilities
+
+Global utilities allow slices and the root store to access shared runtime services through `global`.
+
+Common use cases include:
+
+- notifications and toasts
+- navigation and routing
+- analytics and tracking
+- API clients and service wrappers
+- runtime values that are difficult to access directly from slices
+- integrations with React hooks and third-party libraries
+
+Utilities are registered using `provideGlobalUtils` and are accessible from any slice or the root store.
+
+## Accessing Global Utilities
+
+**Available:**
+
+- Through the exposed store or slice instances
+
+```ts
+store.global;
+slice.global;
+```
+
+- Inside slice methods
+
+```ts
+this.global.notify("success", "Saved!");
+```
+
+## Utilities Type Extension
 
 Overriding `OrcheStore.Define.global` provides full typing everywhere.
 
@@ -816,15 +927,21 @@ declare global {
 }
 ```
 
-#### Rules
+```ts
+this.global; // Before: any
+this.global; // After: fully typed
+```
 
-- global utilities must be an object
-- `Utils | null | undefined` resolves to `Utils`
-- any other type resolves to `undefined`
+**Rules:**
 
-### Runtime Utility Values
+- `global` must be an object
+- `null` and `undefined` are excluded automatically
+  - `object | null | undefined` is equivalent to `object`
+- Invalid types fall back to `any`
 
-Runtime global utility values can be provided dynamically.
+## Providing Runtime Utilities
+
+Global utility values can be registered or updated at runtime.
 
 ```ts
 import { useEffect } from "react";
@@ -842,9 +959,7 @@ export default function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    provideGlobalUtils({
-      navigate,
-    });
+    provideGlobalUtils({ navigate });
   }, [navigate]);
 
   return (
@@ -855,27 +970,26 @@ export default function App() {
 }
 ```
 
-### Global Utilities Access
+## Using Global Utilities in Slices
 
-Global utilities are accessible through:
-
-```ts
-store.global;
-slice.global;
-this.global;
-```
+Global utilities can be used anywhere a slice instance is available.
 
 ```ts
 methods: {
   async insertUser(data: UserInput) {
     try {
       this.setLoading(true);
+
       const response = await api.users.add(data);
+
       this.global.notify("success", "User added successfully!");
+
       this.setLoading(false);
+
       this.global.navigate("/users/" + response.id);
     } catch (error) {
       this.global.notify("error", "Failed to add user");
+
       console.error(error);
     }
   }
@@ -906,13 +1020,13 @@ const counter = createSlice({
     async incrementAfter(amount: number, delay = 1000) {
       await new Promise((resolve) => setTimeout(resolve, delay));
       this.increment(amount);
-      return this.state.value;
     },
   },
 
   children: {
     subCounter: createSlice({
       name: "subCounter",
+
       state: {
         value: 0,
       },
@@ -924,10 +1038,10 @@ const counter = createSlice({
 Automatically produces:
 
 ```ts
-counter.state;
+counter.getState();
 // { value: number, subCounter: { value: number } }
 
-counter.subCounter.state;
+counter.subCounter.getState();
 // { value: number }
 
 counter.increment(amount: number): void;
@@ -935,52 +1049,45 @@ counter.increment(amount: number): void;
 counter.incrementAfter(amount: number, delay?: number): Promise<number>;
 ```
 
-No manual typing required.
+No manual type declarations required.
 
----
+## Framework Type Extensions
 
-# Redux Toolkit Comparison
+OrcheStore also exposes user-definable type slots through `OrcheStore.Define`.
 
-| Feature                        | OrcheStore | Redux Toolkit |
-| ------------------------------ | ---------- | ------------- |
-| Direct callable mutations      | ✅         | ❌            |
-| Multiple mutation arguments    | ✅         | ❌            |
-| Requires dispatch              | ❌         | ✅            |
-| PayloadAction wrapper          | ❌         | ✅            |
-| Nested slice composition       | ✅         | ⚠️ Manual     |
-| Built-in orchestration methods | ✅         | ❌            |
-| Extensible global utilities    | ✅         | ❌            |
-| Unified slice API              | ✅         | ❌            |
-| Per-slice state hooks          | ✅         | ❌            |
+These slots allow application-specific types to be injected into the framework and become available everywhere with full type safety.
 
----
+| Slot                       | Purpose                 |
+| -------------------------- | ----------------------- |
+| `OrcheStore.Define.root`   | Root store typing       |
+| `OrcheStore.Define.global` | Global utilities typing |
 
-# Architecture Overview
+```ts
+declare global {
+  namespace OrcheStore {
+    interface Define {
+      root: typeof store;
 
-| Layer       | Responsibility                    |
-| ----------- | --------------------------------- |
-| `name`      | Unique slice identifier           |
-| `path`      | Hierarchical slice path           |
-| `state`     | Reactive slice data storage       |
-| `mutations` | Synchronous state transitions     |
-| `methods`   | Async orchestration and workflows |
-| `selectors` | Derived and computed state        |
-| `useSelect` | React subscription hook           |
-| `children`  | Nested slice composition          |
+      global: {
+        navigate: NavigateFunction;
+        notify(type: "info" | "error" | "success", message: string): void;
+      };
+    }
+  }
+}
+```
 
----
+This provides full typing for APIs such as:
 
-# Design Goals
+```ts
+state.root;
 
-- Simplify state management architecture
-- Automate repetitive Redux patterns
-- Reduce infrastructure code
-- Centralize state and behavior
-- Provide direct and intuitive APIs
-- Preserve Redux predictability
-- Encourage scalable composition
-- Deliver strong TypeScript inference
-- Improve long-term maintainability
+this.root;
+this.global;
+
+store.global;
+counter.global;
+```
 
 ---
 
