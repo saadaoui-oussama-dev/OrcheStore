@@ -1,10 +1,6 @@
-import { console } from "./console";
+import { console } from "./helpers/console";
+import { object, reflect } from "./helpers/object-utils";
 import type { GlobalUtils } from "../types";
-
-const assign = Object.assign;
-const reflectGet = Reflect.get;
-const reflectSet = Reflect.set;
-const reflectDeleteProperty = Reflect.deleteProperty;
 
 const messages = {
   GetMissingProp: (prop: any) => [
@@ -25,16 +21,16 @@ const messages = {
 const globalUtils = new Proxy({} as GlobalUtils, {
   get(target: GlobalUtils, prop, receiver) {
     if (!(prop in target)) console.error(...messages.GetMissingProp(prop));
-    return reflectGet(target, prop, receiver);
+    return reflect.get(target, prop, receiver);
   },
 
   set(target: GlobalUtils, prop, value, receiver) {
-    return reflectSet(target, prop, value, receiver);
+    return reflect.set(target, prop, value, receiver);
   },
 
   deleteProperty(target, prop) {
     console.warn(...messages.DeleteProp(prop));
-    return reflectDeleteProperty(target, prop);
+    return reflect.delete(target, prop);
   },
 });
 
@@ -52,7 +48,7 @@ export function provideGlobalUtils(value: Partial<GlobalUtils>): GlobalUtils {
   } else if (typeof value !== "object") {
     console.error(messages.InvalidArgs, `(type: ${typeof value})`, value);
   } else {
-    assign(globalUtils, value);
+    object.assign(globalUtils, value);
   }
   return globalUtils;
 }
