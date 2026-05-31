@@ -1,4 +1,5 @@
-import { createStore, getRootStore } from "./create-store";
+import { createStore } from "./create-store";
+import { createSlice } from "./create-slice";
 import { StoreProvider } from "./store-provider";
 import { getGlobalUtils, provideGlobalUtils } from "./global-utils";
 
@@ -6,8 +7,8 @@ const OrcheStore = {
   /** Creates and initializes an OrcheStore instance. */
   createStore,
 
-  /** Returns the root OrcheStore instance. */
-  getRootStore,
+  /** Creates and initializes an OrcheStore slice. */
+  createSlice,
 
   /** Provides an OrcheStore instance to the React component tree. */
   StoreProvider,
@@ -21,6 +22,6 @@ const OrcheStore = {
 
 export default OrcheStore;
 
-export { createStore, getRootStore, StoreProvider, provideGlobalUtils, getGlobalUtils };
+export { createStore, createSlice, StoreProvider, provideGlobalUtils, getGlobalUtils };
 
 export type * from "../types";

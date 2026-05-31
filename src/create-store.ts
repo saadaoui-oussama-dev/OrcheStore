@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { getReduxSlice } from "./create-slice";
 import { console } from "./helpers/console";
 import type { EnhancedStore } from "@reduxjs/toolkit";
 import type { Store, Slice } from "../types";
@@ -29,9 +30,20 @@ export function createStore({ slices }: { slices: Record<string, Slice> }): Stor
     return stores[0].store;
   }
 
-  const store = slices;
+  const store: any = {};
+
+  const reducers: any = {};
+
+  for (const name in slices) {
+    const slice = slices[name];
+    const reduxSlice = getReduxSlice(slice);
+    if (!reduxSlice) continue;
+    store[name] = slice;
+    reducers[name] = reduxSlice.reducer;
+  }
+
   const reduxStore = configureStore({
-    reducer: {},
+    reducer: reducers,
   });
 
   stores.push({ store: store, redux: reduxStore });
