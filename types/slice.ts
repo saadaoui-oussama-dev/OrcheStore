@@ -14,14 +14,14 @@ type Computed<S extends Dict, C extends Dict> = Dict<(state: ExposedState<S, C>,
 type Methods<Context = any> = Dict<(...args: any[]) => any> & ThisType<Context>;
 
 /** Defines the child slices nested within a slice. */
-type Children = Dict<Slice<any, Mutations<any>, Methods, Dict, Computed<any, any>, any>>;
+type Children = Dict<slice<any, Mutations<any>, Methods, Dict, Computed<any, any>, any>>;
 
 /** Exposes immutable slice state with optional runtime helpers. */
 // TODO: Include nested child slice states in the exposed state shape.
 type ExposedState<S extends Dict, C extends Children = Children, Root = {}> = DeepReadonly<Omit<S, "root"> & Root>;
 
 /** Runtime slice API exposed by createSlice(...). */
-type Slice<
+type slice<
   S extends Dict = Dict,
   R extends Mutations<S> = Mutations<S>,
   M extends Methods = Methods,
@@ -60,7 +60,7 @@ type Slice<
 };
 
 /** Configuration object used to create a slice. */
-type SliceOptions<
+type sliceOptions<
   S extends Dict = Dict,
   R extends Mutations<S> = Mutations<S>,
   M extends Methods = Methods,
@@ -82,10 +82,10 @@ type SliceOptions<
   computed?: G & ThisType<G>;
 
   /** Collection of slice methods and orchestration logic. */
-  methods?: M & ThisType<Slice<S, R, M, C, G, N> & { root: RootStore }>;
+  methods?: M & ThisType<slice<S, R, M, C, G, N> & { root: RootStore }>;
 
   /** Collection of nested child slices. */
   children?: C;
 };
 
-export type { Slice, SliceOptions, Mutations, Computed, Methods, Children };
+export type { slice as Slice, sliceOptions as SliceOptions, Mutations, Computed, Methods, Children };
