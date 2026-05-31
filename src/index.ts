@@ -3,10 +3,10 @@ import { StoreProvider } from "./store-provider";
 import { getGlobalUtils, provideGlobalUtils } from "./global-utils";
 
 const OrcheStore = {
-  /** Creates the root OrcheStore instance. */
+  /** Creates and initializes an OrcheStore instance. */
   createStore,
 
-  /** Returns the current root OrcheStore instance. */
+  /** Returns the root OrcheStore instance. */
   getRootStore,
 
   /** Provides an OrcheStore instance to the React component tree. */

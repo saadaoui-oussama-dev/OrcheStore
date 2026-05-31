@@ -1,25 +1,39 @@
-import type { Slice } from "../types";
+import { configureStore } from "@reduxjs/toolkit";
+import { console } from "./helpers/console";
+import type { EnhancedStore } from "@reduxjs/toolkit";
+import type { Store, Slice } from "../types";
 
-/** The singleton root OrcheStore instance. */
-let rootStore: Slice;
-
-/** The internal Redux store backing OrcheStore. */
-let reduxStore: any;
+/** Registered OrcheStore instances and their backing Redux stores. */
+const stores: { store: Store; redux: EnhancedStore }[] = [];
 
 /** Returns the Redux store associated with the provided OrcheStore instance. */
-export function getReduxStore(store: Slice) {
-  if (store === rootStore) return reduxStore;
+export function getReduxStore(store: Store) {
+  return stores.find((it) => it.store === store)?.redux;
 }
 
-/** Returns the current root OrcheStore instance. */
+/** Returns the root OrcheStore instance. */
 export function getRootStore() {
-  return rootStore;
+  return stores[0]?.store;
 }
 
-/** Creates the root OrcheStore instance. */
-export function createStore({ slices }: { slices: Record<string, Slice> }) {
-  if (rootStore) return rootStore;
+/** Creates and initializes an OrcheStore instance. */
+export function createStore({ slices }: { slices: Record<string, Slice> }): Store {
+  if (stores.length === 1) {
+    console.warn(
+      "[OrcheStore] createStore(...) was called more than once.\n" +
+        "OrcheStore currently supports only a single global store instance and will return the existing store.\n" +
+        "If you are creating a store inside a React component, create it only once, for example:\n" +
+        "const [store] = useState(() => createStore(...));\n" +
+        "Avoid useState(createStore(...)) because createStore(...) will be executed on every render."
+    );
+    return stores[0].store;
+  }
 
-  rootStore = slices as any;
-  reduxStore = {} as any;
+  const store = slices;
+  const reduxStore = configureStore({
+    reducer: {},
+  });
+
+  stores.push({ store: store, redux: reduxStore });
+  return store;
 }

@@ -1,5 +1,6 @@
 import type { Dict } from "./helpers";
 import type { GlobalUtils, RootStore } from "./slots";
+import type { Store as store } from "./store";
 import type { Children, Computed, Methods, Mutations, Slice as slice, SliceOptions as sliceOptions } from "./slice";
 
 type orchestore = {};
@@ -8,6 +9,8 @@ declare global {
   type OrcheStore = orchestore;
 
   namespace OrcheStore {
+    type Store = store;
+
     /** Runtime slice API exposed by createSlice(...). */
     type Slice<
       S extends Dict = Dict,
@@ -30,4 +33,11 @@ declare global {
   }
 }
 
-export type { orchestore as OrcheStore, slice as Slice, sliceOptions as SliceOptions, RootStore, GlobalUtils };
+export type {
+  orchestore as OrcheStore,
+  store as Store,
+  slice as Slice,
+  sliceOptions as SliceOptions,
+  RootStore,
+  GlobalUtils,
+};
