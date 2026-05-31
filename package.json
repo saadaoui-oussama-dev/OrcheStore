@@ -9,8 +9,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "start": "tsup",
-    "build": "tsup",
+    "start": "tsup && node scripts/pack.mjs",
+    "build": "tsup && node scripts/pack.mjs",
     "check": "tsc --noEmit",
     "lint": "eslint .",
     "prepublishOnly": "npm run build"
