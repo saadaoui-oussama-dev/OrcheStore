@@ -10,8 +10,10 @@ const defineMethod = <T, K extends keyof T>(object: T, prop: K, method: T[K]): v
   defineProp(object, prop, { value: method, writable: false, enumerable: true, configurable: false });
 };
 
-const reflect = { get: Reflect.get, set: Reflect.set, delete: Reflect.deleteProperty };
-
 const object = { assign, defineProp, defineReadonly, defineMethod };
 
-export { reflect, object };
+const array = { isArray: Array.isArray };
+
+const reflect = { get: Reflect.get, set: Reflect.set, delete: Reflect.deleteProperty };
+
+export { object, array, reflect };

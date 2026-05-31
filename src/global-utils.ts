@@ -1,5 +1,5 @@
 import { console } from "./helpers/console";
-import { object, reflect } from "./helpers/object-utils";
+import { object, array, reflect } from "./helpers/object-utils";
 import type { GlobalUtils } from "../types";
 
 const messages = {
@@ -43,7 +43,7 @@ export function getGlobalUtils(): GlobalUtils {
 export function provideGlobalUtils(value: Partial<GlobalUtils>): GlobalUtils {
   if (value === null || value === undefined) {
     console.error(messages.InvalidArgs, value);
-  } else if (Array.isArray(value)) {
+  } else if (array.isArray(value)) {
     console.error(messages.InvalidArgs, `(type: array)`, value);
   } else if (typeof value !== "object") {
     console.error(messages.InvalidArgs, `(type: ${typeof value})`, value);

@@ -259,10 +259,10 @@ dispatch(incrementAfter({ amount: 5, delay: 1000 }));
 ✔️ OrcheStore exposes fully typed slice APIs directly.
 
 ```ts
-import { defineStore } from "orchestore";
+import { createStore } from "orchestore";
 import { counter } from "./counterSlice";
 
-export const store = defineStore({
+export const store = createStore({
   slices: {
     counter,
   },
@@ -271,10 +271,11 @@ export const store = defineStore({
 
 ```tsx
 import { StoreProvider } from "orchestore";
+import { store } from "./store";
 
 export default function App() {
   return (
-    <StoreProvider>
+    <StoreProvider store={store}>
       <CounterComponent />
     </StoreProvider>
   );
@@ -782,14 +783,14 @@ const displayName = users.useSelect((state) => {
 
 ## Creating the Store
 
-Create the root store using `defineStore`.
+Create the root store using `createStore`.
 
 ```ts
-import { defineStore } from "orchestore";
+import { createStore } from "orchestore";
 import { counter } from "./counterSlice";
 import { users } from "./usersSlice";
 
-export const store = defineStore({
+export const store = createStore({
   slices: {
     counter,
     users,
@@ -803,10 +804,11 @@ Wrapping the application component inside this provider is required.
 
 ```tsx
 import { StoreProvider } from "orchestore";
+import { store } from "./store";
 
 export default function App() {
   return (
-    <StoreProvider>
+    <StoreProvider store={store}>
       <Routes />
     </StoreProvider>
   );
@@ -844,9 +846,9 @@ Overriding `OrcheStore.Slots.root` provides full root store typing throughout th
 > Under active development: this currently causes a circular type inference limitation.
 
 ```ts
-import { defineStore } from "orchestore";
+import { createStore } from "orchestore";
 
-export const store = defineStore({
+export const store = createStore({
   slices: {
     counter,
   },
@@ -868,7 +870,7 @@ this.root; // After: fully typed store
 
 **Rules:**
 
-- `root` must be a store instance created using `defineStore`
+- `root` must be a store instance created using `createStore`
 - `null` and `undefined` are excluded automatically
   - `typeof store | null | undefined` is equivalent to `typeof store`
 - Invalid types fall back to `any`
@@ -948,6 +950,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { provideGlobalUtils } from "orchestore";
 import { feedbacks } from "./ui-feedbacks";
+import { store } from "./store";
 
 provideGlobalUtils({
   notify(type, message) {
@@ -963,7 +966,7 @@ export default function App() {
   }, [navigate]);
 
   return (
-    <StoreProvider>
+    <StoreProvider store={store}>
       <Routes />
     </StoreProvider>
   );

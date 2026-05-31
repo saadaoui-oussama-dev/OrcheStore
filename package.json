@@ -32,10 +32,19 @@
     "type": "git",
     "url": "https://github.com/saadaoui-oussama-dev/OrcheStore.git"
   },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
+    "react-redux": "^9.2.0"
+  },
   "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "react": "^16.9.0 || ^17.0.0 || ^18 || ^19"
   },
   "keywords": [
     "orchestore",
