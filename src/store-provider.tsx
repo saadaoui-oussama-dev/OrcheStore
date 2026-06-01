@@ -6,7 +6,7 @@ import type { ProviderProps } from "react-redux";
 import type { Dispatch, UnknownAction } from "@reduxjs/toolkit";
 
 type StoreProviderProps = Omit<ProviderProps, "store" | "serverState" | "context"> & {
-  /** The root OrcheStore instance created with createStore(...). */
+  /** The root OrcheStore instance created with `createStore(...)`. */
   store: Store;
 };
 
@@ -32,12 +32,12 @@ export function InternalDispatchProvider({ store, children }: StoreProviderProps
 
 /** Provides an OrcheStore instance to the React component tree. */
 export function StoreProvider(props: StoreProviderProps): React.JSX.Element {
-  const { store, stabilityCheck, identityFunctionCheck } = props;
+  const { store, stabilityCheck, identityFunctionCheck } = { ...(props || {}) };
 
   const reduxStore = getReduxStore(store);
 
   if (!reduxStore) {
-    throw new Error("[OrcheStore] <StoreProvider> requires a store instance created with createStore(...).");
+    throw new Error("[OrcheStore::context] <StoreProvider> requires a store instance created with createStore(...).");
   }
 
   return (

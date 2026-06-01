@@ -1,5 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { getReduxSlice } from "./create-slice";
+import { useSelector } from "react-redux";
+import { object } from "./helpers/object-utils";
 import { console } from "./helpers/console";
 import type { EnhancedStore } from "@reduxjs/toolkit";
 import type { Store, Slice } from "../types";
@@ -21,7 +23,7 @@ export function getRootStore() {
 export function createStore({ slices }: { slices: Record<string, Slice> }): Store {
   if (stores.length === 1) {
     console.warn(
-      "[OrcheStore] createStore(...) was called more than once.\n" +
+      "[OrcheStore::createStore] createStore(...) was called more than once.\n" +
         "OrcheStore currently supports only a single global store instance and will return the existing store.\n" +
         "If you are creating a store inside a React component, create it only once, for example:\n" +
         "const [store] = useState(() => createStore(...));\n" +
@@ -32,10 +34,15 @@ export function createStore({ slices }: { slices: Record<string, Slice> }): Stor
 
   const store: any = {};
 
+  object.defineMethod(store, "getState", () => reduxStore.getState());
+
+  object.defineMethod(store, "useState", (selector: any) => useSelector(selector));
+
   const reducers: any = {};
 
   for (const name in slices) {
     const slice = slices[name];
+    if (name in store) continue;
     const reduxSlice = getReduxSlice(slice);
     if (!reduxSlice) continue;
     store[name] = slice;

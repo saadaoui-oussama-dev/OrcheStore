@@ -4,18 +4,18 @@ import type { GlobalUtils } from "../types";
 
 const messages = {
   GetMissingProp: (prop: any) => [
-    "OrcheStore[global-utils] Attempted to access a global utility before it became available. Missing property",
+    "[OrcheStore::global-utils] Attempted to access a global utility before it became available. Missing property",
     prop,
     "\nIf this utility is optional, register it as undefined using provideGlobalUtils(...) to suppress future warnings.\n",
   ],
 
   DeleteProp: (prop: any) => [
-    "OrcheStore[global-utils] Avoid deleting properties. Trying to delete property",
+    "[OrcheStore::global-utils] Avoid deleting properties. Trying to delete property",
     prop,
     "\nUse provideGlobalUtils(...) to set them to undefined instead for type safety.\n",
   ],
 
-  InvalidArgs: "OrcheStore[global-utils] Expected provideGlobalUtils(...) to receive a non-null object. Received:",
+  InvalidArgs: "[OrcheStore::global-utils] Expected provideGlobalUtils(...) to receive a non-null object. Received:",
 };
 
 const globalUtils = new Proxy({} as GlobalUtils, {

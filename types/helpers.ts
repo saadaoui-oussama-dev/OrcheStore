@@ -1,4 +1,4 @@
-type Dict<Value = any> = Record<string | number | symbol, Value>;
+type Dict<Value = any> = Record<string, Value>;
 
 type Tail<T extends any[]> = T extends [any, ...infer R] ? R : T extends (infer U)[] ? U[] : never;
 

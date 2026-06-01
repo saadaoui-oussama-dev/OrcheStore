@@ -12,7 +12,11 @@ const packFile = resolve("packaged", file);
 renameSync(file, packFile);
 console.log(`Moved to packaged/${file}`);
 
-// Install into ../test
+// Uninstall old package
 const testDir = resolve("../test");
+execSync(`npm uninstall orchestore`, { cwd: testDir, stdio: "inherit" });
+console.log(`Uninstalled old orchestore package from ${testDir}`);
+
+// Install into ../test
 execSync(`npm install "${packFile}"`, { cwd: testDir, stdio: "inherit" });
 console.log(`Installed ${file} into ${testDir}`);
