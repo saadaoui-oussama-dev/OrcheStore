@@ -1,7 +1,7 @@
 type DiagnosticsLevel = "off" | "errors" | "all";
 
 let diagnosticsLevel: DiagnosticsLevel = "all";
-let informed = {diagnostics: false, prerelease: false};
+let informed = { diagnostics: false, prerelease: false };
 
 const log = globalThis.console?.log?.bind?.(globalThis.console) || globalThis.console?.log;
 const warn = globalThis.console?.warn?.bind?.(globalThis.console) || globalThis.console?.warn;
@@ -36,6 +36,12 @@ const devConsole = {
     informed[type] = true;
     if (diagnosticsLevel !== "all") return;
     log?.(type === "prerelease" ? prereleaseMessage : diagnosticsMessage);
+  },
+
+  log(...args: any[]) {
+    if (diagnosticsLevel !== "all") return;
+    devConsole.inform("diagnostics");
+    log?.(...args);
   },
 
   warn(...args: any[]) {

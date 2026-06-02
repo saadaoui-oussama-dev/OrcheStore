@@ -4,7 +4,9 @@ import { useSelector } from "react-redux";
 import { object } from "./helpers/object-utils";
 import { console } from "./helpers/console";
 import type { EnhancedStore } from "@reduxjs/toolkit";
-import type { Store, Slice } from "../types";
+import type { Store } from "../types";
+import { Children } from "../types/slice";
+import { normalizeState } from "./helpers/state";
 
 /** Registered OrcheStore instances and their backing Redux stores. */
 const stores: { store: Store; redux: EnhancedStore }[] = [];
@@ -20,7 +22,7 @@ export function getRootStore() {
 }
 
 /** Creates and initializes an OrcheStore instance. */
-export function createStore({ slices }: { slices: Record<string, Slice> }): Store {
+export function createStore<C extends Children = Children>({ slices }: { slices: C }): Store<C> {
   console.inform("prerelease");
 
   if (stores.length === 1) {
@@ -31,24 +33,31 @@ export function createStore({ slices }: { slices: Record<string, Slice> }): Stor
         "const [store] = useState(() => createStore(...));\n" +
         "Avoid useState(createStore(...)) because createStore(...) will be executed on every render."
     );
-    return stores[0].store;
+    return stores[0].store as Store<C>;
   }
 
   const store: any = {};
 
-  object.defineMethod(store, "getState", () => reduxStore.getState());
+  object.defineMethod(store, "getState", () => normalizeState(reduxStore.getState(), ""));
 
   object.defineMethod(store, "useSelect", (selector: any) => useSelector(selector));
 
   const reducers: any = {};
 
+  const addChild = (name: string, metadata: ReturnType<typeof getReduxSlice>) => {
+    if (!metadata) return;
+    const { redux: reduxSlice, children } = metadata;
+    metadata.path = name;
+    reducers[name] = reduxSlice.reducer;
+    Object.entries(children).forEach(([key, child]) => {
+      addChild(name + "." + key, getReduxSlice(child));
+    });
+  };
+
   for (const name in slices) {
     const slice = slices[name];
     if (name in store) continue;
-    const reduxSlice = getReduxSlice(slice);
-    if (!reduxSlice) continue;
-    store[name] = slice;
-    reducers[name] = reduxSlice.reducer;
+    addChild(name, getReduxSlice(slice)! || {});
   }
 
   const reduxStore = configureStore({

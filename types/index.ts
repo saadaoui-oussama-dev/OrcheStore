@@ -9,7 +9,7 @@ declare global {
   type OrcheStore = orchestore;
 
   namespace OrcheStore {
-    type Store = store;
+    type Store<C extends Children = Children> = store<C>;
 
     /** Runtime slice API exposed by createSlice(...). */
     type Slice<
