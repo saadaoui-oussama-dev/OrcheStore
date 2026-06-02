@@ -1,4 +1,5 @@
 import { createSlice as create, ReducerType } from "@reduxjs/toolkit";
+import { useSelector } from "react-redux";
 import { exposeLayer, validateKey } from "./helpers/validators";
 import { console } from "./helpers/console";
 import { getDispatch } from "./store-provider";
@@ -32,13 +33,16 @@ export function createSlice<
   const options = validateSliceOptions(props);
   const reservedKeys = ["name", "path", "state", "computed", "root", "global", "useSelect"];
   const injectedKeys: string[] = [];
+
+  const getStore = () => getRootStore();
   const exposeContext = (type: string) => ({ module: "createSlice", type, slice: options.name });
+  const useSelectorContext = (rootState: any) => ({ root: getStore(), rootState, global: getGlobalUtils() });
 
   // Convert mutations into Redux Toolkit reducers.
-  exposeLayer(exposeContext("mutation"), options.mutations, [reservedKeys, injectedKeys], (_key, item) => {
+  exposeLayer(exposeContext("mutation"), options.mutations, [reservedKeys, injectedKeys], (key, item) => {
     const isReduxOnly = item?._reducerDefinitionType === ReducerType.asyncThunk || "reducer" in { ...(item || {}) };
-    if (isReduxOnly) return console.error("ERROR");
-    else if (typeof item !== "function") return console.error("ERROR");
+    if (isReduxOnly) return console.error(messages.ReduxReducerConflict());
+    else if (typeof item !== "function") return console.error(messages.InvalidMutation(key));
     return ((state: any, action: any) => item(state, ...action.payload)) as any;
   });
 
@@ -54,16 +58,37 @@ export function createSlice<
 
   object.defineReadonly(slice, "global", () => getGlobalUtils());
 
+  object.defineReadonly(slice, "getState", () => (getStore().getState() as any)[slice.path]);
+
+  object.defineMethod(slice, "useSelect", (selector: any) => useSelector((state: any) => {
+    const context = useSelectorContext(state);
+    return selector.call(context, state[slice.path], context);
+  }));
+
   // Exposing Redux Toolkit actions as auto-dispatching mutations
   Object.entries(reduxSlice.actions).map(([key, action]: [string, any]) => {
-    slice[key] = (...args: any[]) => getDispatch(getRootStore())(action(args));
+    slice[key] = (...args: any[]) => getDispatch(getStore())(action(args));
   });
 
   // Bind methods to the slice instance as their `this` context.
   exposeLayer(exposeContext("method"), options.methods, [reservedKeys, injectedKeys], (key, item) => {
-    if (typeof item !== "function") return console.error("ERROR");
-    return (slice[key] = (...args: Parameters<typeof item>) => item.call(slice, ...args));
+    if (typeof item !== "function") return console.error(messages.InvalidMethod(key));
+    return (slice[key] = (...args: Parameters<typeof item>) => item.apply(slice, args));
   });
+
+  // exposeLayer(exposeContext("children"), options.children, [reservedKeys, injectedKeys], (key, item) => {
+  //   const reduxSlice = getReduxSlice(slice);
+  //   if (!reduxSlice) return console.error(messages.InvalidChild(key));
+  //   return (slice[key] = slice);
+  // });
+
+  if (Object.keys(options.computed).length > 0) {
+    console.warn("[OrcheStore::createSlice] Computed properties are not yet supported and will be ignored.");
+  }
+
+  if (Object.keys(options.children).length > 0) {
+    console.warn("[OrcheStore::createSlice] Child slices are not yet supported and will be ignored.");
+  }
 
   slices.push({ slice: slice, redux: reduxSlice });
   return slice;
@@ -75,7 +100,7 @@ const validateSliceOptions = <S extends Dict, O extends SliceOptions<S, any, any
   const options = { ...(props || {}) };
 
   // Validate the slice name.
-  validateKey(options.name, messages.RequiredName, messages.InvalidName(options.name));
+  validateKey(options.name, messages.RequiredName(), messages.InvalidName(options.name));
 
   // Validate and normalize the initial state.
   if (typeof options.state === "function") {
@@ -110,10 +135,13 @@ const validateSliceOptions = <S extends Dict, O extends SliceOptions<S, any, any
 };
 
 const messages = {
-  RequiredName: "[OrcheStore::createSlice] Missing required slice name.", // prettier-ignore
+  RequiredName: () => "[OrcheStore::createSlice] Missing required slice name. Expected a non-empty string.", // prettier-ignore
   InvalidName: (name: string) => `[OrcheStore::createSlice] Slice names cannot contain '.' or '/'. Received: {${name}}`, // prettier-ignore
   RequiredState: (name: string) =>`[OrcheStore::createSlice] Missing required slice state for slice: {${name}}`, // prettier-ignore
   InvalidState: (name: string) => `[OrcheStore::createSlice] Slice state must be a non-null object or a function that returns a non-null object. Slice: {${name}}`, // prettier-ignore
   ReservedKey: (type: string, prop: string) => `[OrcheStore::createSlice] '${prop}' is reserved by OrcheStore and should not be provided as a ${type}.`, // prettier-ignore
+  InvalidMutation: (key: string) => `[OrcheStore::createSlice] Mutation '${key}' must be a function.`, // prettier-ignore
+  InvalidMethod: (key: string) => `[OrcheStore::createSlice] Method '${key}' must be a function.`, // prettier-ignore
   ReduxConflict: (prop: string) => `[OrcheStore::createSlice] '${prop}' is a Redux Toolkit createSlice(...) option and is not applicable to OrcheStore slices. This property will be ignored.`, // prettier-ignore
+  ReduxReducerConflict: () => "[OrcheStore::createSlice] Redux Toolkit asyncThunk reducers are not supported in mutations. Use methods instead.", // prettier-ignore
 };

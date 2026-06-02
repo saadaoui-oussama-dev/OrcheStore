@@ -1,3 +1,4 @@
+import type { Store } from "./store";
 import type { DeepReadonly, Dict, Tail } from "./helpers";
 import type { GlobalUtils, RootStore } from "./slots";
 
@@ -5,7 +6,7 @@ import type { GlobalUtils, RootStore } from "./slots";
 type ReservedKeys<R = {}, M = {}> = "name" | "path" | "computed" | "root" | "global" | "getState" | "useSelect" | keyof R | keyof M;
 
 /** Defines the mutations available on a slice. */
-type Mutations<S extends Dict> = Dict<(state: Omit<S, "root" | "computed">, ...args: any[]) => void>;
+type Mutations<S extends Dict> = Dict<(state: Omit<S, "computed">, ...args: any[]) => void>;
 
 /** Defines the computed functions available on a slice. */
 type Computed<S extends Dict, C extends Dict> = Dict<(state: ExposedState<S, C>, ...args: any[]) => any>;
@@ -18,7 +19,7 @@ type Children = Dict<slice<any, Mutations<any>, Methods, Dict, Computed<any, any
 
 /** Exposes immutable slice state with optional runtime helpers. */
 // TODO: Include nested child slice states in the exposed state shape.
-type ExposedState<S extends Dict, C extends Children = Children, Root = {}> = DeepReadonly<Omit<S, "root"> & Root>;
+type ExposedState<S extends Dict, C extends Children = Children> = DeepReadonly<Omit<S, "computed">>;
 
 /** Runtime slice API exposed by createSlice(...). */
 type slice<
@@ -46,8 +47,8 @@ type slice<
   /** Returns the latest immutable state snapshot. */
   readonly getState: () => ExposedState<S, C>;
 
-  /** Subscribes to state changes within React components. */
-  readonly useSelect: <T>(selector: (state: ExposedState<S, C, true>) => T) => T;
+  /** Subscribes to state changes within React components. Runs with a context-bound `this` containing `root` store, `rootState` and `global` utilities. */
+  readonly useSelect: <T>(selector: (this: UseSelectContext<RootStore>, state: ExposedState<S, C>, context: UseSelectContext<any>) => T) => T;
 } & {
   /** Exposed mutation functions. */
   readonly [K in Exclude<keyof R, ReservedKeys>]: (...args: Tail<Parameters<R[K]>>) => ReturnType<R[K]>;
@@ -57,6 +58,18 @@ type slice<
 } & {
   /** Exposed child slices. */
   readonly [K in Exclude<keyof C, ReservedKeys<R, M>>]: C[K];
+};
+
+/** Context available inside `useSelect`, providing access to the root store, root state snapshot, and global utilities. */
+type UseSelectContext<RootStore extends Store> = {
+  /** Root store instance. */
+  root: RootStore;
+
+  /** Latest root state snapshot. */
+  rootState: ReturnType<RootStore["getState"]>;
+
+  /** Global utilities shared across slices. */
+  global: GlobalUtils;
 };
 
 /** Configuration object used to create a slice. */
@@ -88,4 +101,4 @@ type sliceOptions<
   children?: C;
 };
 
-export type { slice as Slice, sliceOptions as SliceOptions, Mutations, Computed, Methods, Children };
+export type { slice as Slice, sliceOptions as SliceOptions, Mutations, Computed, Methods, Children, ExposedState, UseSelectContext };
