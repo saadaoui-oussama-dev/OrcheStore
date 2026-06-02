@@ -1,10 +1,7 @@
-/** Whether OrcheStore is running in development mode. */
-const IS_DEV =
-  typeof globalThis !== "undefined" &&
-  typeof (globalThis as any).process !== "undefined" &&
-  (globalThis as any).process?.env?.NODE_ENV !== "production";
+type DiagnosticsLevel = "off" | "errors" | "all";
 
-let informed = false;
+let diagnosticsLevel: DiagnosticsLevel = "all";
+let informed = {diagnostics: false, prerelease: false};
 
 const log = globalThis.console?.log?.bind?.(globalThis.console) || globalThis.console?.log;
 const warn = globalThis.console?.warn?.bind?.(globalThis.console) || globalThis.console?.warn;
@@ -13,38 +10,57 @@ const clear = globalThis.console?.clear?.bind?.(globalThis.console) || globalThi
 
 if (globalThis.console?.clear) {
   globalThis.console.clear = (...args: Parameters<typeof globalThis.console.clear>) => {
-    informed = false;
+    informed.diagnostics = false;
     clear?.(...args);
   };
 }
 
-const diagnosticsMessage =
-  "[OrcheStore] Development diagnostics are enabled.\nWarnings and errors from OrcheStore are not shown in production builds.\nRuntime exceptions that stop code execution may still occur.\nPlease resolve all OrcheStore warnings and errors before deploying to production.\n";
+const prereleaseMessage =
+  "[OrcheStore] 🚧 Pre-release Notice\n" +
+  "Thank you for your interest in OrcheStore.\n" +
+  "OrcheStore is currently under active development and is not yet ready for production use.\n" +
+  "APIs, behavior, and internal implementation details may change without notice.\n" +
+  "The first stable release is currently planned for 2026-06-15.\n" +
+  "Stay tuned for updates!\n";
 
-const inform = () => {
-  if (informed) return;
-  informed = true;
-  log?.(diagnosticsMessage);
-};
+const diagnosticsMessage =
+  "[OrcheStore] Diagnostics are enabled.\n" +
+  "OrcheStore may emit warnings and errors to help identify incorrect usage, invalid configurations, and potential runtime issues.\n" +
+  "Runtime exceptions that stop code execution may still occur regardless of diagnostics settings.\n" +
+  "Please resolve all OrcheStore warnings and errors before deploying to production.\n" +
+  'Diagnostics can be configured with configureDiagnostics("off" | "errors" | "all").\n';
 
 const devConsole = {
-  log(...args: any[]): void {
-    if (!IS_DEV) return;
-    inform();
-    log?.(...args);
+  inform(type: "diagnostics" | "prerelease") {
+    if (informed[type]) return;
+    informed[type] = true;
+    if (diagnosticsLevel !== "all") return;
+    log?.(type === "prerelease" ? prereleaseMessage : diagnosticsMessage);
   },
 
-  warn(...args: any[]): void {
-    if (!IS_DEV) return;
-    inform();
+  warn(...args: any[]) {
+    if (diagnosticsLevel !== "all") return;
+    devConsole.inform("diagnostics");
     warn?.(...args);
   },
 
-  error(...args: any[]): void {
-    if (!IS_DEV) return;
-    inform();
+  error(...args: any[]) {
+    if (diagnosticsLevel === "off") return;
+    devConsole.inform("diagnostics");
     error?.(...args);
   },
 };
 
-export { devConsole as console };
+/**
+ * Configures OrcheStore diagnostics output.
+ *
+ * Levels:
+ * - "off" - disables all output
+ * - "errors" - shows errors only
+ * - "all" - shows logs, warnings, and errors
+ */
+function configureDiagnostics(level: DiagnosticsLevel) {
+  diagnosticsLevel = level;
+}
+
+export { devConsole as console, configureDiagnostics };

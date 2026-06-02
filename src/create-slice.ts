@@ -25,6 +25,8 @@ export function createSlice<
   G extends Computed<S, C> = Computed<S, C>,
   N extends string = string
 >(props: SliceOptions<S, R, M, C, G, N>): Slice<S, R, M, C, G, N> {
+  console.inform("prerelease");
+
   // Initialize slice metadata and runtime containers.
   const slice = {} as any;
   const options = validateSliceOptions(props);

@@ -21,6 +21,8 @@ export function getRootStore() {
 
 /** Creates and initializes an OrcheStore instance. */
 export function createStore({ slices }: { slices: Record<string, Slice> }): Store {
+  console.inform("prerelease");
+
   if (stores.length === 1) {
     console.warn(
       "[OrcheStore::createStore] createStore(...) was called more than once.\n" +
@@ -36,7 +38,7 @@ export function createStore({ slices }: { slices: Record<string, Slice> }): Stor
 
   object.defineMethod(store, "getState", () => reduxStore.getState());
 
-  object.defineMethod(store, "useState", (selector: any) => useSelector(selector));
+  object.defineMethod(store, "useSelect", (selector: any) => useSelector(selector));
 
   const reducers: any = {};
 
