@@ -96,15 +96,11 @@ export function createSlice<
   exposeLayer(exposeContext("children"), options.children, [reservedKeys, injectedKeys], (key, item) => {
     const reduxSlice = getReduxSlice(item);
     if (!reduxSlice) return console.error(messages.InvalidChild(key));
-    sliceMetadata.children[key] = item;
+    return (sliceMetadata.children[key] = item);
   });
 
   if (Object.keys(options.computed).length > 0) {
     console.warn("[OrcheStore::createSlice] Computed properties are not yet supported and will be ignored.");
-  }
-
-  if (Object.keys(options.children).length > 0) {
-    console.warn("[OrcheStore::createSlice] Child slices are not yet supported and will be ignored.");
   }
 
   slices.push(sliceMetadata);

@@ -1,4 +1,5 @@
 import "./App.css";
+import { store } from "./store";
 import { counter, subCounter, subCounter2, subSubCounter, subSubCounter2 } from "./store/counter";
 import { provideGlobalUtils } from "orchestore";
 
@@ -19,6 +20,7 @@ provideGlobalUtils({
 });
 
 function App() {
+  const state = store.useSelect((state) => state);
   const count = counter.useSelect((state) => state);
   const subCount = subCounter.useSelect((state) => state);
   const subCount2 = subCounter2.useSelect((state) => state);
@@ -27,6 +29,9 @@ function App() {
 
   return (
     <>
+      <pre style={{ textAlign: "left" }}>
+        state: {JSON.stringify(state, null, 2)}
+      </pre>
       <pre style={{ textAlign: "left" }}>
         count: {JSON.stringify(count, null, 2)}
       </pre>
@@ -42,6 +47,7 @@ function App() {
       <pre style={{ textAlign: "left" }}>
         subSubCount2: {JSON.stringify(subSubCount2, null, 2)}
       </pre>
+
       <div>
         <button onClick={() => counter.increment()}>Increment</button>
         <button onClick={() => counter.decrement()}>Decrement</button>
