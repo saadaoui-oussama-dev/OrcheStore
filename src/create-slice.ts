@@ -10,7 +10,12 @@ import { normalizeState, extractSliceState } from "./helpers/state";
 import type { Dict } from "../types/helpers";
 import type { Children, Computed, Methods, Mutations, Slice, SliceOptions } from "../types/slice";
 
-type SliceMetadata = { slice: Slice; redux: ReturnType<typeof create<any, any, string, any, string>>, children: Dict<Slice>, path: string }
+type SliceMetadata = {
+  slice: Slice;
+  redux: ReturnType<typeof create<any, any, string, any, string>>;
+  children: Dict<Slice>;
+  path: string;
+}
 
 /** Registered OrcheStore slices and their corresponding Redux Toolkit slices. */
 const slices: SliceMetadata[] = [];
@@ -70,7 +75,7 @@ export function createSlice<
 
   object.defineReadonly(slice, "global", () => getGlobalUtils());
 
-  object.defineMethod(slice, "getState", () => normalizeState(getReduxStore(getStore())!.getState(), slice.path));
+  object.defineMethod(slice, "getState", () => normalizeState(getReduxStore(getStore())!.getState(), sliceMetadata.path));
 
   object.defineMethod(slice, "useSelect", (selector: any) => useSelector((state: any) => {
     const context = useSelectorContext(normalizeState(state, ""));

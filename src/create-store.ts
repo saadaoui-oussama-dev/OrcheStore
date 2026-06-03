@@ -7,6 +7,7 @@ import type { EnhancedStore } from "@reduxjs/toolkit";
 import type { Store } from "../types";
 import { Children } from "../types/slice";
 import { normalizeState } from "./helpers/state";
+import { getGlobalUtils } from "./global-utils";
 
 /** Registered OrcheStore instances and their backing Redux stores. */
 const stores: { store: Store; redux: EnhancedStore }[] = [];
@@ -38,26 +39,33 @@ export function createStore<C extends Children = Children>({ slices }: { slices:
 
   const store: any = {};
 
+  const useSelectorContext = (rootState: any) => ({ root: store, rootState, global: getGlobalUtils() });
+  
   object.defineMethod(store, "getState", () => normalizeState(reduxStore.getState(), ""));
 
-  object.defineMethod(store, "useSelect", (selector: any) => useSelector(selector));
+  object.defineMethod(store, "useSelect", (selector: any) => useSelector((state: any) => {
+    const context = useSelectorContext(normalizeState(state, ""));
+    return selector.call(context, context.rootState, context);
+  }));
 
   const reducers: any = {};
 
-  const addChild = (name: string, metadata: ReturnType<typeof getReduxSlice>) => {
+  const addChild = (name: string, slice: C[Extract<keyof C, string>], parent: any) => {
+    const metadata = getReduxSlice(slice)! || {};
     if (!metadata) return;
     const { redux: reduxSlice, children } = metadata;
     metadata.path = name;
     reducers[name] = reduxSlice.reducer;
+    parent[name] = slice;
     Object.entries(children).forEach(([key, child]) => {
-      addChild(name + "." + key, getReduxSlice(child));
+      addChild(name + "." + key, child as any, slice);
     });
   };
 
   for (const name in slices) {
     const slice = slices[name];
     if (name in store) continue;
-    addChild(name, getReduxSlice(slice)! || {});
+    addChild(name, slice, store);
   }
 
   const reduxStore = configureStore({

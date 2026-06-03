@@ -1,5 +1,5 @@
 import "./App.css";
-import { counter } from "./store/counter";
+import { counter, subCounter, subCounter2, subSubCounter, subSubCounter2 } from "./store/counter";
 import { provideGlobalUtils } from "orchestore";
 
 declare module "orchestore" {
@@ -19,19 +19,68 @@ provideGlobalUtils({
 });
 
 function App() {
-  const count = counter.getState().value;
-  // const state = counter.useSelect((state, context) => context.rootState);
+  const count = counter.useSelect((state) => state);
+  const subCount = subCounter.useSelect((state) => state);
+  const subCount2 = subCounter2.useSelect((state) => state);
+  const subSubCount = subSubCounter.useSelect((state) => state);
+  const subSubCount2 = subSubCounter2.useSelect((state) => state);
 
   return (
     <>
-      <h1>Counter: {count}</h1>
-      <button onClick={() => counter.increment()}>Increment</button>
-      <button onClick={() => counter.decrement()}>Decrement</button>
-      <button onClick={() => counter.incrementAfter(1, 1000)}>
-        Increment After 1s
-      </button>
+      <pre style={{ textAlign: "left" }}>
+        count: {JSON.stringify(count, null, 2)}
+      </pre>
+      <pre style={{ textAlign: "left" }}>
+        subCount: {JSON.stringify(subCount, null, 2)}
+      </pre>
+      <pre style={{ textAlign: "left" }}>
+        subCount2: {JSON.stringify(subCount2, null, 2)}
+      </pre>
+      <pre style={{ textAlign: "left" }}>
+        subSubCount: {JSON.stringify(subSubCount, null, 2)}
+      </pre>
+      <pre style={{ textAlign: "left" }}>
+        subSubCount2: {JSON.stringify(subSubCount2, null, 2)}
+      </pre>
+      <div>
+        <button onClick={() => counter.increment()}>Increment</button>
+        <button onClick={() => counter.decrement()}>Decrement</button>
+        <button onClick={() => counter.incrementAfter(1, 1000)}>
+          Increment After 1s
+        </button>
+      </div>
 
-      {/* <pre>{JSON.stringify(state, null, 2)}</pre> */}
+      <div>
+        <button onClick={() => subCounter.increment()}>Increment</button>
+        <button onClick={() => subCounter.decrement()}>Decrement</button>
+        <button onClick={() => subCounter.incrementAfter(1, 1000)}>
+          Increment After 1s
+        </button>
+      </div>
+
+      <div>
+        <button onClick={() => subCounter2.increment()}>Increment</button>
+        <button onClick={() => subCounter2.decrement()}>Decrement</button>
+        <button onClick={() => subCounter2.incrementAfter(1, 1000)}>
+          Increment After 1s
+        </button>
+      </div>
+
+      <div>
+        <button onClick={() => subSubCounter.increment()}>Increment</button>
+        <button onClick={() => subSubCounter.decrement()}>Decrement</button>
+        <button onClick={() => subSubCounter.incrementAfter(1, 1000)}>
+          Increment After 1s
+        </button>
+      </div>
+
+      <div>
+        <button onClick={() => subSubCounter2.increment()}>Increment</button>
+        <button onClick={() => subSubCounter2.decrement()}>Decrement</button>
+        <button onClick={() => subSubCounter2.incrementAfter(1, 1000)}>
+          Increment After 1s
+        </button>
+      </div>
     </>
   );
 }
