@@ -2,7 +2,11 @@
 
 ### 🚧 Coming Soon
 
-> OrcheStore is currently under active development and is not yet ready for production use.
+OrcheStore is currently under active development and is not yet ready for production use.
+
+> 📅 **Planned First Stable Release:** **2026-06-30**
+
+> ⚠️ APIs, behavior, and internal implementation details may change without notice until the first stable release.
 
 ---
 
@@ -28,3 +32,27 @@ The goal is simple:
 - Preserve predictable state transitions
 - Maintain strong TypeScript inference
 - Scale naturally through composition
+
+---
+
+## Release Status
+
+### Pre-release Notice
+
+OrcheStore is currently in a pre-release phase.
+
+- Not recommended for production use
+- APIs may change before the first stable release
+- Internal architecture and runtime behavior are still evolving
+- Documentation and feature coverage are actively being expanded
+
+### Roadmap
+
+| Milestone            | Status         |
+| -------------------- | -------------- |
+| Core Architecture    | 🚧 In Progress |
+| Documentation        | 🚧 In Progress |
+| Public Preview       | 🚧 Planned     |
+| First Stable Release | 📅 2026-06-30  |
+
+Stay tuned for updates.

@@ -1,6 +1,6 @@
 {
   "name": "orchestore",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A function-oriented architecture built on top of Redux Toolkit for simplifying and automating application development.",
   "author": "Oussama Saadaoui",
   "license": "MIT",

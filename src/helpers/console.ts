@@ -20,7 +20,7 @@ const prereleaseMessage =
   "Thank you for your interest in OrcheStore.\n" +
   "OrcheStore is currently under active development and is not yet ready for production use.\n" +
   "APIs, behavior, and internal implementation details may change without notice.\n" +
-  "The first stable release is currently planned for 2026-06-15.\n" +
+  "The first stable release is currently planned for 2026-06-30.\n" +
   "Stay tuned for updates!\n";
 
 const diagnosticsMessage =
