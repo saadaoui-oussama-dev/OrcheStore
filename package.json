@@ -9,11 +9,12 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "init": "node scripts/install.mjs",
     "start": "tsup && node scripts/pack.mjs",
     "build": "tsup && node scripts/pack.mjs",
+    "publish": "tsup && node scripts/publish.mjs",
     "check": "tsc --noEmit",
-    "lint": "eslint .",
-    "prepublishOnly": "npm run build"
+    "lint": "eslint ."
   },
   "exports": {
     ".": {

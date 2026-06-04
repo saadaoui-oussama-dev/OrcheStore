@@ -22,5 +22,10 @@ console.log(`Installing ${file} into ${testDir}`);
 execSync(`npm install "${packFile}"`, { cwd: testDir, stdio: "inherit" });
 console.log(`Installed ${file} into ${testDir}`);
 
+// Publish to npm
+console.log("Publishing package to npm...");
+execSync("npm publish", { stdio: "inherit" });
+console.log("Package published successfully.");
+
 // Start
 execSync(`npm start`, { cwd: testDir, stdio: "inherit" });
