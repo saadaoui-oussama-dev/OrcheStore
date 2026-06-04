@@ -2,7 +2,6 @@ import { createSlice as create, ReducerType } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
 import { exposeLayer, validateKey } from "./helpers/validators";
 import { console } from "./helpers/console";
-import { getDispatch } from "./store-provider";
 import { getReduxStore, getRootStore } from "./create-store";
 import { object } from "./helpers/object-utils";
 import { getGlobalUtils } from "./global-utils";
@@ -75,7 +74,10 @@ export function createSlice<
 
   object.defineReadonly(slice, "global", () => getGlobalUtils());
 
-  object.defineMethod(slice, "getState", () => normalizeState(getReduxStore(getStore())!.getState(), sliceMetadata.path));
+  object.defineMethod(slice, "getState", () => {
+    const state = getReduxStore(getStore())!.getState();
+    return normalizeState(state, sliceMetadata.path);
+  });
 
   object.defineMethod(slice, "useSelect", (selector: any) => useSelector((state: any) => {
     const context = useSelectorContext(normalizeState(state, ""));
@@ -84,7 +86,7 @@ export function createSlice<
 
   // Exposing Redux Toolkit actions as auto-dispatching mutations
   Object.entries(reduxSlice.actions).map(([key, action]: [string, any]) => {
-    slice[key] = (...args: any[]) => getDispatch(getStore())(action(args));
+    slice[key] = (...args: any[]) => getReduxStore(getStore())?.dispatch(action(args));
   });
 
   // Bind methods to the slice instance as their `this` context.

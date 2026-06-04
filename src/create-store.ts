@@ -41,7 +41,9 @@ export function createStore<C extends Children = Children>({ slices }: { slices:
 
   const useSelectorContext = (rootState: any) => ({ root: store, rootState, global: getGlobalUtils() });
   
-  object.defineMethod(store, "getState", () => normalizeState(reduxStore.getState(), ""));
+  object.defineMethod(store, "getState", () => {
+    return normalizeState(reduxStore.getState(), "");
+  });
 
   object.defineMethod(store, "useSelect", (selector: any) => useSelector((state: any) => {
     const context = useSelectorContext(normalizeState(state, ""));
