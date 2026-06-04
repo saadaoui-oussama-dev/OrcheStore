@@ -6,7 +6,7 @@ import { console } from "./helpers/console";
 import type { EnhancedStore } from "@reduxjs/toolkit";
 import type { Store } from "../types";
 import { Children } from "../types/slice";
-import { normalizeState } from "./helpers/state";
+import { nestingSeparator, normalizeState } from "./helpers/state";
 import { getGlobalUtils } from "./global-utils";
 
 /** Registered OrcheStore instances and their backing Redux stores. */
@@ -60,7 +60,7 @@ export function createStore<C extends Children = Children>({ slices }: { slices:
     reducers[name] = reduxSlice.reducer;
     parent[name] = slice;
     Object.entries(children).forEach(([key, child]) => {
-      addChild(name + "." + key, child as any, slice);
+      addChild(name + nestingSeparator + key, child as any, slice);
     });
   };
 
