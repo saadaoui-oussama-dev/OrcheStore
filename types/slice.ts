@@ -1,40 +1,34 @@
-import type { Store } from "./store";
+import type { AnyStore } from "./store";
 import type { DeepReadonly, Dict, Tail } from "./helpers";
 import type { GlobalUtils, RootStore } from "./slots";
 
 /** Reserved slice member names that cannot be overridden by user-defined APIs. */
-type ReservedKeys<R = {}, M = {}> = "name" | "path" | "computed" | "root" | "global" | "getState" | "useSelect" | keyof R | keyof M;
+type ReservedKeys<R = {}, M = {}> = "name" | "computed" | "root" | "global" | "getState" | "useSelect" | "getPath" | keyof R | keyof M;
 
 /** Defines the mutations available on a slice. */
-type Mutations<S extends Dict> = Dict<(state: Omit<S, "computed">, ...args: any[]) => void>;
+type Mutations<S extends Dict> = Dict<(state: Omit<S, "computed" | "children">, ...args: any[]) => void>;
 
 /** Defines the computed functions available on a slice. */
 type Computed<S extends Dict, C extends Dict> = Dict<(state: ExposedState<S, C>, ...args: any[]) => any>;
 
 /** Defines the methods available on a slice with contextual `this` typing. */
-type Methods<Context = any> = Dict<(...args: any[]) => any> & ThisType<Context>;
-
-/** Defines the child slices nested within a slice. */
-type Children = Dict<slice<any, Mutations<any>, Methods, Dict, Computed<any, any>, any>>;
+type Methods = Dict<(...args: any[]) => any>;
 
 /** Exposes immutable slice state with optional runtime helpers. */
 // TODO: Include nested child slice states in the exposed state shape.
-type ExposedState<S extends Dict, C extends Children = Children> = DeepReadonly<Omit<S, "computed">>;
+type ExposedState<S extends Dict, C extends Dict<AnySlice>> = DeepReadonly<Omit<S, "computed" | "children">>;
 
 /** Runtime slice API exposed by createSlice(...). */
 type slice<
-  S extends Dict = Dict,
-  R extends Mutations<S> = Mutations<S>,
-  M extends Methods = Methods,
-  C extends Children = Children,
-  G extends Computed<S, C> = Computed<S, C>,
+  S extends Dict,
+  R extends Mutations<S>,
+  M extends Methods,
+  C extends Dict<AnySlice>,
+  G extends Computed<S, C>,
   N extends string = string
 > = {
   /** Unique slice identifier. */
   readonly name: N;
-
-  /** Fully qualified runtime path of the slice. */
-  readonly path: string;
 
   /** Application-wide global utilities. */
   readonly global: GlobalUtils;
@@ -45,10 +39,15 @@ type slice<
   };
 
   /** Returns the latest immutable state snapshot. */
-  readonly getState: () => ExposedState<S, C>;
+  readonly getState: (store?: slice<any, any, any, any, any>) => ExposedState<S, C>;
 
   /** Subscribes to state changes within React components. Runs with a context-bound `this` containing `root` store, `rootState` and `global` utilities. */
-  readonly useSelect: <T>(selector: (this: UseSelectContext<RootStore>, state: ExposedState<S, C>, context: UseSelectContext<any>) => T) => T;
+  readonly useSelect: {
+    <T>(selector: (this: UseSelectContext<RootStore>, state: ExposedState<S, C>, context: UseSelectContext<any>) => T): T;
+  }
+
+  /** Returns fully qualified runtime path of the slice. */
+  readonly getPath: (store?: slice<any, any, any, any, any>) => string;
 } & {
   /** Exposed mutation functions. */
   readonly [K in Exclude<keyof R, ReservedKeys>]: (...args: Tail<Parameters<R[K]>>) => ReturnType<R[K]>;
@@ -61,12 +60,12 @@ type slice<
 };
 
 /** Context available inside `useSelect`, providing access to the root store, root state snapshot, and global utilities. */
-type UseSelectContext<RootStore extends Store> = {
+type UseSelectContext<Store extends AnyStore> = {
   /** Root store instance. */
-  root: RootStore;
+  root: Store;
 
   /** Latest root state snapshot. */
-  rootState: ReturnType<RootStore["getState"]>;
+  rootState: ReturnType<Store["getState"]>;
 
   /** Global utilities shared across slices. */
   global: GlobalUtils;
@@ -74,11 +73,11 @@ type UseSelectContext<RootStore extends Store> = {
 
 /** Configuration object used to create a slice. */
 type sliceOptions<
-  S extends Dict = Dict,
-  R extends Mutations<S> = Mutations<S>,
-  M extends Methods = Methods,
-  C extends Children = Children,
-  G extends Computed<S, C> = Computed<S, C>,
+  S extends Dict,
+  R extends Mutations<S>,
+  M extends Methods,
+  C extends Dict<AnySlice>,
+  G extends Computed<S, C>,
   N extends string = string
 > = {
   /** Unique slice identifier. */
@@ -101,4 +100,6 @@ type sliceOptions<
   children?: C;
 };
 
-export type { slice as Slice, sliceOptions as SliceOptions, Mutations, Computed, Methods, Children, ExposedState, UseSelectContext };
+type AnySlice = slice<any, any, any, any, any>;
+
+export type { slice as Slice, sliceOptions as SliceOptions, AnySlice, Mutations, Computed, Methods, ExposedState, UseSelectContext };

@@ -134,7 +134,6 @@ OrcheStore does not replace Redux Toolkit. Instead, it builds on top of it by au
 | Layer       | Responsibility                 |
 | ----------- | ------------------------------ |
 | `name`      | Unique slice identifier        |
-| `path`      | Hierarchical slice path        |
 | `state`     | Slice data storage definition  |
 | `mutations` | Synchronous state transitions  |
 | `methods`   | Orchestration and side effects |
@@ -142,6 +141,7 @@ OrcheStore does not replace Redux Toolkit. Instead, it builds on top of it by au
 | `children`  | Nested slice composition       |
 | `getState`  | Imperative state access        |
 | `useSelect` | Reactive state subscriptions   |
+| `getPath`   | Hierarchical slice path        |
 
 ---
 
@@ -626,22 +626,24 @@ console.log(admin.users.permissions.getState());
 
 ### Runtime Paths
 
-Every slice exposes a unique runtime path through `path`.
+Every slice exposes a runtime path through `getPath`.
 
 ```ts
-store.counter.name; // "counter"
-store.counter.path; // "counter"
+store.counter.name;      // "counter"
+store.counter.getPath(); // "counter"
 ```
 
 Nested slices automatically inherit their parent path.
 
 ```ts
-store.admin.users.name; // "users"
-store.admin.users.path; // "admin.users"
+store.admin.users.name;      // "users"
+store.admin.users.getPath(); // "admin.users"
 
-store.admin.users.permissions.name; // "permissions"
-store.admin.users.permissions.path; // "admin.users.permissions"
+store.admin.users.permissions.name;      // "permissions"
+store.admin.users.permissions.getPath(); // "admin.users.permissions"
 ```
+
+**Notes:**
 
 Paths are generated automatically from the slice hierarchy.
 

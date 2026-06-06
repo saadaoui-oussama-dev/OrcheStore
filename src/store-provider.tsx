@@ -1,19 +1,19 @@
 import React from "react";
 import { Provider } from "react-redux";
-import { getReduxStore } from "./create-store";
-import type { Store } from "../types";
+import { getStore } from "./create-store";
+import type { AnyStore } from "../types/store";
 import type { ProviderProps } from "react-redux";
 
 type StoreProviderProps = Omit<ProviderProps, "store" | "serverState" | "context"> & {
   /** The root OrcheStore instance created with `createStore(...)`. */
-  store: Store;
+  store: AnyStore;
 };
 
 /** Provides an OrcheStore instance to the React component tree. */
 export function StoreProvider(props: StoreProviderProps): React.JSX.Element {
   const { store, stabilityCheck, identityFunctionCheck, children } = { ...(props || {}) };
 
-  const reduxStore = getReduxStore(store);
+  const reduxStore = getStore(store, undefined, false).redux;
 
   if (!reduxStore) {
     throw new Error("[OrcheStore::context] <StoreProvider> requires a store instance created with createStore(...).");
