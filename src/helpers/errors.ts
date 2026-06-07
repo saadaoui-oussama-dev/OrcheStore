@@ -4,7 +4,7 @@ import type { ExposeContext } from "../../types/internal";
 export const storeProviderErrors = {
 	InvalidStore: (store: any) => ({
 		StoreType: [
-			"[OrcheStore::context] <StoreProvider> requires a store instance created with createStore(...).\n",
+			"[OrcheStore::StoreProvider] Expected a store instance created with createStore(...).\n",
 			...typeChecker(store),
 		],
 	}),
@@ -23,56 +23,92 @@ export const globalUtilsErrors = {
 		"\nUse provideGlobalUtils(...) to set them to undefined instead for type safety.\n",
 	],
 
-	InvalidArgs: () => "[OrcheStore::global-utils] Expected provideGlobalUtils(...) to receive a non-null object.\n", // prettier-ignore
+	InvalidArgs: () => "[OrcheStore::global-utils] Expected provideGlobalUtils(...) to receive a non-null object.\n",
 };
 
 export const storeErrors = {
-	ReservedKey: (type: string, prop: string) => `[OrcheStore::createStore] '${prop}' is reserved by OrcheStore and should not be provided as a ${type}.`, // prettier-ignore
-	InvalidChild: (key: string) => `[OrcheStore::createStore] Child slice '${key}' must be a slice object created using createSlice(...).`, // prettier-ignore
-	ReduxConflict: (prop: string) => `[OrcheStore::createStore] '${prop}' is a Redux Toolkit configureStore(...) option and is not applicable to OrcheStore stores. This property will be ignored.`, // prettier-ignore
+	ReservedKey: (type: string, prop: string) =>
+		`[OrcheStore::createStore] '${prop}' is reserved by OrcheStore and cannot be used as a ${type}.`,
+
+	InvalidChild: (key: string) =>
+		`[OrcheStore::createStore] Child slice '${key}' must be a slice created with createSlice(...).`,
+
+	ReduxConflict: (prop: string) =>
+		`[OrcheStore::createStore] '${prop}' is a Redux Toolkit configureStore(...) option and is ignored by OrcheStore.`,
+
 	singletoneLimitation: () =>
 		"[OrcheStore::createStore] createStore(...) was called more than once.\n" +
 		"OrcheStore currently supports only a single global store instance and will return the existing store.\n" +
 		"If you are creating a store inside a React component, create it only once, for example:\n" +
 		"const [store] = useState(() => createStore(...));\n" +
-		"Avoid useState(createStore(...)) because createStore(...) will be executed on every render.",
+		"Avoid useState(createStore(...)) because createStore(...) will execute on every render.",
 };
 
 export const sliceErrors = {
-	InvalidStore: (type: string, name: string, store: any) => ({
+	InvalidStore: (store: any, type: string, name: string) => ({
 		StoreType: [
-			`[OrcheStore::${type}] <StoreProvider> requires a store instance created with createStore(...).\n`,
+			`[OrcheStore::${type}] Unable to resolve a valid store instance.\n` +
+				`This operation requires a store created with createStore(...).\n`,
 			...typeChecker(store),
 		],
+
 		NeverExposed: [
-			`[OrcheStore::${type}] Slice {${name}} is not exposed in any store.\n` +
-				`A slice must be exposed within at least one store before it can be accessed.\n` +
-				`Create a store using createStore(...) and expose the slice as part of that store tree.`,
+			`[OrcheStore::${type}] Slice {${name}} has not been exposed in any store.\n` +
+				`Expose the slice using createStore({ slices: ... }) before accessing its state, mutations, methods, or selectors.`,
 		],
+
 		NotInTree: [
-			`[OrcheStore::${type}] Slice {${name}} does not belong to the current store tree.\n` +
-				`The requested operation was performed against a store that does not expose this slice.\n` +
-				`Ensure the slice is exposed within the target store or access it through the correct store instance.\n`,
+			`[OrcheStore::${type}] Slice {${name}} is not exposed within the target store.\n` +
+				`A slice can only be accessed through stores that expose it.\n`,
 			...typeChecker.prefixed("Current store", false, store),
 		],
-		NotProvided: [`[OrcheStore::${type}]`, ...typeChecker.prefixed("Current store", false, store)],
+
+		NotProvided: [
+			`[OrcheStore::${type}] React hooks can only be used within a StoreProvider tree.\n` +
+				`The store containing slice {${name}} has not been provided to React.\n` +
+				`Wrap your application with <StoreProvider store={store}> before calling useSelect(...).\n`,
+			...typeChecker.prefixed("Current store", false, store),
+		],
 	}),
-	RequiredName: () => "[OrcheStore::createSlice] Missing required slice name. Expected a non-empty string.", // prettier-ignore
-	InvalidName: (name: string) => `[OrcheStore::createSlice] Slice names cannot contain '.' or '/'. Received: {${name}}`, // prettier-ignore
-	RequiredState: (name: string) =>`[OrcheStore::createSlice] Missing required slice state for slice: {${name}}`, // prettier-ignore
-	InvalidState: (name: string) => `[OrcheStore::createSlice] Slice state must be a non-null object or a function that returns a non-null object. Slice: {${name}}`, // prettier-ignore
-	ReservedKey: (type: string, prop: string) => `[OrcheStore::createSlice] '${prop}' is reserved by OrcheStore and should not be provided as a ${type}.`, // prettier-ignore
-	InvalidMutation: (key: string) => `[OrcheStore::createSlice] Mutation '${key}' must be a function.`, // prettier-ignore
-	InvalidMethod: (key: string) => `[OrcheStore::createSlice] Method '${key}' must be a function.`, // prettier-ignore
-	InvalidChild: (key: string) => `[OrcheStore::createSlice] Child slice '${key}' must be a slice object created using createSlice(...).`, // prettier-ignore
-	ReduxConflict: (prop: string) => `[OrcheStore::createSlice] '${prop}' is a Redux Toolkit createSlice(...) option and is not applicable to OrcheStore slices. This property will be ignored.`, // prettier-ignore
-	ReduxReducerConflict: () => "[OrcheStore::createSlice] Redux Toolkit asyncThunk reducers are not supported in mutations. Use methods instead.", // prettier-ignore
+
+	RequiredName: () => "[OrcheStore::createSlice] Missing required slice name. Expected a non-empty string.",
+
+	InvalidName: (name: string) => `[OrcheStore::createSlice] Slice names cannot contain '.' or '/'. Received: {${name}}`,
+
+	RequiredState: (name: string) => `[OrcheStore::createSlice] Missing required state for slice {${name}}.`,
+
+	InvalidState: (name: string) =>
+		`[OrcheStore::createSlice] Slice state must be a non-null object or a function that returns a non-null object. Slice: {${name}}`,
+
+	ReservedKey: (type: string, prop: string) =>
+		`[OrcheStore::createSlice] '${prop}' is reserved by OrcheStore and cannot be used as a ${type}.`,
+
+	InvalidMutation: (key: string) => `[OrcheStore::createSlice] Mutation '${key}' must be a function.`,
+
+	InvalidMethod: (key: string) => `[OrcheStore::createSlice] Method '${key}' must be a function.`,
+
+	InvalidChild: (key: string) =>
+		`[OrcheStore::createSlice] Child slice '${key}' must be a slice created with createSlice(...).`,
+
+	ReduxConflict: (prop: string) =>
+		`[OrcheStore::createSlice] '${prop}' is a Redux Toolkit createSlice(...) option and is ignored by OrcheStore.`,
+
+	ReduxReducerConflict: () =>
+		"[OrcheStore::createSlice] Redux Toolkit asyncThunk reducers are not supported inside mutations. Use methods instead.",
 };
 
 export const validatorErrors = {
-	target: ({ slice }: ExposeContext) => (slice ? ` Affected slice '${slice}':\n` : " "), // prettier-ignore
-	RequiredName: (ctx: ExposeContext) => `[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${ctx.type} keys must be non-empty strings.`, // prettier-ignore
-	InvalidName: (ctx: ExposeContext, key: string) => `[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${ctx.type} names cannot contain '.' or '/'. Received: ${key}.`, // prettier-ignore
-	ReservedKey: (ctx: ExposeContext, key: string) => `[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}'${key}' is a reserved name and cannot be used as a ${ctx.type} key.`, // prettier-ignore
-	DuplicateKey: (ctx: ExposeContext, key: string) => `[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${ctx.type} name '${key}' conflicts with another member.`, // prettier-ignore
+	target: ({ slice }: ExposeContext) => (slice ? ` Affected slice '${slice}':\n` : " "),
+
+	RequiredName: (ctx: ExposeContext) =>
+		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${ctx.type} keys must be non-empty strings.`,
+
+	InvalidName: (ctx: ExposeContext, key: string) =>
+		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${ctx.type} names cannot contain '.' or '/'. Received: ${key}.`,
+
+	ReservedKey: (ctx: ExposeContext, key: string) =>
+		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}'${key}' is a reserved name and cannot be used as a ${ctx.type} key.`,
+
+	DuplicateKey: (ctx: ExposeContext, key: string) =>
+		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${ctx.type} name '${key}' conflicts with another member.`,
 };

@@ -60,14 +60,14 @@ export function createSlice<
 	object.defineMethod(slice, "getPath", () => getPath(slice));
 
 	object.defineMethod(slice, "getState", () => {
-		const errors = sliceErrors.InvalidStore("slice-method", options.name, undefined);
+		const errors = sliceErrors.InvalidStore(undefined, "slice.getState", options.name);
 		const storeData = getStore(sliceData, undefined, false, errors);
 		const state = storeData.redux.getState();
 		return normalizeState(state, getPath(slice));
 	});
 
 	object.defineMethod(slice, "useSelect", (selector: any) => {
-		const errors = sliceErrors.InvalidStore("slice-useSelect", options.name, undefined);
+		const errors = sliceErrors.InvalidStore(undefined, "slice.useSelect", options.name);
 		const storeData = getStore(sliceData, undefined, true, errors);
 		return useSelector((state: any) => {
 			const context = useSelectorContext(storeData, normalizeState(state, ""));
@@ -78,7 +78,7 @@ export function createSlice<
 	// Exposing Redux Toolkit actions as auto-dispatching mutations
 	Object.entries(reduxSlice.actions).map(([key, action]: [string, any]) => {
 		(slice as any)[key] = (...args: any[]) => {
-			const errors = sliceErrors.InvalidStore("slice-mutation", options.name, undefined);
+			const errors = sliceErrors.InvalidStore(undefined, "slice mutation", options.name);
 			const storeData = getStore(sliceData, undefined, false, errors);
 			return storeData.redux.dispatch(action(args));
 		};
