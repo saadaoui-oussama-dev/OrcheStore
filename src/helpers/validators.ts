@@ -1,28 +1,21 @@
-import { Dict } from "../../types/helpers";
+import { devConsole } from "./console";
+import { validatorErrors } from "../errors";
+import type { Dict } from "../../types/helpers";
 
 /** Validation reporting behavior. */
 type ErrorMode = "" | "error" | "warn";
 
 /** Context information used for validation and member exposure. */
-type ExposeContext = { module: string; type: string; slice?: string };
+export type ExposeContext = { module: string; type: string; slice?: string };
 
 /** Transforms a layer member before it is exposed. */
 type ExposeAdapter = <K extends string>(key: K, item: any) => any;
 
-/** Global validation messages. */
-const messages = {
-  target: ({ slice }: ExposeContext) => (slice ? ` Affected slice '${slice}':\n` : " "), // prettier-ignore
-  RequiredName: (ctx: ExposeContext) => `[OrcheStore::${ctx.module}]${messages.target(ctx)}${ctx.type} keys must be non-empty strings.`, // prettier-ignore
-  InvalidName: (ctx: ExposeContext, key: string) => `[OrcheStore::${ctx.module}]${messages.target(ctx)}${ctx.type} names cannot contain '.' or '/'. Received: ${key}.`, // prettier-ignore
-  ReservedKey: (ctx: ExposeContext, key: string) => `[OrcheStore::${ctx.module}]${messages.target(ctx)}'${key}' is a reserved name and cannot be used as a ${ctx.type} key.`, // prettier-ignore
-  DuplicateKey: (ctx: ExposeContext, key: string) => `[OrcheStore::${ctx.module}]${messages.target(ctx)}${ctx.type} name '${key}' conflicts with another member.`, // prettier-ignore
-};
-
 /** Reports a validation message by throwing, logging, or warning. */
 const report = (message: string, mode?: ErrorMode) => {
   if (!message) return false;
-  else if (mode === "warn") console.warn(message);
-  else if (mode === "error") console.error(message);
+  else if (mode === "warn") devConsole.warn(message);
+  else if (mode === "error") devConsole.error(message);
   else throw new Error(message);
 };
 
@@ -35,10 +28,10 @@ export const validateKey = (key: unknown, req = "", spec = "", opt?: [ErrorMode,
 
 /** Validates a layer key before exposing its member. */
 const validateLayerKey = (context: ExposeContext, key: string, reserved: string[][]) => {
-  const [RequiredName, InvalidName] = [messages.RequiredName(context), messages.InvalidName(context, key)];
+  const [RequiredName, InvalidName] = [validatorErrors.RequiredName(context), validatorErrors.InvalidName(context, key)];
   if (!validateKey(key, RequiredName, InvalidName, ["error", "error"])) return;
-  else if (reserved[0].includes(key)) return console.error(messages.ReservedKey(context, key));
-  else if (reserved[1].includes(key)) return console.error(messages.DuplicateKey(context, key));
+  else if (reserved[0].includes(key)) return devConsole.error(validatorErrors.ReservedKey(context, key));
+  else if (reserved[1].includes(key)) return devConsole.error(validatorErrors.DuplicateKey(context, key));
   return true;
 };
 

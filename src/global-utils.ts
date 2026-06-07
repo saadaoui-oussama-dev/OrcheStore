@@ -1,26 +1,12 @@
-import { console } from "./helpers/console";
+import { devConsole } from "./helpers/console";
+import { typeChecker } from "./helpers/functions";
 import { object, array, reflect } from "./helpers/object-utils";
+import { globalUtilsErrors } from "./errors";
 import type { GlobalUtils } from "../types";
-
-const messages = {
-  GetMissingProp: (prop: any) => [
-    "[OrcheStore::global-utils] Attempted to access a global utility before it became available. Missing property",
-    prop,
-    "\nIf this utility is optional, register it as undefined using provideGlobalUtils(...) to suppress future warnings.\n",
-  ],
-
-  DeleteProp: (prop: any) => [
-    "[OrcheStore::global-utils] Avoid deleting properties. Trying to delete property",
-    prop,
-    "\nUse provideGlobalUtils(...) to set them to undefined instead for type safety.\n",
-  ],
-
-  InvalidArgs: "[OrcheStore::global-utils] Expected provideGlobalUtils(...) to receive a non-null object. Received:",
-};
 
 const globalUtils = new Proxy({} as GlobalUtils, {
   get(target: GlobalUtils, prop, receiver) {
-    if (!(prop in target)) console.error(...messages.GetMissingProp(prop));
+    if (!(prop in target)) devConsole.error(...globalUtilsErrors.GetMissingProp(prop));
     return reflect.get(target, prop, receiver);
   },
 
@@ -29,7 +15,7 @@ const globalUtils = new Proxy({} as GlobalUtils, {
   },
 
   deleteProperty(target, prop) {
-    console.warn(...messages.DeleteProp(prop));
+    devConsole.warn(...globalUtilsErrors.DeleteProp(prop));
     return reflect.delete(target, prop);
   },
 });
@@ -41,14 +27,8 @@ export function getGlobalUtils(): GlobalUtils {
 
 /** Registers or updates application-wide global utilities. */
 export function provideGlobalUtils(value: Partial<GlobalUtils>): GlobalUtils {
-  if (value === null || value === undefined) {
-    console.error(messages.InvalidArgs, value);
-  } else if (array.isArray(value)) {
-    console.error(messages.InvalidArgs, `(type: array)`, value);
-  } else if (typeof value !== "object") {
-    console.error(messages.InvalidArgs, `(type: ${typeof value})`, value);
-  } else {
-    object.assign(globalUtils, value);
-  }
+  const typeError = typeChecker(value, (v) => v && typeof v === 'object' && !array.isArray(v)); // prettier-ignore
+  if (typeError) devConsole.error(globalUtilsErrors.InvalidArgs, ...typeError);
+  else object.assign(globalUtils, value);
   return globalUtils;
 }

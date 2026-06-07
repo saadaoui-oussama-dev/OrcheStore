@@ -69,4 +69,4 @@ function configureDiagnostics(level: DiagnosticsLevel) {
   diagnosticsLevel = level;
 }
 
-export { devConsole as console, configureDiagnostics };
+export { devConsole, configureDiagnostics };
