@@ -22,10 +22,10 @@ provideGlobalUtils({
 function App() {
   const state = store.useSelect((state) => state);
   const count = counter.useSelect((state) => state);
-  const subCount = subCounter.useSelect((state) => state);
-  const subCount2 = subCounter2.useSelect((state) => state);
-  const subSubCount = subSubCounter.useSelect((state) => state);
-  const subSubCount2 = subSubCounter2.useSelect((state) => state);
+  // const subCount = subCounter.useSelect((state) => state);
+  // const subCount2 = subCounter2.useSelect((state) => state);
+  // const subSubCount = subSubCounter.useSelect((state) => state);
+  // const subSubCount2 = subSubCounter2.useSelect((state) => state);
 
   return (
     <>
@@ -35,7 +35,7 @@ function App() {
       <pre style={{ textAlign: "left" }}>
         count: {JSON.stringify(count, null, 2)}
       </pre>
-      <pre style={{ textAlign: "left" }}>
+      {/* <pre style={{ textAlign: "left" }}>
         subCount: {JSON.stringify(subCount, null, 2)}
       </pre>
       <pre style={{ textAlign: "left" }}>
@@ -46,7 +46,7 @@ function App() {
       </pre>
       <pre style={{ textAlign: "left" }}>
         subSubCount2: {JSON.stringify(subSubCount2, null, 2)}
-      </pre>
+      </pre> */}
 
       <div>
         <button onClick={() => counter.increment()}>Increment</button>

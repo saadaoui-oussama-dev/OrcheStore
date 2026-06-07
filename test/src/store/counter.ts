@@ -12,11 +12,11 @@ export const subSubCounter = createSlice({
     },
   },
 
-  computed: {
-    double(state) {
-      return state.subSubValue * 2;
-    },
-  },
+  // computed: {
+  //   double(state) {
+  //     return state.subSubValue * 2;
+  //   },
+  // },
 
   methods: {
     async incrementAfter(amount: number, delay = 1000) {
@@ -38,11 +38,11 @@ export const subSubCounter2 = createSlice({
     },
   },
 
-  computed: {
-    double(state) {
-      return state.subSubValue2 * 2;
-    },
-  },
+  // computed: {
+  //   double(state) {
+  //     return state.subSubValue2 * 2;
+  //   },
+  // },
 
   methods: {
     async incrementAfter(amount: number, delay = 1000) {
@@ -64,11 +64,11 @@ export const subCounter = createSlice({
     },
   },
 
-  computed: {
-    double(state) {
-      return state.subValue * 2;
-    },
-  },
+  // computed: {
+  //   double(state) {
+  //     return state.subValue * 2;
+  //   },
+  // },
 
   methods: {
     async incrementAfter(amount: number, delay = 1000) {
@@ -77,10 +77,10 @@ export const subCounter = createSlice({
     },
   },
 
-  children: {
-    subSubCounter,
-    subSubCounter2,
-  }
+  // children: {
+  //   subSubCounter,
+  //   subSubCounter2,
+  // }
 });
 
 export const subCounter2 = createSlice({
@@ -95,11 +95,11 @@ export const subCounter2 = createSlice({
     },
   },
 
-  computed: {
-    double(state) {
-      return state.subValue2 * 2;
-    },
-  },
+  // computed: {
+  //   double(state) {
+  //     return state.subValue2 * 2;
+  //   },
+  // },
 
   methods: {
     async incrementAfter(amount: number, delay = 1000) {
@@ -121,11 +121,11 @@ export const counter = createSlice({
     },
   },
 
-  computed: {
-    double(state) {
-      return state.value * 2;
-    },
-  },
+  // computed: {
+  //   double(state) {
+  //     return state.value * 2;
+  //   },
+  // },
 
   methods: {
     async incrementAfter(amount: number, delay = 1000) {
@@ -134,8 +134,8 @@ export const counter = createSlice({
     },
   },
 
-  children: {
-    subCounter,
-    subCounter2
-  },
+  // children: {
+  //   subCounter,
+  //   subCounter2
+  // },
 });
