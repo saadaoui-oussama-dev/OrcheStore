@@ -10,8 +10,8 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "init": "node scripts/install.mjs",
-    "start": "tsup && node scripts/pack.mjs",
-    "build": "tsup && node scripts/pack.mjs",
+    "start": "tsup && node scripts/build.mjs",
+    "build": "tsup && node scripts/build.mjs",
     "publish": "tsup && node scripts/publish.mjs",
     "check": "tsc --noEmit",
     "lint": "eslint ."
