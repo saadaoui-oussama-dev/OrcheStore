@@ -19,9 +19,9 @@ export const validateKey = (key: unknown, req = "", spec = "", opt?: [ErrorMode,
 
 /** Validates a layer key before exposing its member. */
 const validateLayerKey = (context: ExposeContext, key: string, reserved: string[][]) => {
-	const RequiredName = validatorErrors.RequiredName(context);
-	const InvalidName = validatorErrors.InvalidName(context, key);
-	if (!validateKey(key, RequiredName, InvalidName, ["error", "error"])) return;
+	const requiredName = validatorErrors.RequiredName(context);
+	const invalidName = validatorErrors.InvalidName(context, key);
+	if (!validateKey(key, requiredName, invalidName, ["error", "error"])) return;
 	else if (reserved[0].includes(key)) return devConsole.error(validatorErrors.ReservedKey(context, key));
 	else if (reserved[1].includes(key)) return devConsole.error(validatorErrors.DuplicateKey(context, key));
 	return true;

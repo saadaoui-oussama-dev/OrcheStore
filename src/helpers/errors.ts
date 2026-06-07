@@ -27,9 +27,6 @@ export const globalUtilsErrors = {
 };
 
 export const storeErrors = {
-	ReservedKey: (type: string, prop: string) =>
-		`[OrcheStore::createStore] '${prop}' is reserved by OrcheStore and cannot be used as a ${type}.`,
-
 	InvalidChild: (key: string) =>
 		`[OrcheStore::createStore] Child slice '${key}' must be a slice created with createSlice(...).`,
 
@@ -77,11 +74,10 @@ export const sliceErrors = {
 
 	RequiredState: (name: string) => `[OrcheStore::createSlice] Missing required state for slice {${name}}.`,
 
-	InvalidState: (name: string) =>
-		`[OrcheStore::createSlice] Slice state must be a non-null object or a function that returns a non-null object. Slice: {${name}}`,
-
-	ReservedKey: (type: string, prop: string) =>
-		`[OrcheStore::createSlice] '${prop}' is reserved by OrcheStore and cannot be used as a ${type}.`,
+	InvalidState: (slice: string, state: any) => [
+		`[OrcheStore::createSlice]${validatorErrors.target({ slice })}Slice state must be a non-null object or a function that returns a non-null object.\n`,
+		...typeChecker(state),
+	],
 
 	InvalidMutation: (key: string) => `[OrcheStore::createSlice] Mutation '${key}' must be a function.`,
 
@@ -98,7 +94,7 @@ export const sliceErrors = {
 };
 
 export const validatorErrors = {
-	target: ({ slice }: ExposeContext) => (slice ? ` Affected slice '${slice}':\n` : " "),
+	target: ({ slice }: { slice?: string }) => (slice ? ` Affected slice '${slice}':\n` : " "),
 
 	RequiredName: (ctx: ExposeContext) =>
 		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${ctx.type} keys must be non-empty strings.`,

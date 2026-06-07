@@ -115,12 +115,18 @@ const validateSliceOptions = <S extends Dict, O extends SliceOptions<S, any, any
 		const initFunc = options.state;
 		options.state = () => {
 			const initState = initFunc();
-			if (typeof initState !== "object") throw new Error(sliceErrors.InvalidState(options.name));
+			if (typeof initState !== "object") {
+				devConsole.error(...sliceErrors.InvalidState(options.name, initState));
+				throw new Error();
+			}
 			if (!initState) throw new Error(sliceErrors.RequiredState(options.name));
 			return initState;
 		};
 	} else {
-		if (typeof options.state !== "object") throw new Error(sliceErrors.InvalidState(options.name));
+		if (typeof options.state !== "object") {
+			devConsole.error(...sliceErrors.InvalidState(options.name, options.state));
+			throw new Error();
+		}
 		if (!options.state) throw new Error(sliceErrors.RequiredState(options.name));
 	}
 
