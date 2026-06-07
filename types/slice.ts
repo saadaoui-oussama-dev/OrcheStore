@@ -3,27 +3,27 @@ import type { DeepReadonly, Dict, Tail } from "./helpers";
 import type { GlobalUtils, RootStore } from "./slots";
 
 /** Reserved slice member names that cannot be overridden by user-defined APIs. */
-type ReservedKeys<R = {}, M = {}> = "name" | "computed" | "root" | "global" | "getState" | "useSelect" | "getPath" | keyof R | keyof M; // prettier-ignore
+type ReservedSliceKeys<R = {}, M = {}> = "name" | "computed" | "root" | "global" | "getState" | "useSelect" | "getPath" | keyof R | keyof M; // prettier-ignore
 
 /** Defines the mutations available on a slice. */
 export type Mutations<S extends Dict> = Dict<(state: Omit<S, "computed" | "children">, ...args: any[]) => void>;
 
 /** Defines the computed functions available on a slice. */
 export type Computed<S extends Dict, R extends Mutations<S>, M extends Methods, C extends Dict<AnySlice>> = Dict<
-	(state: ExposedState<S, R, M, C>, ...args: any[]) => any
+	(state: ExposedSliceState<S, R, M, C>, ...args: any[]) => any
 >;
 
 /** Defines the methods available on a slice with contextual `this` typing. */
 export type Methods = Dict<(...args: any[]) => any>;
 
 /** Exposes immutable slice state with optional runtime helpers. */
-export type ExposedState<
+export type ExposedSliceState<
 	S extends Dict,
 	R extends Mutations<S>,
 	M extends Methods,
 	C extends Dict<AnySlice>,
 > = DeepReadonly<Omit<S, "computed" | "children">> & {
-	children: { [K in Exclude<keyof C, ReservedKeys<R, M>>]: ReturnType<C[K]["getState"]> };
+	children: { [K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: ReturnType<C[K]["getState"]> };
 };
 
 export type AnySlice = slice<any, any, any, any, any>;
@@ -49,12 +49,12 @@ type slice<
 	};
 
 	/** Returns the latest immutable state snapshot. */
-	readonly getState: (store?: slice<any, any, any, any, any>) => ExposedState<S, R, M, C>;
+	readonly getState: (store?: slice<any, any, any, any, any>) => ExposedSliceState<S, R, M, C>;
 
 	/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `root` store, `rootState` and `global` utilities. */
 	readonly useSelect: {
 		<T, Store extends AnyStore = RootStore>(
-			selector: (this: UseSelectContext<Store>, state: ExposedState<S, R, M, C>, context: UseSelectContext<any>) => T,
+			selector: (this: UseSelectContext<Store>, state: ExposedSliceState<S, R, M, C>, context: UseSelectContext<any>) => T,
 		): T;
 	};
 
@@ -62,13 +62,13 @@ type slice<
 	readonly getPath: (store?: slice<any, any, any, any, any>) => string;
 } & {
 	/** Exposed mutation functions. */
-	readonly [K in Exclude<keyof R, ReservedKeys>]: (...args: Tail<Parameters<R[K]>>) => ReturnType<R[K]>;
+	readonly [K in Exclude<keyof R, ReservedSliceKeys>]: (...args: Tail<Parameters<R[K]>>) => ReturnType<R[K]>;
 } & {
 	/** Exposed method functions. */
-	readonly [K in Exclude<keyof M, ReservedKeys<R>>]: M[K];
+	readonly [K in Exclude<keyof M, ReservedSliceKeys<R>>]: M[K];
 } & {
 	/** Exposed child slices. */
-	readonly [K in Exclude<keyof C, ReservedKeys<R, M>>]: C[K];
+	readonly [K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K];
 };
 
 /** Configuration object used to create a slice. */

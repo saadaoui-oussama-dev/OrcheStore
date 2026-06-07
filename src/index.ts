@@ -4,7 +4,7 @@ import { StoreProvider } from "./store-provider";
 import { getGlobalUtils, provideGlobalUtils } from "./global-utils";
 import { configureDiagnostics } from "./helpers/console";
 
-const OrcheStore = {
+const defaultExport = {
 	/** Creates and initializes an OrcheStore instance. */
 	createStore,
 
@@ -24,8 +24,14 @@ const OrcheStore = {
 	configureDiagnostics,
 };
 
-export default OrcheStore;
-
-export { createStore, createSlice, StoreProvider, provideGlobalUtils, getGlobalUtils, configureDiagnostics };
+export {
+	defaultExport as default,
+	createStore,
+	createSlice,
+	StoreProvider,
+	provideGlobalUtils,
+	getGlobalUtils,
+	configureDiagnostics,
+};
 
 export type * from "../types";

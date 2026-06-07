@@ -5,10 +5,10 @@ import type { EnhancedStore } from "@reduxjs/toolkit";
 import type { GlobalUtils } from "./slots";
 
 /** Exposes immutable store state. */
-type ExposedState<C extends Dict<AnySlice>> = { readonly [K in keyof C]: ReturnType<C[K]["getState"]> };
+type ExposedStoreState<C extends Dict<AnySlice>> = { readonly [K in keyof C]: ReturnType<C[K]["getState"]> };
 
 /** Reserved store member names that cannot be overridden by user-defined APIs. */
-type ReservedKeys<R = {}, M = {}> = "name" | "computed" | "global" | "getState" | "useSelect" | keyof R | keyof M; // prettier-ignore
+type ReservedStoreKeys<R = {}, M = {}> = "name" | "computed" | "global" | "getState" | "useSelect" | keyof R | keyof M; // prettier-ignore
 
 export type AnyStore = store<any>;
 
@@ -18,15 +18,15 @@ type store<C extends Dict<AnySlice>> = {
 	readonly global: GlobalUtils;
 
 	/** Returns the latest immutable state snapshot. */
-	readonly getState: () => ExposedState<C>;
+	readonly getState: () => ExposedStoreState<C>;
 
 	/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `global` utilities. */
 	readonly useSelect: <T>(
-		selector: (this: UseSelectContext<store<C>>, state: ExposedState<C>, context: UseSelectContext<store<C>>) => T,
+		selector: (this: UseSelectContext<store<C>>, state: ExposedStoreState<C>, context: UseSelectContext<store<C>>) => T,
 	) => T;
 } & {
 	/** Exposed slices. */
-	readonly [K in Exclude<keyof C, ReservedKeys>]: C[K];
+	readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K];
 };
 
 /** Configuration object used to create a store. */
@@ -38,7 +38,7 @@ type storeOptions<C extends Dict<AnySlice>> = {
 export type StoreData = { store: AnyStore; redux: EnhancedStore; provided: boolean };
 
 export type StoreProviderProps = Omit<ProviderProps, "store" | "serverState" | "context"> & {
-	/** The root OrcheStore instance created with `createStore(...)`. */
+	/** The root store instance created with `createStore(...)`. */
 	store: AnyStore;
 };
 
