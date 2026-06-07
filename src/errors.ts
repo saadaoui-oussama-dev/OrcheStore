@@ -21,7 +21,6 @@ export const globalUtilsErrors = {
   InvalidArgs: "[OrcheStore::global-utils] Expected provideGlobalUtils(...) to receive a non-null object.\n", // prettier-ignore
 };
 
-
 export const storeErrors = {
   ReservedKey: (type: string, prop: string) => `[OrcheStore::createStore] '${prop}' is reserved by OrcheStore and should not be provided as a ${type}.`, // prettier-ignore
   InvalidChild: (key: string) => `[OrcheStore::createStore] Child slice '${key}' must be a slice object created using createSlice(...).`, // prettier-ignore
@@ -33,22 +32,21 @@ export const storeErrors = {
     "Avoid useState(createStore(...)) because createStore(...) will be executed on every render.",
 };
 
-
 export const sliceErrors = {
   InvalidStore: (type: string, name: string, store: any) => ({
-    0: [
+    storeType: [
       `[OrcheStore::${type}] <StoreProvider> requires a store instance created with createStore(...).\n`,
       ...typeChecker(store),
     ],
     neverExposed: [
       `[OrcheStore::${type}] Slice {${name}} is not exposed in any store.\n` +
-      `A slice must be exposed within at least one store before it can be accessed.\n` +
-      `Create a store using createStore(...) and expose the slice as part of that store tree.`,
+        `A slice must be exposed within at least one store before it can be accessed.\n` +
+        `Create a store using createStore(...) and expose the slice as part of that store tree.`,
     ],
     notInTree: [
       `[OrcheStore::${type}] Slice {${name}} does not belong to the current store tree.\n` +
-      `The requested operation was performed against a store that does not expose this slice.\n` +
-      `Ensure the slice is exposed within the target store or access it through the correct store instance.\n`,
+        `The requested operation was performed against a store that does not expose this slice.\n` +
+        `Ensure the slice is exposed within the target store or access it through the correct store instance.\n`,
       ...typeChecker.prefixed("Current store", false, store),
     ],
     notProvided: [
