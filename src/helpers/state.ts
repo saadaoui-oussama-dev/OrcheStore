@@ -11,7 +11,8 @@ export function normalizeState(state: any, slice: string) {
 	slices.forEach((key) => {
 		let parent = normalizedState;
 		key.slice(0, key.length - 1).forEach((part) => (parent = parent[part] ||= {}));
-		parent[key[key.length - 1]] = { ...state[key.join(nestingSeparator)] };
+		parent.children ||= {};
+		parent.children[key[key.length - 1]] = { ...state[key.join(nestingSeparator)] };
 	});
 
 	return normalizedState;
