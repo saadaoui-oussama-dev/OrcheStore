@@ -8,7 +8,7 @@ import type { StoreProviderProps } from "../types/internal";
 export function StoreProvider(props: StoreProviderProps): React.JSX.Element {
 	const { store, ...rest } = { ...(props || {}) };
 
-	const storeData = getStore(undefined, store, false, storeProviderErrors.InvalidStore(store));
+	const storeData = getStore(undefined, store, storeProviderErrors.InvalidStore(store));
 
 	if (!storeData.provided) storeData.provided = true;
 

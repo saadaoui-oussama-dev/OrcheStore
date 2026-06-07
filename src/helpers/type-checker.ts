@@ -12,13 +12,16 @@ const checker = (...args: Parameters<TypeChecker["prefixed"]>) => {
 	const prefix = `${args[0] || "Received"}: `;
 	const type = args[1] !== false ? "(type: " + typeof value + ")" : "";
 	if (validate?.(value)) return;
-	if (value === undefined || typeof value === "object") return [prefix, value];
+	if (value === undefined || value === null) return [`${prefix}(type: ${value})`];
+	if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean")
+		return [`${prefix}${type} ${value}`];
+	if (typeof value === "object") return [prefix, value];
 	if (value === "") return [`${prefix}Empty String`];
 	return [`${prefix}${type}`, value];
 };
 
 export const typeChecker = (<T>(value: T, validate?: (value: T) => boolean) => {
-	return checker("Received: ", true, value, validate as any);
+	return checker("Received", true, value, validate as any);
 }) as TypeChecker;
 
 typeChecker.prefixed = <T>(prefix: string, type: boolean, value: T, validate?: (value: T) => boolean) => {

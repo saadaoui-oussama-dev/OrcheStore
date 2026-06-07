@@ -61,14 +61,14 @@ export function createSlice<
 
 	object.defineMethod(slice, "getState", () => {
 		const errors = sliceErrors.InvalidStore(undefined, "slice.getState", options.name);
-		const storeData = getStore(sliceData, undefined, false, errors);
+		const storeData = getStore(sliceData, undefined, errors);
 		const state = storeData.redux.getState();
 		return normalizeState(state, getPath(slice));
 	});
 
 	object.defineMethod(slice, "useSelect", (selector: any) => {
 		const errors = sliceErrors.InvalidStore(undefined, "slice.useSelect", options.name);
-		const storeData = getStore(sliceData, undefined, true, errors);
+		const storeData = getStore(sliceData, undefined, errors);
 		return useSelector((state: any) => {
 			const context = useSelectorContext(storeData, normalizeState(state, ""));
 			return selector.call(context, extractSliceState(context.rootState, getPath(slice)), context);
@@ -79,7 +79,7 @@ export function createSlice<
 	Object.entries(reduxSlice.actions).map(([key, action]: [string, any]) => {
 		(slice as any)[key] = (...args: any[]) => {
 			const errors = sliceErrors.InvalidStore(undefined, "slice mutation", options.name);
-			const storeData = getStore(sliceData, undefined, false, errors);
+			const storeData = getStore(sliceData, undefined, errors);
 			return storeData.redux.dispatch(action(args));
 		};
 	});
@@ -116,7 +116,9 @@ const validateSliceOptions = <S extends Dict, O extends SliceOptions<S, any, any
 		options.state = () => {
 			const initState = initFunc();
 			if (typeof initState !== "object") {
-				devConsole.error(...sliceErrors.InvalidState(options.name, initState));
+				const message = sliceErrors.InvalidState(options.name, initState);
+				if (message.every((m) => typeof m === "string")) throw new Error(message.join(" "));
+				devConsole.error(...message);
 				throw new Error();
 			}
 			if (!initState) throw new Error(sliceErrors.RequiredState(options.name));
@@ -124,7 +126,9 @@ const validateSliceOptions = <S extends Dict, O extends SliceOptions<S, any, any
 		};
 	} else {
 		if (typeof options.state !== "object") {
-			devConsole.error(...sliceErrors.InvalidState(options.name, options.state));
+			const message = sliceErrors.InvalidState(options.name, options.state);
+			if (message.every((m) => typeof m === "string")) throw new Error(message.join(" "));
+			devConsole.error(...message);
 			throw new Error();
 		}
 		if (!options.state) throw new Error(sliceErrors.RequiredState(options.name));

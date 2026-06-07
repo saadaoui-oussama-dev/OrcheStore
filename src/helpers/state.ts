@@ -1,7 +1,7 @@
 export const nestingSeparator = ".";
 
 export function normalizeState(state: any, slice: string) {
-	const normalizedState = {} as any;
+	const normalizedState = { children: {} } as any;
 
 	const slices = Object.keys(state)
 		.filter((key) => key.startsWith(slice))
@@ -15,7 +15,7 @@ export function normalizeState(state: any, slice: string) {
 		parent.children[key[key.length - 1]] = { ...state[key.join(nestingSeparator)] };
 	});
 
-	return normalizedState;
+	return normalizedState.children;
 }
 
 export function extractSliceState(state: any, slice: string) {

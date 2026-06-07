@@ -85,14 +85,14 @@ const validateStoreOptions = <C extends Dict<AnySlice>, O extends StoreOptions<C
 };
 
 /** Returns the OrcheStore store instance with its associated Redux store. */
-export function getStore(slice?: SliceData, store?: AnyStore, reactContext?: boolean, error: Dict<any[]> = {}) {
+export function getStore(slice?: SliceData, store?: AnyStore, error: Dict<any[]> = {}) {
 	let message: any[] | undefined = undefined;
 	if ((!slice || store !== undefined) && !stores.find((it) => it.store === store)) message = error["StoreType"];
 	else if (slice && !slice.exposedIn.length) message = error["NeverExposed"];
 	else if (slice && store && !slice.exposedIn.includes(store)) message = error["NotInTree"];
 	store = slice && store === undefined ? slice.exposedIn[0] : store;
-	if (reactContext && !store!.provided) message = error["NotProvided"];
 	if (message) {
+		if (message.every((m) => typeof m === "string")) throw new Error(message.join(" "));
 		devConsole.error(...message);
 		throw new Error();
 	}

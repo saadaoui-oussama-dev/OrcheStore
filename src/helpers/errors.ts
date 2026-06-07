@@ -51,19 +51,13 @@ export const sliceErrors = {
 
 		NeverExposed: [
 			`[OrcheStore::${type}] Slice {${name}} has not been exposed in any store.\n` +
-				`Expose the slice using createStore({ slices: ... }) before accessing its state, mutations, methods, or selectors.`,
+				`Ensure the slice is reachable from a store instance.\n` +
+				`This can be done by exposing the slice directly through createStore({ slices: ... }) or indirectly through a parent slice using createSlice({ children: ... }).`,
 		],
 
 		NotInTree: [
 			`[OrcheStore::${type}] Slice {${name}} is not exposed within the target store.\n` +
 				`A slice can only be accessed through stores that expose it.\n`,
-			...typeChecker.prefixed("Current store", false, store),
-		],
-
-		NotProvided: [
-			`[OrcheStore::${type}] React hooks can only be used within a StoreProvider tree.\n` +
-				`The store containing slice {${name}} has not been provided to React.\n` +
-				`Wrap your application with <StoreProvider store={store}> before calling useSelect(...).\n`,
 			...typeChecker.prefixed("Current store", false, store),
 		],
 	}),
