@@ -1,5 +1,5 @@
 import { devConsole } from "./helpers/console";
-import { typeChecker } from "./helpers/functions";
+import { typeChecker } from "./helpers/type-checker";
 import { object, array, reflect } from "./helpers/object-utils";
 import { globalUtilsErrors } from "./errors";
 import type { GlobalUtils } from "../types";

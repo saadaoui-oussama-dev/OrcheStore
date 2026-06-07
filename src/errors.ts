@@ -1,4 +1,4 @@
-import { typeChecker } from "./helpers/functions";
+import { typeChecker } from "./helpers/type-checker";
 import type { ExposeContext } from "../types/internal";
 
 export const storeProviderErrors = {
