@@ -2,7 +2,7 @@ import { createSlice as create, ReducerType } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
 import { exposeLayer, validateKey } from "./helpers/validators";
 import { devConsole } from "./helpers/console";
-import { stores } from "./create-store";
+import { getStore } from "./create-store";
 import { object } from "./helpers/object-utils";
 import { getGlobalUtils } from "./global-utils";
 import { normalizeState, extractSliceState, nestingSeparator } from "./helpers/state";
@@ -11,26 +11,6 @@ import type { Dict, AnyStore, StoreData, SliceData, Computed, Methods, Mutations
 
 /** Registered OrcheStore slices and their corresponding Redux Toolkit slices. */
 const slices: SliceData[] = [];
-
-/** Returns the Redux Toolkit slice associated with the provided OrcheStore slice. */
-export function getSlice(slice: AnySlice) {
-	return slices.find((it) => it.slice === slice);
-}
-
-/** Returns the OrcheStore store instance with its associated Redux store. */
-export function getStore(slice: SliceData, store?: AnyStore, reactContext?: boolean, error: Dict<any[]> = {}) {
-	let message: any[] | undefined = undefined;
-	if (store !== undefined && !stores.find((it) => it.store === store)) message = error["storeType"];
-	else if (slice && !slice.exposedIn.length) message = error["neverExposed"];
-	else if (slice && store && !slice.exposedIn.includes(store)) message = error["notInTree"];
-	store = slice && store === undefined ? slice.exposedIn[0] : store;
-	if (reactContext && !store!.provided) message = error["notProvided"];
-	if (message) {
-		devConsole.error(...message);
-		throw new Error();
-	}
-	return stores.find((it) => it.store === store)!;
-}
 
 // Context object factory functions.
 const getPath = (slice: AnySlice) => slice.name;
@@ -167,6 +147,12 @@ const validateSliceOptions = <S extends Dict, O extends SliceOptions<S, any, any
 	// Return a fully normalized options object.
 	return options as Required<O>;
 };
+
+
+/** Returns the Redux Toolkit slice associated with the provided OrcheStore slice. */
+export function getSlice(slice: AnySlice) {
+	return slices.find((it) => it.slice === slice);
+}
 
 // prettier-ignore
 export const exposeSliceToParent = (name: string, childData: SliceData, parent: any, store: AnyStore, reducers: any) => {

@@ -10,7 +10,7 @@ import type { Dict, Store, AnyStore, AnySlice, StoreData, SliceData, StoreOption
 import { exposeLayer } from "./helpers/validators";
 
 /** Registered OrcheStore stores and their corresponding Redux stores. */
-export const stores: StoreData[] = [];
+const stores: StoreData[] = [];
 
 // Context object factory functions.
 const useSelectorContext = (store: any, rootState: any) => ({ root: store, rootState, global: getGlobalUtils() });
@@ -83,3 +83,18 @@ const validateStoreOptions = <C extends Dict<AnySlice>, O extends StoreOptions<C
 	// Return a fully normalized options object.
 	return options as Required<O>;
 };
+
+/** Returns the OrcheStore store instance with its associated Redux store. */
+export function getStore(slice?: SliceData, store?: AnyStore, reactContext?: boolean, error: Dict<any[]> = {}) {
+	let message: any[] | undefined = undefined;
+	if ((!slice || store !== undefined) && !stores.find((it) => it.store === store)) message = error["StoreType"];
+	else if (slice && !slice.exposedIn.length) message = error["NeverExposed"];
+	else if (slice && store && !slice.exposedIn.includes(store)) message = error["NotInTree"];
+	store = slice && store === undefined ? slice.exposedIn[0] : store;
+	if (reactContext && !store!.provided) message = error["NotProvided"];
+	if (message) {
+		devConsole.error(...message);
+		throw new Error();
+	}
+	return stores.find((it) => it.store === store)!;
+}

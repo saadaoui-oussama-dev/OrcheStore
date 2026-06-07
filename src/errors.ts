@@ -2,7 +2,12 @@ import { typeChecker } from "./helpers/type-checker";
 import type { ExposeContext } from "../types/internal";
 
 export const storeProviderErrors = {
-	InvalidStore: (store: any) => ["[OrcheStore::context] <StoreProvider> requires a store instance created with createStore(...).\n", ...typeChecker(store)], // prettier-ignore
+	InvalidStore: (store: any) => ({
+		StoreType: [
+			"[OrcheStore::context] <StoreProvider> requires a store instance created with createStore(...).\n",
+			...typeChecker(store),
+		],
+	}),
 };
 
 export const globalUtilsErrors = {
@@ -35,22 +40,22 @@ export const storeErrors = {
 
 export const sliceErrors = {
 	InvalidStore: (type: string, name: string, store: any) => ({
-		storeType: [
+		StoreType: [
 			`[OrcheStore::${type}] <StoreProvider> requires a store instance created with createStore(...).\n`,
 			...typeChecker(store),
 		],
-		neverExposed: [
+		NeverExposed: [
 			`[OrcheStore::${type}] Slice {${name}} is not exposed in any store.\n` +
 				`A slice must be exposed within at least one store before it can be accessed.\n` +
 				`Create a store using createStore(...) and expose the slice as part of that store tree.`,
 		],
-		notInTree: [
+		NotInTree: [
 			`[OrcheStore::${type}] Slice {${name}} does not belong to the current store tree.\n` +
 				`The requested operation was performed against a store that does not expose this slice.\n` +
 				`Ensure the slice is exposed within the target store or access it through the correct store instance.\n`,
 			...typeChecker.prefixed("Current store", false, store),
 		],
-		notProvided: [`[OrcheStore::${type}]`, ...typeChecker.prefixed("Current store", false, store)],
+		NotProvided: [`[OrcheStore::${type}]`, ...typeChecker.prefixed("Current store", false, store)],
 	}),
 	RequiredName: () => "[OrcheStore::createSlice] Missing required slice name. Expected a non-empty string.", // prettier-ignore
 	InvalidName: (name: string) => `[OrcheStore::createSlice] Slice names cannot contain '.' or '/'. Received: {${name}}`, // prettier-ignore
