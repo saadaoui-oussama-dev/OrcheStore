@@ -5,30 +5,23 @@ import { getGlobalUtils, provideGlobalUtils } from "./global-utils";
 import { configureDiagnostics } from "./helpers/console";
 
 const OrcheStore = {
-  /** Creates and initializes an OrcheStore instance. */
-  createStore,
+	/** Creates and initializes an OrcheStore instance. */
+	createStore,
 
-  /** Creates and initializes an OrcheStore slice. */
-  createSlice,
+	/** Creates and initializes an OrcheStore slice. */
+	createSlice,
 
-  /** Provides an OrcheStore instance to the React component tree. */
-  StoreProvider,
+	/** Provides an OrcheStore instance to the React component tree. */
+	StoreProvider,
 
-  /** Registers or updates application-wide global utilities. */
-  provideGlobalUtils,
+	/** Registers or updates application-wide global utilities. */
+	provideGlobalUtils,
 
-  /** Returns the current global utilities object. */
-  getGlobalUtils,
+	/** Returns the current global utilities object. */
+	getGlobalUtils,
 
-  /**
-   * Configures OrcheStore diagnostics output.
-   *
-   * Levels:
-   * - "off" - disables all output
-   * - "errors" - shows errors only
-   * - "all" - shows logs, warnings, and errors
-   */
-  configureDiagnostics,
+	/** Configures diagnostics output level ("off" | "errors" | "all"). */
+	configureDiagnostics,
 };
 
 export default OrcheStore;

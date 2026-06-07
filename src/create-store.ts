@@ -1,71 +1,85 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { getSlice } from "./create-slice";
+import { exposeSliceToParent, getSlice } from "./create-slice";
 import { useSelector } from "react-redux";
 import { object } from "./helpers/object-utils";
 import { devConsole } from "./helpers/console";
-import { nestingSeparator, normalizeState } from "./helpers/state";
+import { normalizeState } from "./helpers/state";
 import { getGlobalUtils } from "./global-utils";
 import { storeErrors } from "./errors";
-import type { Dict, Store, AnyStore, AnySlice, StoreData } from "../types/internal"; // prettier-ignore
+import type { Dict, Store, AnyStore, AnySlice, StoreData, SliceData, StoreOptions } from "../types/internal"; // prettier-ignore
+import { exposeLayer } from "./helpers/validators";
 
-/** Registered OrcheStore instances and their backing Redux stores. */
+/** Registered OrcheStore stores and their corresponding Redux stores. */
 export const stores: StoreData[] = [];
 
+// Context object factory functions.
+const useSelectorContext = (store: any, rootState: any) => ({ root: store, rootState, global: getGlobalUtils() });
+const exposeContext = (type: string) => ({ module: "createStore", type, slice: "" });
+
 /** Creates and initializes an OrcheStore instance. */
-export function createStore<C extends Dict<AnySlice>>({ slices }: { slices: C }): Store<C> {
-  devConsole.inform("prerelease");
+export function createStore<C extends Dict<AnySlice>>(props: { slices: C }): Store<C> {
+	if (stores.length === 1) {
+		devConsole.warn(storeErrors.singletoneLimitation());
+		return stores[0].store as Store<C>;
+	}
 
-  if (stores.length === 1) {
-    devConsole.warn(storeErrors.singletoneLimitation());
-    return stores[0].store as Store<C>;
-  }
+	devConsole.inform("prerelease");
 
-  const store = {} as AnyStore;
+	// Initialize store metadata and runtime containers.
+	const store = {} as AnyStore;
+	const options = validateStoreOptions(props);
+	const reservedKeys = ["name", "computed", "global", "getState", "useSelect"];
+	const injectedKeys: string[] = [];
 
-  const useSelectorContext = (rootState: any) => ({ root: store, rootState, global: getGlobalUtils() });
-  
-  object.defineMethod(store, "getState", () => {
-    return normalizeState(reduxStore.getState(), "");
-  });
+	object.defineReadonly(store, "global", () => getGlobalUtils());
 
-  object.defineMethod(store, "useSelect", (selector: any) => useSelector((state: any) => {
-    const context = useSelectorContext(normalizeState(state, ""));
-    return selector.call(context, context.rootState, context);
-  }));
+	// Exposing slices and adapt slice reducers into one combined reducer.
+	const reducers: any = {};
+	exposeLayer(exposeContext("slice"), options.slices, [reservedKeys, injectedKeys], (key, item) => {
+		const childData = getSlice(item);
+		if (!childData) return devConsole.error(storeErrors.InvalidChild(key));
+		return exposeSliceToParent(key, childData, store, store, reducers);
+	});
 
-  const reducers: any = {};
+	// Create and register the underlying Redux Toolkit store.
+	const reduxStore = configureStore({
+		reducer: reducers,
+	});
 
-  const addChild = (name: string, slice: AnySlice, parent: any) => {
-    const sliceData = getSlice(slice)! || {};
-    if (!sliceData) return;
-    const { redux: reduxSlice, children } = sliceData;
-    sliceData.path = name;
-    sliceData.exposedIn.push(store);
-    reducers[name] = reduxSlice.reducer;
-    parent[name] = slice;
-    Object.entries(children).forEach(([key, child]) => {
-      addChild(name + nestingSeparator + key, child as any, slice);
-    });
-  };
+	const storeData: StoreData = { provided: false, store: store, redux: reduxStore };
 
-  for (const key in slices) {
-    const slice = slices[key] as AnySlice;
-    if (key in store) {
-      devConsole.error(storeErrors.ReservedKey("slice key", key));
-      continue;
-    }
-    const sliceData = getSlice(slice);
-    if (!sliceData) {
-      devConsole.error(storeErrors.InvalidChild(key));
-      continue;
-    }
-    addChild(key, slice, store);
-  }
+	object.defineMethod(store, "getState", () => {
+		return normalizeState(reduxStore.getState(), "");
+	});
 
-  const reduxStore = configureStore({
-    reducer: reducers,
-  });
+	object.defineMethod(store, "useSelect", (selector: any) => {
+		return useSelector((state: any) => {
+			const context = useSelectorContext(store, normalizeState(state, ""));
+			return selector.call(context, context.rootState, context);
+		});
+	});
 
-  stores.push({ provided: false, store: store, redux: reduxStore });
-  return store as any;
+	stores.push(storeData);
+	return store as Store<C>;
 }
+
+/** Validates and normalizes store definition options. */
+const validateStoreOptions = <C extends Dict<AnySlice>, O extends StoreOptions<C>>(props: O) => {
+	// Create a mutable copy of the provided options.
+	const options = { ...(props || {}) };
+
+	// Normalize optional object collections.
+	options.slices = typeof options.slices === "object" && options.slices ? { ...options.slices } : ({} as any);
+
+	// Warn when Redux Toolkit-specific options are provided.
+	const { reducer, devTools, duplicateMiddlewareCheck, enhancers, middleware, preloadedState } = options as any;
+	if (reducer !== undefined) devConsole.warn(storeErrors.ReduxConflict("reducer"));
+	if (devTools !== undefined) devConsole.warn(storeErrors.ReduxConflict("devTools"));
+	if (duplicateMiddlewareCheck !== undefined) devConsole.warn(storeErrors.ReduxConflict("duplicateMiddlewareCheck"));
+	if (enhancers !== undefined) devConsole.warn(storeErrors.ReduxConflict("enhancers"));
+	if (middleware !== undefined) devConsole.warn(storeErrors.ReduxConflict("middleware"));
+	if (preloadedState !== undefined) devConsole.warn(storeErrors.ReduxConflict("preloadedState"));
+
+	// Return a fully normalized options object.
+	return options as Required<O>;
+};
