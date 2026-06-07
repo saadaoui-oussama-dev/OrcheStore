@@ -25,7 +25,7 @@ export function createSlice<
 	R extends Mutations<S>,
 	M extends Methods,
 	C extends Dict<AnySlice>,
-	G extends Computed<S, C>,
+	G extends Computed<S, R, M, C>,
 	N extends string = string,
 >(props: SliceOptions<S, R, M, C, G, N>): Slice<S, R, M, C, G, N> {
 	devConsole.inform("prerelease");

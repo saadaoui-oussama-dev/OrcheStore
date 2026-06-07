@@ -9,14 +9,22 @@ type ReservedKeys<R = {}, M = {}> = "name" | "computed" | "root" | "global" | "g
 export type Mutations<S extends Dict> = Dict<(state: Omit<S, "computed" | "children">, ...args: any[]) => void>;
 
 /** Defines the computed functions available on a slice. */
-export type Computed<S extends Dict, C extends Dict> = Dict<(state: ExposedState<S, C>, ...args: any[]) => any>;
+export type Computed<S extends Dict, R extends Mutations<S>, M extends Methods, C extends Dict<AnySlice>> = Dict<
+	(state: ExposedState<S, R, M, C>, ...args: any[]) => any
+>;
 
 /** Defines the methods available on a slice with contextual `this` typing. */
 export type Methods = Dict<(...args: any[]) => any>;
 
-// TODO: Include nested child slice states in the exposed state shape.
 /** Exposes immutable slice state with optional runtime helpers. */
-export type ExposedState<S extends Dict, C extends Dict<AnySlice>> = DeepReadonly<Omit<S, "computed" | "children">>;
+export type ExposedState<
+	S extends Dict,
+	R extends Mutations<S>,
+	M extends Methods,
+	C extends Dict<AnySlice>,
+> = DeepReadonly<Omit<S, "computed" | "children">> & {
+	children: { [K in Exclude<keyof C, ReservedKeys<R, M>>]: ReturnType<C[K]["getState"]> };
+};
 
 export type AnySlice = slice<any, any, any, any, any>;
 
@@ -26,7 +34,7 @@ type slice<
 	R extends Mutations<S>,
 	M extends Methods,
 	C extends Dict<AnySlice>,
-	G extends Computed<S, C>,
+	G extends Computed<S, R, M, C>,
 	N extends string = string,
 > = {
 	/** Unique slice identifier. */
@@ -41,12 +49,12 @@ type slice<
 	};
 
 	/** Returns the latest immutable state snapshot. */
-	readonly getState: (store?: slice<any, any, any, any, any>) => ExposedState<S, C>;
+	readonly getState: (store?: slice<any, any, any, any, any>) => ExposedState<S, R, M, C>;
 
 	/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `root` store, `rootState` and `global` utilities. */
 	readonly useSelect: {
 		<T, Store extends AnyStore = RootStore>(
-			selector: (this: UseSelectContext<Store>, state: ExposedState<S, C>, context: UseSelectContext<any>) => T,
+			selector: (this: UseSelectContext<Store>, state: ExposedState<S, R, M, C>, context: UseSelectContext<any>) => T,
 		): T;
 	};
 
@@ -69,7 +77,7 @@ type sliceOptions<
 	R extends Mutations<S>,
 	M extends Methods,
 	C extends Dict<AnySlice>,
-	G extends Computed<S, C>,
+	G extends Computed<S, R, M, C>,
 	N extends string = string,
 > = {
 	/** Unique slice identifier. */
