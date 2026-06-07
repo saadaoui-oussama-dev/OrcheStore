@@ -5,7 +5,7 @@ import { object } from "./helpers/object-utils";
 import { devConsole } from "./helpers/console";
 import { normalizeState } from "./helpers/state";
 import { getGlobalUtils } from "./global-utils";
-import { storeErrors } from "./errors";
+import { storeErrors } from "./helpers/errors";
 import type { Dict, Store, AnyStore, AnySlice, StoreData, SliceData, StoreOptions } from "../types/internal"; // prettier-ignore
 import { exposeLayer } from "./helpers/validators";
 

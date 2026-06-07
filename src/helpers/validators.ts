@@ -1,5 +1,5 @@
 import { devConsole } from "./console";
-import { validatorErrors } from "../errors";
+import { validatorErrors } from "./errors";
 import type { Dict, ErrorMode, ExposeContext, ExposeAdapter } from "../../types/internal"; // prettier-ignore
 
 /** Reports a validation message by throwing, logging, or warning. */

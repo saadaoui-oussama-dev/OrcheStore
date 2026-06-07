@@ -1,7 +1,7 @@
 import React from "react";
 import { Provider } from "react-redux";
 import { getStore } from "./create-store";
-import { storeProviderErrors } from "./errors";
+import { storeProviderErrors } from "./helpers/errors";
 import type { StoreProviderProps } from "../types/internal";
 
 /** Provides an OrcheStore instance to the React component tree. */

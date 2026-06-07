@@ -6,7 +6,7 @@ import { getStore } from "./create-store";
 import { object } from "./helpers/object-utils";
 import { getGlobalUtils } from "./global-utils";
 import { normalizeState, extractSliceState, nestingSeparator } from "./helpers/state";
-import { sliceErrors } from "./errors";
+import { sliceErrors } from "./helpers/errors";
 import type { Dict, AnyStore, StoreData, SliceData, Computed, Methods, Mutations, AnySlice, Slice, SliceOptions, UseSelectContext } from "../types/internal"; // prettier-ignore
 
 /** Registered OrcheStore slices and their corresponding Redux Toolkit slices. */
@@ -147,7 +147,6 @@ const validateSliceOptions = <S extends Dict, O extends SliceOptions<S, any, any
 	// Return a fully normalized options object.
 	return options as Required<O>;
 };
-
 
 /** Returns the Redux Toolkit slice associated with the provided OrcheStore slice. */
 export function getSlice(slice: AnySlice) {

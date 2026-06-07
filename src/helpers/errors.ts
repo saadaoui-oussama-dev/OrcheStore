@@ -1,5 +1,5 @@
-import { typeChecker } from "./helpers/type-checker";
-import type { ExposeContext } from "../types/internal";
+import { typeChecker } from "./type-checker";
+import type { ExposeContext } from "../../types/internal";
 
 export const storeProviderErrors = {
 	InvalidStore: (store: any) => ({
