@@ -1,6 +1,6 @@
 {
   "name": "orchestore",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "A function-oriented architecture built on top of Redux Toolkit for simplifying and automating application development.",
   "author": "Oussama Saadaoui",
   "license": "MIT",
@@ -12,7 +12,7 @@
     "init": "node scripts/install.mjs",
     "start": "tsup && node scripts/build.mjs",
     "build": "tsup && node scripts/build.mjs",
-    "publish": "tsup && node scripts/publish.mjs",
+    "deploy": "tsup && node scripts/publish.mjs",
     "check": "tsc --noEmit",
     "lint": "eslint ."
   },
