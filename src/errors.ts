@@ -1,5 +1,5 @@
 import { typeChecker } from "./helpers/functions";
-import type { ExposeContext } from "./helpers/validators";
+import type { ExposeContext } from "../types/internal";
 
 export const storeProviderErrors = {
   InvalidStore: (store: any) => ["[OrcheStore::context] <StoreProvider> requires a store instance created with createStore(...).\n", ...typeChecker(store)], // prettier-ignore

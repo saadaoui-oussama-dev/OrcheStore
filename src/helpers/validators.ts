@@ -1,15 +1,6 @@
 import { devConsole } from "./console";
 import { validatorErrors } from "../errors";
-import type { Dict } from "../../types/helpers";
-
-/** Validation reporting behavior. */
-type ErrorMode = "" | "error" | "warn";
-
-/** Context information used for validation and member exposure. */
-export type ExposeContext = { module: string; type: string; slice?: string };
-
-/** Transforms a layer member before it is exposed. */
-type ExposeAdapter = <K extends string>(key: K, item: any) => any;
+import type { Dict, ErrorMode, ExposeContext, ExposeAdapter } from "../../types/internal"; // prettier-ignore
 
 /** Reports a validation message by throwing, logging, or warning. */
 const report = (message: string, mode?: ErrorMode) => {

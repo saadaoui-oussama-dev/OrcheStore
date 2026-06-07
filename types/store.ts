@@ -1,5 +1,7 @@
 import type { Dict } from "./helpers";
 import type { AnySlice, UseSelectContext } from "./slice";
+import type { ProviderProps } from "react-redux";
+import type { EnhancedStore } from "@reduxjs/toolkit";
 
 /** Exposes immutable store state. */
 type ExposedState<C extends Dict<AnySlice>> = { readonly [K in keyof C]: ReturnType<C[K]["getState"]> };
@@ -18,6 +20,13 @@ type store<C extends Dict<AnySlice>> = {
   readonly [K in Exclude<keyof C, ReservedKeys>]: C[K];
 };
 
+type StoreProviderProps = Omit<ProviderProps, "store" | "serverState" | "context"> & {
+  /** The root OrcheStore instance created with `createStore(...)`. */
+  store: AnyStore;
+};
+
 type AnyStore = store<any>;
 
-export type { store as Store, AnyStore };
+type StoreData = { store: AnyStore; redux: EnhancedStore; provided: boolean };
+
+export type { store as Store, AnyStore, StoreProviderProps, StoreData };

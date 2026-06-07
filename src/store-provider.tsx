@@ -3,13 +3,7 @@ import { Provider } from "react-redux";
 import { stores } from "./create-store";
 import { devConsole } from "./helpers/console";
 import { storeProviderErrors } from "./errors";
-import type { AnyStore } from "../types/store";
-import type { ProviderProps } from "react-redux";
-
-type StoreProviderProps = Omit<ProviderProps, "store" | "serverState" | "context"> & {
-  /** The root OrcheStore instance created with `createStore(...)`. */
-  store: AnyStore;
-};
+import type { StoreProviderProps } from "../types/internal";
 
 /** Provides an OrcheStore instance to the React component tree. */
 export function StoreProvider(props: StoreProviderProps): React.JSX.Element {

@@ -1,7 +1,5 @@
-type DiagnosticsLevel = "off" | "errors" | "all";
-
-let diagnosticsLevel: DiagnosticsLevel = "all";
-let informed = { diagnostics: false, prerelease: false };
+let diagnosticsLevel: "off" | "errors" | "all" = "all";
+const informed = { diagnostics: false, prerelease: false };
 
 const log = globalThis.console?.log?.bind?.(globalThis.console) || globalThis.console?.log;
 const warn = globalThis.console?.warn?.bind?.(globalThis.console) || globalThis.console?.warn;
@@ -65,7 +63,7 @@ const devConsole = {
  * - "errors" - shows errors only
  * - "all" - shows logs, warnings, and errors
  */
-function configureDiagnostics(level: DiagnosticsLevel) {
+function configureDiagnostics(level: "off" | "errors" | "all") {
   diagnosticsLevel = level;
 }
 

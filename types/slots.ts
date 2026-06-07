@@ -1,3 +1,5 @@
+import { AnyStore } from "./store";
+
 declare global {
   namespace OrcheStore {
     /** User-defined framework type slots. */
@@ -12,16 +14,10 @@ type Definition<T, Rule, Default> = T extends keyof OrcheStore.Slots
     : Default
   : Default;
 
-/** Validation rule for the `global` type slot. */
-type GlobalUtilsRule = Record<PropertyKey, any>;
-
-/** Validation rule for the `root` type slot. */
-type RootStoreRule = Record<PropertyKey, any>;
-
 /** Resolved type for application-wide global utilities. */
-type GlobalUtils = Definition<"global", GlobalUtilsRule, any>;
+type GlobalUtils = Definition<"global", Record<PropertyKey, any>, any>;
 
 /** Resolved type for the application root store. */
-type RootStore = Definition<"root", RootStoreRule, any>;
+type RootStore = Definition<"root", AnyStore, any>;
 
 export type { RootStore, GlobalUtils };

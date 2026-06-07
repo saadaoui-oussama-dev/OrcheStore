@@ -100,6 +100,14 @@ type sliceOptions<
   children?: C;
 };
 
+type SliceData = {
+  slice: AnySlice;
+  redux: any;
+  children: Dict<AnySlice>;
+  path: string;
+  exposedIn: AnyStore[];
+}
+
 type AnySlice = slice<any, any, any, any, any>;
 
-export type { slice as Slice, sliceOptions as SliceOptions, AnySlice, Mutations, Computed, Methods, ExposedState, UseSelectContext };
+export type { slice as Slice, sliceOptions as SliceOptions, AnySlice, Mutations, Computed, Methods, ExposedState, UseSelectContext, SliceData };

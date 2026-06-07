@@ -2,26 +2,15 @@ import { createSlice as create, ReducerType } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
 import { exposeLayer, validateKey } from "./helpers/validators";
 import { devConsole } from "./helpers/console";
-import { StoreMetadata, stores } from "./create-store";
+import { stores } from "./create-store";
 import { object } from "./helpers/object-utils";
 import { getGlobalUtils } from "./global-utils";
 import { normalizeState, extractSliceState } from "./helpers/state";
-import { typeChecker } from "./helpers/functions";
-import type { Dict } from "../types/helpers";
-import type { AnyStore } from "../types/store";
-import type { Computed, Methods, Mutations, AnySlice, Slice, SliceOptions, UseSelectContext } from "../types/slice";
 import { sliceErrors } from "./errors";
-
-export type SliceMetadata = {
-  slice: AnySlice;
-  redux: ReturnType<typeof create<any, any, string, any, string>>;
-  children: Dict<AnySlice>;
-  path: string;
-  exposedIn: AnyStore[];
-}
+import type { Dict, AnyStore, StoreData, SliceData, Computed, Methods, Mutations, AnySlice, Slice, SliceOptions, UseSelectContext } from "../types/internal"; // prettier-ignore
 
 /** Registered OrcheStore slices and their corresponding Redux Toolkit slices. */
-const slices: SliceMetadata[] = [];
+const slices: SliceData[] = [];
 
 /** Returns the Redux Toolkit slice associated with the provided OrcheStore slice. */
 export function getSlice(slice: AnySlice) {
@@ -29,7 +18,7 @@ export function getSlice(slice: AnySlice) {
 }
 
 /** Returns the OrcheStore store instance with its associated Redux store. */
-export function getStore(slice: SliceMetadata, store?: AnyStore, reactContext?: boolean, error: Dict<any[]> = {}) {
+export function getStore(slice: SliceData, store?: AnyStore, reactContext?: boolean, error: Dict<any[]> = {}) {
   let message: (any[] | undefined) = undefined;
   if (store !== undefined && !stores.find((it) => it.store === store)) message = error['storeType'];
   else if (slice && !slice.exposedIn.length) message = error['neverExposed'];
@@ -63,7 +52,7 @@ export function createSlice<
   // Context object factory functions.
   const getPath = (slice: AnySlice) => slice.name;
   const exposeContext = (type: string) => ({ module: "createSlice", type, slice: options.name });
-  const useSelectorContext = (storeData: StoreMetadata, rootState: any): UseSelectContext<any> => {
+  const useSelectorContext = (storeData: StoreData, rootState: any): UseSelectContext<any> => {
     return { root: storeData.store, rootState, global: getGlobalUtils() };
   };
 
@@ -82,7 +71,7 @@ export function createSlice<
     reducers: options.mutations as any,
   });
 
-  const sliceMetadata: SliceMetadata = { path: options.name, slice: slice, redux: reduxSlice, children: {}, exposedIn: [] };
+  const sliceData: SliceData = { path: options.name, slice: slice, redux: reduxSlice, children: {}, exposedIn: [] };
 
   object.defineReadonly(slice, "name", () => options.name);
 
@@ -92,14 +81,14 @@ export function createSlice<
 
   object.defineMethod(slice, "getState", () => {
     const errors = sliceErrors.InvalidStore("slice-method", options.name, undefined);
-    const storeData = getStore(sliceMetadata, undefined, false, errors);
+    const storeData = getStore(sliceData, undefined, false, errors);
     const state = storeData.redux.getState();
     return normalizeState(state, getPath(slice));
   });
 
   object.defineMethod(slice, "useSelect", (selector: any) => {
     const errors = sliceErrors.InvalidStore("slice-useSelect", options.name, undefined);
-    const storeData = getStore(sliceMetadata, undefined, true, errors);
+    const storeData = getStore(sliceData, undefined, true, errors);
     return useSelector((state: any) => {
       const context = useSelectorContext(storeData, normalizeState(state, ""));
       return selector.call(context, extractSliceState(context.rootState, getPath(slice)), context);
@@ -110,7 +99,7 @@ export function createSlice<
   Object.entries(reduxSlice.actions).map(([key, action]: [string, any]) => {
     (slice as any)[key] = (...args: any[]) => {
       const errors = sliceErrors.InvalidStore("slice-mutation", options.name, undefined);
-      const storeData = getStore(sliceMetadata, undefined, false, errors);
+      const storeData = getStore(sliceData, undefined, false, errors);
       return storeData.redux.dispatch(action(args));
     };
   });
@@ -122,13 +111,13 @@ export function createSlice<
   });
 
   exposeLayer(exposeContext("children"), options.children, [reservedKeys, injectedKeys], (key, item) => {
-    return;
+    if (!!true) return;
     const sliceData = getSlice(item);
     if (!sliceData) return devConsole.error(sliceErrors.InvalidChild(key));
-    return (sliceMetadata.children[key] = item);
+    return (sliceData.children[key] = item);
   });
 
-  slices.push(sliceMetadata);
+  slices.push(sliceData);
   return slice as any;
 }
 

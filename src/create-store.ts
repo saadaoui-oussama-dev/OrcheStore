@@ -1,20 +1,15 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { getSlice, type SliceMetadata } from "./create-slice";
+import { getSlice } from "./create-slice";
 import { useSelector } from "react-redux";
 import { object } from "./helpers/object-utils";
 import { devConsole } from "./helpers/console";
 import { nestingSeparator, normalizeState } from "./helpers/state";
 import { getGlobalUtils } from "./global-utils";
 import { storeErrors } from "./errors";
-import type { EnhancedStore } from "@reduxjs/toolkit";
-import type { Dict } from "../types/helpers";
-import type { AnySlice } from "../types/slice";
-import type { Store, AnyStore } from "../types/store";
-
-export type StoreMetadata = { store: AnyStore; redux: EnhancedStore; provided: boolean };
+import type { Dict, Store, AnyStore, AnySlice, StoreData } from "../types/internal"; // prettier-ignore
 
 /** Registered OrcheStore instances and their backing Redux stores. */
-export const stores: StoreMetadata[] = [];
+export const stores: StoreData[] = [];
 
 /** Creates and initializes an OrcheStore instance. */
 export function createStore<C extends Dict<AnySlice>>({ slices }: { slices: C }): Store<C> {
