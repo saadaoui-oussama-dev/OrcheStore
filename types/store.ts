@@ -47,4 +47,4 @@ type ReservedStoreKeys<R = {}, M = {}> =
 	| ("name" | "computed" | "global" | "getState" | "useSelect")
 	| (keyof R | keyof M);
 
-export type { store as Store, storeOptions as StoreOptions, StoreData, StoreProviderProps, StoreState };
+export type { store as Store, storeOptions as StoreOptions, StoreProviderProps, StoreData, StoreState };

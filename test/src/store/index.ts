@@ -3,7 +3,7 @@ import { counter } from "./counter";
 export { StoreProvider } from "orchestore";
 
 export const store = createStore({
-  slices: {
-    counter: counter,
-  },
+	slices: {
+		counter: counter,
+	},
 });

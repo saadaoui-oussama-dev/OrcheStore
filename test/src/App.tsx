@@ -1,6 +1,6 @@
 import "./App.css";
 import { store } from "./store";
-import { counter, subCounter, subCounter2, subSubCounter, subSubCounter2 } from "./store/counter";
+// import { counter, subCounter, subCounter2, subSubCounter, subSubCounter2 } from "./store/counter";
 import { provideGlobalUtils } from "orchestore";
 
 declare module "orchestore" {
@@ -20,22 +20,16 @@ provideGlobalUtils({
 });
 
 function App() {
-  const state = store.useSelect((state) => state);
-  const count = counter.useSelect((state) => state);
+  const state = store.useSelect((state) => JSON.stringify(state, null, 2));
   // const subCount = subCounter.useSelect((state) => state);
   // const subCount2 = subCounter2.useSelect((state) => state);
   // const subSubCount = subSubCounter.useSelect((state) => state);
   // const subSubCount2 = subSubCounter2.useSelect((state) => state);
 
   return (
-    <>
-      <pre style={{ textAlign: "left" }}>
-        state: {JSON.stringify(state, null, 2)}
-      </pre>
-      <pre style={{ textAlign: "left" }}>
-        count: {JSON.stringify(count, null, 2)}
-      </pre>
-      {/* <pre style={{ textAlign: "left" }}>
+		<>
+			<pre style={{ textAlign: "left" }}>state: {state}</pre>
+			{/* <pre style={{ textAlign: "left" }}>
         subCount: {JSON.stringify(subCount, null, 2)}
       </pre>
       <pre style={{ textAlign: "left" }}>
@@ -48,15 +42,19 @@ function App() {
         subSubCount2: {JSON.stringify(subSubCount2, null, 2)}
       </pre> */}
 
-      <div>
-        <button onClick={() => counter.increment()}>Increment</button>
-        <button onClick={() => counter.decrement()}>Decrement</button>
-        <button onClick={() => counter.incrementAfter(1, 1000)}>
-          Increment After 1s
-        </button>
-      </div>
+			<div>
+				<button onClick={() => store.counter.increment()}>Increment</button>
+				<button onClick={() => store.counter.decrement()}>Decrement</button>
+				<button onClick={() => store.counter.incrementAfter(1, 1000)}>Increment After 1s</button>
+			</div>
 
-      <div>
+			<div>
+				<button onClick={() => store.counter2.increment()}>Increment</button>
+				<button onClick={() => store.counter2.decrement()}>Decrement</button>
+				<button onClick={() => store.counter2.incrementAfter(1, 1000)}>Increment After 1s</button>
+			</div>
+
+			{/* <div>
         <button onClick={() => subCounter.increment()}>Increment</button>
         <button onClick={() => subCounter.decrement()}>Decrement</button>
         <button onClick={() => subCounter.incrementAfter(1, 1000)}>
@@ -86,9 +84,9 @@ function App() {
         <button onClick={() => subSubCounter2.incrementAfter(1, 1000)}>
           Increment After 1s
         </button>
-      </div>
-    </>
-  );
+      </div> */}
+		</>
+	);
 }
 
 export default App;

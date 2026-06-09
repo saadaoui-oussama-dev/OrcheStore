@@ -1,6 +1,6 @@
 import { devConsole } from "./console";
 import { validatorErrors } from "./errors";
-import type { Dict, ErrorMode, ExposeContext, ExposeAdapter } from "../../types/internal"; // prettier-ignore
+import type { Dict, ErrorMode, ExposeContext, ExposeAdapter, NormalizePropsConfig } from "../../types/internal"; // prettier-ignore
 
 /** Reports a validation message by throwing, logging, or warning. */
 const report = (message: string, mode?: ErrorMode) => {
@@ -37,3 +37,22 @@ export const exposeLayer = (context: ExposeContext, layer: Dict, reserved: strin
 	});
 	return layer;
 };
+
+/** Validates and normalizes definition options. */
+export function normalizeProps<T>(props: T, config: NormalizePropsConfig): Required<T> {
+	// Create a mutable copy of the provided options.
+	const options = { ...(props || {}) } as any;
+
+	// Normalize optional object collections.
+	config.objects.forEach((layer) => {
+		options[layer] = typeof options[layer] === "object" && options[layer] ? { ...options[layer] } : {};
+	});
+
+	// Warn when Redux Toolkit-specific options are provided.
+	config.redux.forEach((layer) => {
+		if (options[layer] !== undefined) devConsole.warn(config.reduxConflict(layer));
+	});
+
+	// Return a fully normalized options object.
+	return options as Required<T>;
+}

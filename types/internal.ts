@@ -11,3 +11,9 @@ export type ExposeContext = { module: string; type: string; slice?: string };
 
 /** Transforms a layer member before it is exposed. */
 export type ExposeAdapter = <K extends string>(key: K, item: any) => any;
+
+export type NormalizePropsConfig = {
+	objects: string[];
+	redux: string[];
+	reduxConflict: (layer: string) => string | string[];
+};

@@ -1,4 +1,4 @@
-import type { Dict, GlobalUtils, ReadOnly, RootStore, Tail } from "./internal";
+import type { Dict, GlobalUtils, ReadOnly, RootStore, Store, Tail } from "./internal";
 
 /** Runtime slice API exposed by createSlice(...). */
 type slice<S, R extends Mutations<S>, M> = GlobalUtils & {
@@ -13,12 +13,20 @@ type slice<S, R extends Mutations<S>, M> = GlobalUtils & {
 
 	/** Returns fully qualified runtime path of the slice. */
 	readonly getPath: () => string;
+
+	/** Collection of derived state functions. */
+	// readonly computed: {
+	// 	readonly [K in keyof G]: (...args: Tail<Parameters<G[K]>>) => ReturnType<G[K]>;
+	// };
 } & {
 	/** Exposed mutation functions. */
 	readonly [K in Exclude<keyof R, ReservedSliceKeys>]: (...args: Tail<Parameters<R[K]>>) => ReturnType<R[K]>;
 } & {
 	/** Exposed method functions. */
 	readonly [K in Exclude<keyof M, ReservedSliceKeys<R>>]: M[K];
+} & {
+	/** Exposed children. */
+	// readonly [K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K];
 };
 
 /** Configuration object used to create a slice. */
@@ -34,6 +42,12 @@ type sliceOptions<S, R extends Mutations<S>, M, Root = RootStore> = {
 
 	/** Collection of slice methods and orchestration logic. */
 	methods?: M & ThisType<slice<S, R, M> & { root: Root }>;
+
+	/** Collection of derived state functions. */ // TODO: Including root, and child slices.
+	// computed?: G & ThisType<GlobalUtils & Omit<G, "global">>;
+
+	/** Collection of nested child slices. */
+	// children?: C;
 };
 
 /** Defines the mutations available on a slice. */
@@ -46,9 +60,23 @@ type SliceState<S, readOnly> = readOnly extends true
 		? Omit<S, "computed" | "children">
 		: S;
 
+/** Internal slice runtime state. Not intended for public use. */
+type SliceData = {
+	slice: slice<any, Mutations<any>, any>;
+	redux: any;
+	children: Dict<slice<any, Mutations<any>, any>>;
+	path: string;
+	exposedIn: Store<any>[];
+	// pointer: slice<any, Mutations<any>, any>;
+	// roots: Store<any>[];
+	// children: Dict<SliceData["clones"][number]>;
+	// clones: { root?: Store<any>, redux: any; path: string; origin: SliceData }[];
+	// const sliceData: SliceData = { pointer: slice, clones: [], roots: [], children: {} };
+};
+
 /** Reserved slice member names that cannot be overridden by user-defined APIs. */
 type ReservedSliceKeys<R = {}, M = {}> =
 	| ("name" | "computed" | "root" | "global" | "children" | "getState" | "useSelect" | "getPath")
 	| (keyof R | keyof M);
 
-export type { slice as Slice, sliceOptions as SliceOptions, SliceState, Mutations };
+export type { slice as Slice, sliceOptions as SliceOptions, SliceState, SliceData, Mutations };
