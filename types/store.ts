@@ -12,7 +12,9 @@ type store<C> = OmitNever<
 		readonly useSelect: <T>(selector: (this: GlobalUtils, state: StoreState<C>, context: GlobalUtils) => T) => T;
 	} & {
 		/** Exposed slices. */
-		[K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer R, infer M> ? Slice<S, R, M> : never;
+		readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer R, infer M>
+			? Slice<S, R, M>
+			: never;
 	}
 >;
 
@@ -25,7 +27,9 @@ type storeOptions<C> = {
 /** Derived immutable state shape of the store. */
 type StoreState<C> = ReadOnly<
 	OmitNever<{
-		readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer _, infer __> ? SliceState<S, true> : never;
+		readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer _, infer __>
+			? SliceState<S, true>
+			: never;
 	}>
 >;
 
@@ -36,11 +40,7 @@ type StoreProviderProps<T = any> = Omit<ProviderProps, "store" | "serverState" |
 };
 
 /** Internal store runtime state. Not intended for public use. */
-type StoreData = {
-	store: store<any>;
-	redux: EnhancedStore;
-	provided: boolean;
-};
+type StoreData = { name: string, store: store<any>; redux: EnhancedStore };
 
 /** Reserved store member names that cannot be overridden by user-defined APIs. */
 type ReservedStoreKeys<R = {}, M = {}> =

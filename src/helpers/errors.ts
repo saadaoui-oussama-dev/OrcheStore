@@ -30,10 +30,7 @@ export const storeErrors = {
 	InvalidChild: (key: string) =>
 		`[OrcheStore::createStore] Child slice '${key}' must be a slice created with createSlice(...).`,
 
-	ReduxConflict: (prop: string) =>
-		`[OrcheStore::createStore] '${prop}' is a Redux Toolkit configureStore(...) option and is ignored by OrcheStore.`,
-
-	singletoneLimitation: () =>
+	singletonLimitation: () =>
 		"[OrcheStore::createStore] createStore(...) was called more than once.\n" +
 		"OrcheStore currently supports only a single global store instance and will return the existing store.\n" +
 		"If you are creating a store inside a React component, create it only once, for example:\n" +
@@ -80,9 +77,6 @@ export const sliceErrors = {
 	InvalidChild: (key: string) =>
 		`[OrcheStore::createSlice] Child slice '${key}' must be a slice created with createSlice(...).`,
 
-	ReduxConflict: (prop: string) =>
-		`[OrcheStore::createSlice] '${prop}' is a Redux Toolkit createSlice(...) option and is ignored by OrcheStore.`,
-
 	ReduxReducerConflict: () =>
 		"[OrcheStore::createSlice] Redux Toolkit asyncThunk reducers are not supported inside mutations. Use methods instead.",
 };
@@ -90,15 +84,15 @@ export const sliceErrors = {
 export const validatorErrors = {
 	target: ({ slice }: { slice?: string }) => (slice ? ` Affected slice '${slice}':\n` : " "),
 
-	RequiredName: (ctx: ExposeContext) =>
-		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${ctx.type} keys must be non-empty strings.`,
+	RequiredName: (ctx: ExposeContext, type: string) =>
+		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${type} keys must be non-empty strings.`,
 
-	InvalidName: (ctx: ExposeContext, key: string) =>
-		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${ctx.type} names cannot contain '.' or '/'. Received: ${key}.`,
+	InvalidName: (ctx: ExposeContext, type: string, key: string) =>
+		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${type} names cannot contain '.' or '/'. Received: ${key}.`,
 
-	ReservedKey: (ctx: ExposeContext, key: string) =>
-		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}'${key}' is a reserved name and cannot be used as a ${ctx.type} key.`,
+	ReservedKey: (ctx: ExposeContext, type: string, key: string) =>
+		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}'${key}' is a reserved name and cannot be used as a ${type} key.`,
 
-	DuplicateKey: (ctx: ExposeContext, key: string) =>
-		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${ctx.type} name '${key}' conflicts with another member.`,
+	DuplicateKey: (ctx: ExposeContext, type: string, key: string) =>
+		`[OrcheStore::${ctx.module}]${validatorErrors.target(ctx)}${type} name '${key}' conflicts with another member.`,
 };

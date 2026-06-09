@@ -54,7 +54,7 @@ type sliceOptions<S, R extends Mutations<S>, M, Root = RootStore> = {
 type Mutations<S> = Dict<(state: SliceState<S, false>, ...args: any[]) => void>;
 
 /** Derived state shape exposed by a slice, excluding internal framework fields. */
-type SliceState<S, readOnly> = readOnly extends true
+type SliceState<S, isReadOnly> = isReadOnly extends true
 	? ReadOnly<S extends Dict ? Omit<S, "computed" | "children"> : S>
 	: S extends Dict
 		? Omit<S, "computed" | "children">
@@ -66,12 +66,7 @@ type SliceData = {
 	redux: any;
 	children: Dict<slice<any, Mutations<any>, any>>;
 	path: string;
-	exposedIn: Store<any>[];
-	// pointer: slice<any, Mutations<any>, any>;
-	// roots: Store<any>[];
-	// children: Dict<SliceData["clones"][number]>;
-	// clones: { root?: Store<any>, redux: any; path: string; origin: SliceData }[];
-	// const sliceData: SliceData = { pointer: slice, clones: [], roots: [], children: {} };
+	roots: Store<any>[];
 };
 
 /** Reserved slice member names that cannot be overridden by user-defined APIs. */

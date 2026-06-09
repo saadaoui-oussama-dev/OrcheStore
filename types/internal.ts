@@ -1,3 +1,5 @@
+import { Dict } from "./helpers";
+
 export type * from "./helpers";
 export type * from "./slice";
 export type * from "./store";
@@ -7,13 +9,15 @@ export type * from "./slots";
 export type ErrorMode = "" | "error" | "warn";
 
 /** Context information used for validation and member exposure. */
-export type ExposeContext = { module: string; type: string; slice?: string };
+export type ExposeContext = { module: string; slice?: string, reserved: string[] };
 
 /** Transforms a layer member before it is exposed. */
 export type ExposeAdapter = <K extends string>(key: K, item: any) => any;
 
 export type NormalizePropsConfig = {
-	objects: string[];
-	redux: string[];
-	reduxConflict: (layer: string) => string | string[];
+	method: string;
+	objects?: string[];
+	unsupported?: string[];
+	redux?: string[];
+	validate?: (options: Dict) => void;
 };

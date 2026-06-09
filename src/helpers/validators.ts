@@ -18,41 +18,44 @@ export const validateKey = (key: unknown, req = "", spec = "", opt?: [ErrorMode,
 };
 
 /** Validates a layer key before exposing its member. */
-const validateLayerKey = (context: ExposeContext, key: string, reserved: string[][]) => {
-	const requiredName = validatorErrors.RequiredName(context);
-	const invalidName = validatorErrors.InvalidName(context, key);
+export const validateLayerKey = (context: ExposeContext, type: string, key: string, reserved: string[][]) => {
+	const requiredName = validatorErrors.RequiredName(context, type);
+	const invalidName = validatorErrors.InvalidName(context, type, key);
 	if (!validateKey(key, requiredName, invalidName, ["error", "error"])) return;
-	else if (reserved[0].includes(key)) return devConsole.error(validatorErrors.ReservedKey(context, key));
-	else if (reserved[1].includes(key)) return devConsole.error(validatorErrors.DuplicateKey(context, key));
+	else if (reserved[0].includes(key)) return devConsole.error(validatorErrors.ReservedKey(context, type, key));
+	else if (reserved[1].includes(key)) return devConsole.error(validatorErrors.DuplicateKey(context, type, key));
 	return true;
 };
 
 /** Validates, adapts, and exposes layer members. */
-export const exposeLayer = (context: ExposeContext, layer: Dict, reserved: string[][], adapter: ExposeAdapter) => {
-	Object.entries(layer).forEach(([key, item]) => {
-		const newValue = validateLayerKey(context, key, reserved) ? adapter(key, item) : undefined;
-		if (newValue === undefined) return delete layer[key];
-		(layer as any)[key] = newValue;
-		reserved[1].push(key);
-	});
-	return layer;
+export const createExposer = (context: ExposeContext) => {
+	const exposed: string[] = [];
+	const reserved = [context.reserved, exposed];
+	return (type: string, layer: any, adapter: ExposeAdapter) => {
+		Object.entries(layer).forEach(([key, item]) => {
+			const newValue = validateLayerKey(context, type, key, reserved) ? adapter(key, item) : undefined;
+			if (newValue === undefined) return delete layer[key];
+			layer[key] = newValue;
+			exposed.push(key);
+		});
+		return layer;
+	};
 };
 
 /** Validates and normalizes definition options. */
-export function normalizeProps<T>(props: T, config: NormalizePropsConfig): Required<T> {
-	// Create a mutable copy of the provided options.
+export const normalizeProps = <T>(props: T, config: NormalizePropsConfig): Required<T> => {
 	const options = { ...(props || {}) } as any;
-
-	// Normalize optional object collections.
-	config.objects.forEach((layer) => {
+	config.objects?.forEach((layer) => {
 		options[layer] = typeof options[layer] === "object" && options[layer] ? { ...options[layer] } : {};
 	});
-
-	// Warn when Redux Toolkit-specific options are provided.
-	config.redux.forEach((layer) => {
-		if (options[layer] !== undefined) devConsole.warn(config.reduxConflict(layer));
+	config.validate?.(options);
+	config.redux?.forEach((layer) => {
+		if (options[layer] === undefined) return;
+		devConsole.warn(`[OrcheStore::${config.method}] '${layer}' property is a Redux Toolkit option and is ignored by OrcheStore.`); // prettier-ignore
 	});
-
-	// Return a fully normalized options object.
+	config.unsupported?.forEach((layer) => {
+		if (Object.keys((options as any)[layer]).length < 1) return;
+		devConsole.warn(`[OrcheStore::${config.method}] '${layer}' property is not yet supported and will be ignored.`); // prettier-ignore
+	});
 	return options as Required<T>;
-}
+};

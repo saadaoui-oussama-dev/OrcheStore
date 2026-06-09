@@ -1,15 +1,33 @@
-import { createStore } from "./create-store";
+import { createStore, getStore } from "./create-store";
 import { createSlice } from "./create-slice";
 import { StoreProvider } from "./store-provider";
 import { getGlobalUtils, provideGlobalUtils } from "./global-utils";
-import { configureDiagnostics } from "./helpers/console";
+import { configureDiagnostics, devConsole } from "./helpers/console";
+import { storeErrors } from "./helpers/errors";
+import type { Mutations, Slice, SliceOptions, Store, StoreOptions } from "../types/internal";
+
+/** Creates and initializes an OrcheStore slice. */
+const createSliceWrapper = <S, R extends Mutations<S>, M>(props: SliceOptions<S, R, M>): Slice<S, R, M> => {
+	devConsole.inform("prerelease");
+	return createSlice(props);
+};
+
+/** Creates and initializes an OrcheStore instance. */
+const createStoreWrapper = <T>(props: StoreOptions<T>): Store<T> => {
+	devConsole.inform("prerelease");
+	if (getStore(undefined, undefined, false as any)) {
+		devConsole.warn(storeErrors.singletonLimitation());
+		return getStore(undefined, undefined, false as any).store as any;
+	}
+	return createStore(props);
+};
 
 const defaultExport = {
 	/** Creates and initializes an OrcheStore instance. */
-	createStore,
+	createStore: createStoreWrapper,
 
 	/** Creates and initializes an OrcheStore slice. */
-	createSlice,
+	createSlice: createSliceWrapper,
 
 	/** Provides an OrcheStore instance to the React component tree. */
 	StoreProvider,
@@ -26,8 +44,8 @@ const defaultExport = {
 
 export {
 	defaultExport as default,
-	createStore,
-	createSlice,
+	createStoreWrapper as createStore,
+	createSliceWrapper as createSlice,
 	StoreProvider,
 	provideGlobalUtils,
 	getGlobalUtils,
