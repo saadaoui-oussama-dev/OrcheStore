@@ -1,44 +1,22 @@
-import type { Dict } from "./helpers";
-import type { GlobalUtils, RootStore } from "./slots";
-import type { Store as store, StoreOptions as storeOptions } from "./store";
-import type { AnySlice, Computed, Methods, Mutations, Slice as slice, SliceOptions as sliceOptions } from "./slice";
-
-type orchestore = {};
+import type { GlobalUtils, Mutations, RootStore, Slice as slice, SliceOptions as sliceOptions, Store as store, StoreOptions as storeOptions } from "./internal"; // prettier-ignore
 
 declare global {
-	type OrcheStore = orchestore;
-
 	namespace OrcheStore {
 		/** Runtime store API exposed by createStore(...). */
-		type Store<C extends Dict<AnySlice>> = store<C>;
+		type Store<C> = store<C>;
 
 		/** Configuration object used to create a store. */
-		type StoreOptions<C extends Dict<AnySlice>> = storeOptions<C>;
+		type StoreOptions<C> = storeOptions<C>;
 
 		/** Runtime slice API exposed by createSlice(...). */
-		type Slice<
-			S extends Dict,
-			R extends Mutations<S>,
-			M extends Methods,
-			C extends Dict<AnySlice>,
-			G extends Computed<S, R, M, C>,
-			N extends string = string,
-		> = slice<S, R, M, C, G, N>;
+		type Slice<S, R extends Mutations<S>, M> = slice<S, R, M>;
 
 		/** Configuration object used to create a slice. */
-		type SliceOptions<
-			S extends Dict,
-			R extends Mutations<S>,
-			M extends Methods,
-			C extends Dict<AnySlice>,
-			G extends Computed<S, R, M, C>,
-			N extends string = string,
-		> = sliceOptions<S, R, M, C, G, N>;
+		type SliceOptions<S, R extends Mutations<S>, M, Root = RootStore> = sliceOptions<S, R, M, Root>;
 	}
 }
 
 export type {
-	orchestore as OrcheStore,
 	store as Store,
 	storeOptions as StoreOptions,
 	slice as Slice,
