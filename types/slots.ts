@@ -1,4 +1,4 @@
-import type { Store } from "./internal";
+import type { Dict, Store } from "./internal";
 
 declare global {
 	namespace OrcheStore {
@@ -17,10 +17,10 @@ type Definition<T, Rule, Default> = T extends keyof OrcheStore.Slots
 /** Resolved type for application-wide global utilities. */
 type GlobalUtils = {
 	/** Application-wide global utilities. */
-	global: Definition<"global", Record<PropertyKey, any>, any>;
+	global: Definition<"global", Dict, any>;
 };
 
 /** Resolved type for the application root store. */
-type RootStore = Definition<"root", Store<any>, any>;
+type RootStore = Definition<"root", Store<unknown>, any>;
 
 export type { RootStore, GlobalUtils };

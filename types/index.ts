@@ -12,7 +12,7 @@ declare global {
 		type Slice<S, R extends Mutations<S>, M> = slice<S, R, M>;
 
 		/** Configuration object used to create a slice. */
-		type SliceOptions<S, R extends Mutations<S>, M, Root = RootStore> = sliceOptions<S, R, M, Root>;
+		type SliceOptions<S, R extends Mutations<S>, M> = sliceOptions<S, R, M>;
 	}
 }
 

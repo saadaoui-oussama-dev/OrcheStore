@@ -14,7 +14,7 @@ const slices: SliceData[] = [];
 
 /** Creates and initializes an OrcheStore slice. */
 const createSlice = <S, R extends Mutations<S>, M>(props: SliceOptions<S, R, M>): Slice<S, R, M> => {
-	const sliceData = { roots: [] } satisfies Partial<SliceData> as any as SliceData;
+	const sliceData = { children: {}, roots: [] } satisfies Partial<SliceData> as any as SliceData;
 	const slice = (sliceData.slice = {} as any);
 	const options = normalizeProps(props, {
 		method: "createSlice",

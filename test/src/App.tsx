@@ -48,11 +48,11 @@ function App() {
 				<button onClick={() => store.counter.incrementAfter(1, 1000)}>Increment After 1s</button>
 			</div>
 
-			<div>
+			{/* <div>
 				<button onClick={() => store.counter2.increment()}>Increment</button>
 				<button onClick={() => store.counter2.decrement()}>Decrement</button>
 				<button onClick={() => store.counter2.incrementAfter(1, 1000)}>Increment After 1s</button>
-			</div>
+			</div> */}
 
 			{/* <div>
         <button onClick={() => subCounter.increment()}>Increment</button>

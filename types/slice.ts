@@ -30,7 +30,7 @@ type slice<S, R extends Mutations<S>, M> = GlobalUtils & {
 };
 
 /** Configuration object used to create a slice. */
-type sliceOptions<S, R extends Mutations<S>, M, Root = RootStore> = {
+type sliceOptions<S, R extends Mutations<S>, M> = {
 	/** Unique slice identifier. */
 	name: string;
 
@@ -41,7 +41,7 @@ type sliceOptions<S, R extends Mutations<S>, M, Root = RootStore> = {
 	mutations?: R & ThisType<GlobalUtils>;
 
 	/** Collection of slice methods and orchestration logic. */
-	methods?: M & ThisType<slice<S, R, M> & { root: Root }>;
+	methods?: M & ThisType<slice<S, R, M> & { root: RootStore }>;
 
 	/** Collection of derived state functions. */ // TODO: Including root, and child slices.
 	// computed?: G & ThisType<GlobalUtils & Omit<G, "global">>;
