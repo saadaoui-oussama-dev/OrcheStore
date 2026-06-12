@@ -1,5 +1,6 @@
 import { Dict } from "./helpers";
 
+export type * from "./factory";
 export type * from "./helpers";
 export type * from "./slice";
 export type * from "./store";
