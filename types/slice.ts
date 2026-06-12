@@ -20,7 +20,7 @@ type slice<S, R extends Mutations<S>, M> = GlobalUtils & {
 	// };
 } & {
 	/** Exposed mutation functions. */
-	readonly [K in Exclude<keyof R, ReservedSliceKeys>]: (...args: Tail<Parameters<R[K]>>) => ReturnType<R[K]>;
+	readonly [K in Exclude<keyof R, ReservedSliceKeys>]: (...args: Tail<Parameters<R[K]>>) => void;
 } & {
 	/** Exposed method functions. */
 	readonly [K in Exclude<keyof M, ReservedSliceKeys<R>>]: M[K];

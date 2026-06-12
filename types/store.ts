@@ -5,6 +5,9 @@ import type { GlobalUtils, ReadOnly, OmitNever, Slice, SliceState } from "./inte
 /** Runtime store API exposed by createStore(...). */
 type store<C> = OmitNever<
 	GlobalUtils & {
+		/** Unique store identifier. Currently this is set to "default" and is nt configurable */
+		readonly name: "default";
+
 		/** Returns the latest immutable state snapshot. */
 		readonly getState: () => StoreState<C>;
 
