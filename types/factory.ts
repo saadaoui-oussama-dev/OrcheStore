@@ -1,4 +1,4 @@
-type NodeMeta<T extends object> = {
+type NodeMeta<T> = {
 	/** Clone lineage shared by all related nodes. */
 	familyId: symbol;
 
@@ -12,35 +12,45 @@ type NodeMeta<T extends object> = {
 	children: Map<string, T>;
 };
 
-/** Tracks all nodes that originated from the same lineage. */
-type FamilyMeta<T extends object, C> = {
-	/** Default config inherited by clones. */
-	config: C;
+type FamilyMeta<T, C> = {
+	/** Default props inherited by clones. */
+	props: C;
 
 	/** All nodes belonging to this lineage. */
 	siblings: Set<T>;
 };
 
-type FactoryOptions<T extends object, C> = {
-	/** Creates a node and provides lazy access to its runtime metadata. */
-	instantiate: (config: C, getSelfMetadata: () => [T, NodeMeta<T>, FamilyMeta<T, C>]) => T;
+type FactoryOptions<T, C> = {
+	/** Human-readable identifier for debugging, diagnostics, and tooling. */
+	factoryName: string;
 
-	/** Produces the config used when cloning a family member. */
-	getConfig?: (origin: T, config: C) => C;
+	/** Creates a node and provides lazy access to its runtime metadata. */
+	instantiate: (props: C, getSelfMetadata: () => [T, NodeMeta<T>, FamilyMeta<T, C>]) => T;
+
+	options?: {
+		/** Transforms user-provided props before node creation and registration. */
+		adapt?: (props: C) => C;
+
+		/** Stores the lineage's initial props, later used as the clone baseline. */
+		register?: (props: C) => C;
+
+		/** Produces the props used when cloning a family member. */
+		clone?: (firstRegisteredProps: C, origin: T) => C;
+	};
 };
 
-type FactoryOutput<C, T> = {
+type FactoryOutput<T, C> = {
 	/** Creates the first member of a new lineage. */
-	create: (config: C) => T;
+	create: (props: C) => T;
 
 	/** Creates a detached sibling in the same lineage. */
 	clone: (node: T) => T;
 
 	/** Attaches a node under a parent, cloning only when ownership changes. */
-	attach: (key: string, node: T, parent: T, parentChildren?: Map<string, T>) => T;
+	attach: <P = T>(key: string, node: T, parent: P, parentMeta?: NodeMeta<P>) => T;
 };
 
-type NodeFactory = {
+type Factory = {
 	/**
 	 * Creates nodes that enforce single ownership.
 	 *
@@ -64,7 +74,7 @@ type NodeFactory = {
 	 *
 	 * while both nodes still belong to the same clone lineage.
 	 */
-	createNodeFactory<T extends object, C>(options: FactoryOptions<T, C>): FactoryOutput<C, T>;
+	createNodeFactory<T, C>(options: FactoryOptions<T, C>): FactoryOutput<T, C>;
 };
 
-export type { NodeMeta, FamilyMeta, FactoryOptions, FactoryOutput, NodeFactory };
+export type { NodeMeta, FamilyMeta, FactoryOptions, FactoryOutput, Factory };
