@@ -1,4 +1,4 @@
-type NodeMeta<T> = {
+type NodeMeta<T, E> = E & {
 	/** Clone lineage shared by all related nodes. */
 	familyId: symbol;
 
@@ -12,42 +12,53 @@ type NodeMeta<T> = {
 	children: Map<string, T>;
 };
 
-type FamilyMeta<T, C> = {
+type FamilyMeta<T, P> = {
 	/** Default props inherited by clones. */
-	props: C;
+	props: P;
 
 	/** All nodes belonging to this lineage. */
 	siblings: Set<T>;
 };
 
-type FactoryOptions<T, C> = {
+type AttachErrors<T> = {
+	/** Invoked when a node is unknown to this factory. */
+	UnknownNode?: (key: string, node: any) => void;
+
+	/** Invoked when the specified owner is unknown. */
+	UnknownParent?: (key: string, node: T, parent: any) => void;
+
+	/** Invoked when an attachment would introduce recursive ownership. */
+	InfiniteOwnership?: <U = T>(key: string, node: T, parent: U) => void;
+};
+
+type FactoryOptions<T, P = any, E = {}> = {
 	/** Human-readable identifier for debugging, diagnostics, and tooling. */
 	factoryName: string;
 
 	/** Creates a node and provides lazy access to its runtime metadata. */
-	instantiate: (props: C, getSelfMetadata: () => [T, NodeMeta<T>, FamilyMeta<T, C>]) => T;
+	instantiate: (props: P, getSelfMetadata: () => [T, NodeMeta<T, E>, FamilyMeta<T, P>]) => T;
 
 	options?: {
 		/** Transforms user-provided props before node creation and registration. */
-		adapt?: (props: C) => C;
+		adapt?: (props: P) => P;
 
 		/** Stores the lineage's initial props, later used as the clone baseline. */
-		register?: (props: C) => C;
+		register?: (props: P) => P;
 
 		/** Produces the props used when cloning a family member. */
-		clone?: (firstRegisteredProps: C, origin: T) => C;
+		clone?: (firstRegisteredProps: P, originMetadata: [T, NodeMeta<T, E>, FamilyMeta<T, P>]) => P;
 	};
 };
 
-type FactoryOutput<T, C> = {
+type FactoryOutput<T, P = any, E = {}> = {
 	/** Creates the first member of a new lineage. */
-	create: (props: C) => T;
+	create: (props: P) => T;
 
 	/** Creates a detached sibling in the same lineage. */
-	clone: (node: T) => T;
+	clone: (node: T, errors?: AttachErrors<T>) => T;
 
 	/** Attaches a node under a parent, cloning only when ownership changes. */
-	attach: <P = T>(key: string, node: T, parent: P, parentMeta?: NodeMeta<P>) => T;
+	attach: <U = T, F = E>(key: string, node: T, parent: U, parentMeta?: NodeMeta<U, F>, errors?: AttachErrors<T>) => T;
 };
 
 type Factory = {
@@ -74,7 +85,7 @@ type Factory = {
 	 *
 	 * while both nodes still belong to the same clone lineage.
 	 */
-	createNodeFactory<T, C>(options: FactoryOptions<T, C>): FactoryOutput<T, C>;
+	createNodeFactory<T, P, E>(options: FactoryOptions<T, P, E>): FactoryOutput<T, P, E>;
 };
 
 export type { NodeMeta, FamilyMeta, FactoryOptions, FactoryOutput, Factory };

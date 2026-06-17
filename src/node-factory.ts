@@ -1,29 +1,21 @@
-import type { FactoryOptions, FamilyMeta, NodeMeta, Factory } from "../types/internal";
+import type { FactoryOptions, FamilyMeta, NodeMeta, Factory, FactoryOutput } from "../types/internal";
 
 const { createNodeFactory }: Factory = {
-	createNodeFactory<T, C>({ factoryName, instantiate, options = {} }: FactoryOptions<T, C>) {
+	createNodeFactory<T, P, E>({ factoryName, instantiate, options = {} }: FactoryOptions<T, P, E>) {
 		/** Runtime ownership metadata for managed nodes. */
-		const metadata = new Map<T, NodeMeta<T>>();
+		const metadata = new Map<T, NodeMeta<T, E>>();
 
 		/** Registry of clone lineages. */
-		const families = new Map<symbol, FamilyMeta<T, C>>();
-
-		/** Resolves lineage and ownership metadata for a node. */
-		function getNodeData(node: T) {
-			const meta = metadata.get(node);
-			const family = meta ? families.get(meta.familyId) : undefined;
-			if (!meta || !family) throw new Error(`${factoryName} factory: Unknown node`);
-			return [family, meta] as const;
-		}
+		const families = new Map<symbol, FamilyMeta<T, P>>();
 
 		/** Creates the first member of a new lineage. */
-		function create(props: C) {
+		const create: FactoryOutput<T, P, E>["create"] = (props) => {
 			// Normalize and register the lineage props.
 			props = options.adapt ? options.adapt(props) : props;
 			props = options.register ? options.register(props) : props;
 
 			// Initialize ownership and lineage metadata for the root node.
-			const meta = { familyId: Symbol("family"), path: "", children: new Map<string, T>(), parents: [] as T[] };
+			const meta = { familyId: Symbol("family"), path: "", children: new Map<string, T>(), parents: [] as T[] } as any;
 			const family = { props, siblings: new Set<T>() };
 
 			// Instantiate the node with lazy access to its runtime metadata.
@@ -36,51 +28,73 @@ const { createNodeFactory }: Factory = {
 			families.set(meta.familyId, family);
 
 			return node;
-		}
+		};
 
 		/** Creates a detached sibling in the same lineage. */
-		function clone(node: T) {
-			return cloneUnlessOrphan("", [], node, true);
-		}
+		const clone: FactoryOutput<T, P, E>["clone"] = (node, errors) => {
+			let meta = metadata.get(node)!;
+			let family = (meta ? families.get(meta.familyId) : undefined)!;
+			if (!meta || !family) {
+				if (errors?.UnknownNode) return void errors?.UnknownNode?.("", node) as any;
+				throw new Error(`[OrcheStore] ${factoryName} factory: Unknown node`);
+			}
+			return cloneUnlessOrphan("", [], node, meta, family, true, () => {});
+		};
 
 		/** Attaches a node under a parent, cloning only when ownership changes. */
-		function attach<P = T>(key: string, node: T, parent: P, parentMetadata?: NodeMeta<P>) {
+		const attach: FactoryOutput<T, P, E>["attach"] = (key, node, parent, parentMetadata, errors) => {
+			// Ensure the node is managed by this factory and belongs to a known lineage.
+			let meta = metadata.get(node)!;
+			let family = (meta ? families.get(meta.familyId) : undefined)!;
+			if (!meta || !family) {
+				if (errors?.UnknownNode) return void errors?.UnknownNode?.(key, node) as any;
+				throw new Error(`[OrcheStore] ${factoryName} factory: Unknown node`);
+			}
+
 			// Resolve the parent's ownership metadata.
-			const parentMeta = (parentMetadata || metadata.get(parent as any)) as NodeMeta<T>;
-			if (!parentMeta) throw new Error(`${factoryName} factory: Unknown node parent`);
+			const parentMeta = (parentMetadata || metadata.get(parent as any)) as NodeMeta<T, E>;
+			if (!parentMeta) {
+				if (errors?.UnknownParent) return void errors?.UnknownParent?.(key, node, parent) as any;
+				throw new Error(`[OrcheStore] ${factoryName} factory: Unknown parent node`);
+			}
 
 			// Prevent ownership cycles.
-			if (node === (parent as any)) throw new Error(`${factoryName} factory: Infinite ownership recursion`);
-			for (const parent of parentMeta.parents.values()) {
-				if (parent === (node as any)) throw new Error(`${factoryName} factory: Infinite ownership recursion`);
+			for (const p of [parent, ...parentMeta.parents]) {
+				if (p === (node as any)) {
+					if (errors?.InfiniteOwnership) return void errors?.InfiniteOwnership?.(key, node, parent) as any;
+					throw new Error(`[OrcheStore] ${factoryName} factory: Infinite ownership recursion`);
+				}
 			}
 
 			// Compute the node's location within the ownership tree.
 			const path = (parentMeta.path ? `${parentMeta.path}.` : "") + key;
-			const parents = [parent, ...(parentMeta.parents || [])] as T[];
+			const parents = [parent, ...parentMeta.parents] as T[];
 
 			// Reconcile ownership and attach the resulting node.
-			return cloneUnlessOrphan(path, parents, node, false, (clone) => parentMeta.children.set(key, clone));
-		}
+			return cloneUnlessOrphan(path, parents, node, meta, family, false, (clone) =>
+				parentMeta.children.set(key, clone),
+			);
+		};
 
 		/** Reconciles ownership by reusing or cloning nodes as needed. */
-		function cloneUnlessOrphan(path: string, parents: T[], origin: T, force: boolean, onSetOwnership?: (c: T) => void) {
-			let [node, [family, meta]] = [origin, getNodeData(origin)];
+		function cloneUnlessOrphan(...args: [string, T[], T, NodeMeta<T, E>, FamilyMeta<T, P>, boolean, (c: T) => void]) {
+			let [path, parents, node, meta, family, force, onSetOwnership] = args;
 
 			// A node can only have one owner. Clone when ownership changes.
 			force = force || (meta.parents.length > 0 && (meta.parents[0] !== parents[0] || meta.path.split(".").at(-1) !== path.split(".").at(-1))); // prettier-ignore
 
 			if (force) {
 				// Prepare metadata and props for a new sibling in the same lineage.
-				meta = { familyId: meta.familyId, path, children: new Map(meta.children), parents };
-				const props = options.clone ? options.clone(family.props, origin) : family.props;
+				const $meta = { familyId: meta.familyId, path, children: new Map(meta.children), parents } as any;
+				const props = options.clone ? options.clone(family.props, [node, meta, family]) : family.props;
 
 				// Instantiate a sibling within the same lineage with lazy access to its runtime metadata.
+				meta = $meta;
 				node = undefined as T;
-				node = instantiate(props, () => [node, meta, family]);
+				node = instantiate(props, () => [node, $meta, family]);
 
 				// Register the sibling in the lineage metadata.
-				metadata.set(node, meta);
+				metadata.set(node, $meta);
 				family.siblings.add(node);
 			}
 
@@ -91,7 +105,10 @@ const { createNodeFactory }: Factory = {
 
 			// Propagate ownership reconciliation through the subtree.
 			for (const [key, child] of [...meta.children.entries()]) {
-				cloneUnlessOrphan(`${path}${path ? "." : ""}${key}`, [node, ...parents], child, force, (clone) => {
+				let meta = metadata.get(child)!;
+				let family = (meta ? families.get(meta.familyId) : undefined)!;
+				const childPath = `${path}${path ? "." : ""}${key}`;
+				cloneUnlessOrphan(childPath, [node, ...parents], child, meta, family, force, (clone) => {
 					if (clone !== child) meta.children.set(key, clone);
 				});
 			}
@@ -99,7 +116,7 @@ const { createNodeFactory }: Factory = {
 			return node;
 		}
 
-		return { create, clone, attach };
+		return { create, attach, clone };
 	},
 };
 
