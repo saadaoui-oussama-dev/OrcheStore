@@ -1,4 +1,7 @@
 type NodeMeta<T, E> = E & {
+	/** Node associated with this metadata. */
+	node: T;
+
 	/** Clone lineage shared by all related nodes. */
 	familyId: symbol;
 
@@ -36,7 +39,7 @@ type FactoryOptions<T, P = any, E = {}> = {
 	factoryName: string;
 
 	/** Creates a node and provides lazy access to its runtime metadata. */
-	instantiate: (props: P, getSelfMetadata: () => [T, NodeMeta<T, E>, FamilyMeta<T, P>]) => T;
+	instantiate: (props: P, metadata: NodeMeta<T, E>, family: FamilyMeta<T, P>) => T;
 
 	options?: {
 		/** Transforms user-provided props before node creation and registration. */
@@ -46,11 +49,14 @@ type FactoryOptions<T, P = any, E = {}> = {
 		register?: (props: P) => P;
 
 		/** Produces the props used when cloning a family member. */
-		clone?: (firstRegisteredProps: P, originMetadata: [T, NodeMeta<T, E>, FamilyMeta<T, P>]) => P;
+		clone?: (firstRegisteredProps: P, originMetadata: NodeMeta<T, E>, family: FamilyMeta<T, P>) => P;
 	};
 };
 
 type FactoryOutput<T, P = any, E = {}> = {
+	/** Runtime metadata for all nodes managed by this factory. */
+	instances: Map<T, NodeMeta<T, E>>;
+
 	/** Creates the first member of a new lineage. */
 	create: (props: P) => T;
 
