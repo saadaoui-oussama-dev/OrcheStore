@@ -6,7 +6,6 @@ import { attachSlice, slices } from "./create-slice";
 import { devConsole } from "./helpers/console";
 import { storeErrors } from "./helpers/errors";
 import { object } from "./helpers/object-utils";
-import { normalizeState } from "./helpers/state";
 import { createExposer, normalizeProps } from "./helpers/validators";
 import type { AnyStore, AnyStoreOptions, Store, StoreOptions } from "../types/internal";
 
@@ -25,24 +24,18 @@ const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, { red
 
 		object.defineReadonly(store, "global", () => getGlobalUtils());
 
-		object.defineMethod(store, "getState", () => {
-			return normalizeState(meta.redux.getState());
-		});
+		object.defineMethod(store, "getState", () => meta.redux.getState());
 
 		object.defineMethod(store, "useSelect", (selector: any) => {
 			const context = { global: getGlobalUtils(), root: store };
-			return useSelector((state: any) => {
-				return selector.apply(context, [normalizeState(state), context]);
-			});
+			return useSelector((state: any) => selector.apply(context, [state, context]));
 		});
 
 		// Combine all slices into one combined reducer.
-		meta.reducers = {};
-
-		expose("slice", props.slices, (key, item) => {
+		meta.reducers = expose("slice", false, props.slices, (key, item) => {
 			const errors = { UnknownNode: (key: string) => devConsole.error(storeErrors.InvalidChild(key)) };
 			const slice = attachSlice(key, item, store, meta, errors);
-			if (slice) ((meta.reducers[key] = slices.get(slice)!.reducers), ((store as any)[key] = slice));
+			if (slice) return (((store as any)[key] = slice), slices.get(slice)!.reducers);
 		});
 
 		// Create and register the underlying Redux Toolkit store.

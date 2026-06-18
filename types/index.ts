@@ -1,4 +1,4 @@
-import type { GlobalUtils, Mutations, RootStore, Slice as slice, SliceOptions as sliceOptions, Store as store, StoreOptions as storeOptions } from "./internal"; // prettier-ignore
+import type { GlobalUtils, Mutations, Obj, RootStore, Slice as slice, SliceOptions as sliceOptions, Store as store, StoreOptions as storeOptions } from "./internal"; // prettier-ignore
 
 declare global {
 	namespace OrcheStore {
@@ -9,10 +9,10 @@ declare global {
 		type StoreOptions<C> = storeOptions<C>;
 
 		/** Runtime slice API exposed by createSlice(...). */
-		type Slice<S, R extends Mutations<S>, M> = slice<S, R, M>;
+		type Slice<S extends Obj, R extends Mutations<S, C>, M, C> = slice<S, R, M, C>;
 
 		/** Configuration object used to create a slice. */
-		type SliceOptions<S, R extends Mutations<S>, M> = sliceOptions<S, R, M>;
+		type SliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = sliceOptions<S, R, M, C>;
 	}
 }
 

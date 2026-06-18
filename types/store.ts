@@ -1,5 +1,4 @@
 import type { ProviderProps } from "react-redux";
-import type { EnhancedStore } from "@reduxjs/toolkit";
 import type { GlobalUtils, ReadOnly, OmitNever, Slice, SliceState } from "./internal";
 
 /** Runtime store API exposed by createStore(...). */
@@ -15,8 +14,8 @@ type store<C> = OmitNever<
 		readonly useSelect: <T>(selector: (this: GlobalUtils, state: StoreState<C>, context: GlobalUtils) => T) => T;
 	} & {
 		/** Exposed slices. */
-		readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer R, infer M>
-			? Slice<S, R, M>
+		readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer R, infer M, infer C>
+			? Slice<S, R, M, C>
 			: never;
 	}
 >;
@@ -30,8 +29,8 @@ type storeOptions<C> = {
 /** Derived immutable state shape of the store. */
 type StoreState<C> = ReadOnly<
 	OmitNever<{
-		readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer _, infer __>
-			? SliceState<S, true>
+		readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer _, infer __, infer C>
+			? SliceState.State<S, C>
 			: never;
 	}>
 >;
@@ -47,7 +46,6 @@ type ReservedStoreKeys<R = {}, M = {}> =
 	| ("name" | "computed" | "global" | "getState" | "useSelect")
 	| (keyof R | keyof M);
 
-	
 type AnyStore = store<any>;
 
 type AnyStoreOptions = storeOptions<any>;

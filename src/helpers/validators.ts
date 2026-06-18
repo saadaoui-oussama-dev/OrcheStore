@@ -1,6 +1,6 @@
 import { devConsole } from "./console";
 import { validatorErrors } from "./errors";
-import type { Dict, ErrorMode, ExposeContext, ExposeAdapter, NormalizePropsConfig } from "../../types/internal"; // prettier-ignore
+import type { ErrorMode, ExposeContext, ExposeAdapter, NormalizePropsConfig } from "../../types/internal"; // prettier-ignore
 
 /** Reports a validation message by throwing, logging, or warning. */
 const report = (message: string, mode?: ErrorMode) => {
@@ -31,11 +31,13 @@ export const validateLayerKey = (context: ExposeContext, type: string, key: stri
 export const createExposer = (context: ExposeContext) => {
 	const exposed: string[] = [];
 	const reserved = [context.reserved, exposed];
-	return (type: string, layer: any, adapter: ExposeAdapter) => {
-		const response = {} as any;
+	return (type: string, entries: boolean, layer: any, adapter: ExposeAdapter) => {
+		const response: any = entries ? [] : {};
 		Object.entries(layer as any).forEach(([key, item]) => {
-			const newValue = validateLayerKey(context, type, key, reserved) ? adapter(key, item) : undefined;
-			if (newValue !== undefined) (((response as any)[key] = newValue), exposed.push(key));
+			const value = validateLayerKey(context, type, key, reserved) ? adapter(key, item) : undefined;
+			if (value === undefined) return;
+			entries ? response.push([key, value]) : ((response as any)[key] = value);
+			exposed.push(key);
 		});
 		return response;
 	};

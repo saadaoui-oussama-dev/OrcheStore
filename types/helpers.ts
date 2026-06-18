@@ -1,5 +1,8 @@
-/** String-keyed object map. */
+/** `Record` with string keys, requiring only the value type. */
 type Dict<Value = any> = Record<string, Value>;
+
+/** `Record` with default property keys, requiring only the value type. */
+type Obj<Value = any> = Record<PropertyKey, Value>;
 
 /** Returns all tuple elements except the first. */
 type Tail<T extends any[]> = T extends [any, ...infer R] ? R : T extends (infer U)[] ? U[] : never;
@@ -18,4 +21,4 @@ type ReadOnly<T> = T extends (...args: any[]) => any
 			? { readonly [K in keyof T]: ReadOnly<T[K]> }
 			: T;
 
-export type { Dict, Tail, OmitNever, ReadOnly };
+export type { Dict, Obj, OmitNever, ReadOnly, Tail };

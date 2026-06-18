@@ -1,4 +1,4 @@
-import { combineReducers, ReducerType, createSlice as sliceCreator } from "@reduxjs/toolkit";
+import { ReducerType, createSlice as sliceCreator } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
 import { getStore } from "./create-store";
 import { getGlobalUtils } from "./global-utils";
@@ -6,9 +6,8 @@ import { createNodeFactory } from "./node-factory";
 import { devConsole } from "./helpers/console";
 import { sliceErrors } from "./helpers/errors";
 import { object } from "./helpers/object-utils";
-import { normalizeState } from "./helpers/state";
 import { createExposer, normalizeProps, validateKey } from "./helpers/validators";
-import type { AnySlice, AnySliceOptions, Mutations, Slice, SliceOptions } from "../types/internal"; // prettier-ignore
+import type { AnySlice, AnySliceOptions, Mutations, Obj, Slice, SliceOptions } from "../types/internal"; // prettier-ignore
 
 const { instances, create, attach } = createNodeFactory<AnySlice, AnySliceOptions, { redux: any; reducers: any }>({
 	factoryName: "slice",
@@ -26,13 +25,11 @@ const { instances, create, attach } = createNodeFactory<AnySlice, AnySliceOption
 		});
 
 		// Convert mutations into Redux Toolkit reducers.
-		const reducers = expose("mutation", props.mutations, (key, item) => {
+		const reducers = expose("mutation", false, props.mutations, (key, item) => {
 			const isRedux = item?._reducerDefinitionType === ReducerType.asyncThunk || "reducer" in { ...(item || {}) };
 			if (isRedux) return devConsole.error(sliceErrors.ReduxReducerConflict());
 			if (typeof item !== "function") return devConsole.error(sliceErrors.InvalidMutation(key));
-			return (state: any, action: any) => {
-				if (action?.meta?.path === meta.path) return item(state, ...action.payload);
-			};
+			return (state: any, action: any) => (action?.meta?.path === meta.path ? item(state, ...action.payload) : state);
 		});
 
 		// Create and register the underlying Redux Toolkit slice.
@@ -47,12 +44,17 @@ const { instances, create, attach } = createNodeFactory<AnySlice, AnySliceOption
 		object.defineReadonly(slice, "global", () => getGlobalUtils());
 		object.defineReadonly(slice, "root", () => store().node as any);
 
-		object.defineMethod(slice, "getState", () => normalizeState(store("slice.getState").redux.getState(), meta.path));
+		object.defineMethod(slice, "getState", () => {
+			let state = store("slice.getState").redux.getState();
+			meta.path.split(".").forEach((part) => (state = (state || {})[part]));
+			return state;
+		});
 
 		object.defineMethod(slice, "useSelect", (selector: any) => {
 			const context = { global: getGlobalUtils(), root: store("slice.useSelect").node };
 			return useSelector((state: any) => {
-				return selector.apply(context, [normalizeState(state, meta.path), context]);
+				meta.path.split(".").forEach((part) => (state = (state || {})[part]));
+				return selector.apply(context, [state, context]);
 			});
 		});
 
@@ -64,22 +66,25 @@ const { instances, create, attach } = createNodeFactory<AnySlice, AnySliceOption
 		});
 
 		// Exposing methods with binding to the slice instance as their `this` context.
-		expose("method", props.methods, (key, item) => {
+		expose("method", false, props.methods, (key, item) => {
 			if (typeof item !== "function") return devConsole.error(sliceErrors.InvalidMethod(key));
 			return (slice[key] = (...args: any[]) => item.apply(slice, args));
 		});
 
 		// Exposing children and normalize reducers
-		let hasChildren = false;
-		meta.reducers = {};
+		const childReducers = expose("child", true, (props as any).children, (key, item) => {
+			const errors = { UnknownNode: (key: string) => devConsole.error(sliceErrors.InvalidChild(key)) };
+			const it = attach(key, item, slice, meta, errors);
+			if (it) return (((slice as any)[key] = it), instances.get(it)!.reducers);
+		});
 
-		// expose("child", (props as any).children, (key, item) => {
-			// const errors = { UnknownNode: (key: string) => devConsole.error(sliceErrors.InvalidChild(key)) };
-			// const it = attach(key, item, slice, meta, errors);
-			// if (it) ((hasChildren = true), (meta.reducers[key] = instances.get(it)!.reducers), ((slice as any)[key] = it));
-		// });
-
-		meta.reducers = hasChildren ? combineReducers({ "": meta.redux.reducer, ...meta.reducers }) : meta.redux.reducer;
+		meta.reducers = (state: any, action: any) => {
+			const actionPath = action?.meta?.path;
+			if (typeof actionPath === "string" && !actionPath.startsWith(meta.path)) return state;
+			const nextState = { ...meta.redux.reducer(state, action) };
+			for (const [key, reducer] of childReducers) nextState[key] = reducer(nextState?.[key], action);
+			return nextState;
+		};
 
 		return slice;
 	},
@@ -120,7 +125,8 @@ const validateState = (name: string, state: any) => {
 };
 
 /** Creates and initializes an OrcheStore slice. */
-const createSlice = <S, R extends Mutations<S>, M>(props: SliceOptions<S, R, M>): Slice<S, R, M> =>
-	(create as any)(props);
+const createSlice = <S extends Obj, R extends Mutations<S, C>, M, C>(
+	props: SliceOptions<S, R, M, C>,
+): Slice<S, R, M, C> => (create as any)(props);
 
 export { instances as slices, createSlice, attach as attachSlice };

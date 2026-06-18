@@ -4,10 +4,10 @@ import { StoreProvider } from "./store-provider";
 import { getGlobalUtils, provideGlobalUtils } from "./global-utils";
 import { configureDiagnostics, devConsole } from "./helpers/console";
 import { storeErrors } from "./helpers/errors";
-import type { Mutations, Slice, SliceOptions, Store, StoreOptions } from "../types/internal";
+import type { Mutations, Obj, Slice, SliceOptions, Store, StoreOptions } from "../types/internal";
 
 /** Creates and initializes an OrcheStore slice. */
-const createSliceWrapper = <S, R extends Mutations<S>, M>(props: SliceOptions<S, R, M>): Slice<S, R, M> => {
+const createSliceWrapper = <S extends Obj, R extends Mutations<S, C>, M, C>(props: SliceOptions<S, R, M, C>): Slice<S, R, M, C> => {
 	devConsole.inform("prerelease");
 	return createSlice(props);
 };
