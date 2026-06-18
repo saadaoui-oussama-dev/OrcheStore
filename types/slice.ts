@@ -51,7 +51,7 @@ type sliceOptions<S, R extends Mutations<S>, M> = {
 };
 
 /** Defines the mutations available on a slice. */
-type Mutations<S> = Dict<(state: SliceState<S, false>, ...args: any[]) => void>;
+type Mutations<S> = Dict<(state: SliceState<S, false>, ...args: any[]) => void | S>;
 
 /** Derived state shape exposed by a slice, excluding internal framework fields. */
 type SliceState<S, isReadOnly> = isReadOnly extends true
