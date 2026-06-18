@@ -15,9 +15,9 @@ const createSliceWrapper = <S, R extends Mutations<S>, M>(props: SliceOptions<S,
 /** Creates and initializes an OrcheStore instance. */
 const createStoreWrapper = <T>(props: StoreOptions<T>): Store<T> => {
 	devConsole.inform("prerelease");
-	if (getStore(undefined, undefined, false as any)) {
+	if (getStore(undefined, undefined, true as any)) {
 		devConsole.warn(storeErrors.singletonLimitation());
-		return getStore(undefined, undefined, false as any).store as any;
+		return getStore(undefined, undefined, true as any).node as any;
 	}
 	return createStore(props);
 };

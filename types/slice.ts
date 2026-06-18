@@ -5,14 +5,14 @@ type slice<S, R extends Mutations<S>, M> = GlobalUtils & {
 	/** Unique slice identifier. */
 	readonly name: string;
 
+	/** Fully qualified runtime path of the slice. */
+	readonly path: string;
+
 	/** Returns the latest immutable state snapshot. */
 	readonly getState: () => SliceState<S, true>;
 
 	/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `root` store, `rootState` and `global` utilities. */
 	readonly useSelect: <T>(selector: (this: GlobalUtils, state: SliceState<S, true>, context: GlobalUtils) => T) => T;
-
-	/** Returns fully qualified runtime path of the slice. */
-	readonly getPath: () => string;
 
 	/** Collection of derived state functions. */
 	// readonly computed: {
@@ -60,18 +60,13 @@ type SliceState<S, isReadOnly> = isReadOnly extends true
 		? Omit<S, "computed" | "children">
 		: S;
 
-/** Internal slice runtime state. Not intended for public use. */
-type SliceData = {
-	slice: slice<any, Mutations<any>, any>;
-	redux: any;
-	children: Dict<slice<any, Mutations<any>, any>>;
-	path: string;
-	roots: Store<any>[];
-};
-
 /** Reserved slice member names that cannot be overridden by user-defined APIs. */
 type ReservedSliceKeys<R = {}, M = {}> =
-	| ("name" | "computed" | "root" | "global" | "children" | "getState" | "useSelect" | "getPath")
+	| ("name" | "path" | "computed" | "root" | "global" | "children" | "getState" | "useSelect")
 	| (keyof R | keyof M);
 
-export type { slice as Slice, sliceOptions as SliceOptions, SliceState, SliceData, Mutations };
+type AnySlice = slice<any, Mutations<any>, any>;
+
+type AnySliceOptions = sliceOptions<any, Mutations<any>, any>;
+
+export type { slice as Slice, sliceOptions as SliceOptions, SliceState, Mutations, AnySlice, AnySliceOptions };

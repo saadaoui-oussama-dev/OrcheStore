@@ -1,134 +1,126 @@
-import { createSlice as create, ReducerType } from "@reduxjs/toolkit";
+import { combineReducers, ReducerType, createSlice as sliceCreator } from "@reduxjs/toolkit";
+import { useSelector } from "react-redux";
+import { getStore } from "./create-store";
 import { getGlobalUtils } from "./global-utils";
+import { createNodeFactory } from "./node-factory";
 import { devConsole } from "./helpers/console";
 import { sliceErrors } from "./helpers/errors";
 import { object } from "./helpers/object-utils";
-import { nestingSeparator, normalizeState } from "./helpers/state";
+import { normalizeState } from "./helpers/state";
 import { createExposer, normalizeProps, validateKey } from "./helpers/validators";
-import type { Dict, Mutations, Slice, SliceData, SliceOptions, Store } from "../types/internal"; // prettier-ignore
-import { getStore } from "./create-store";
-import { useSelector } from "react-redux";
+import type { AnySlice, AnySliceOptions, Mutations, Slice, SliceOptions } from "../types/internal"; // prettier-ignore
 
-/** Registered OrcheStore slices and their corresponding Redux Toolkit slices. */
-const slices: SliceData[] = [];
+const { instances, create, attach } = createNodeFactory<AnySlice, AnySliceOptions, { redux: any; reducers: any }>({
+	factoryName: "slice",
+
+	instantiate(props, meta) {
+		const slice = {} as AnySlice;
+
+		const store = (type?: string) =>
+			getStore(undefined, meta, type ? sliceErrors.InvalidStore(type, props.name) : false);
+
+		const expose = createExposer({
+			module: "createSlice",
+			slice: props.name,
+			reserved: ["name", "path", "computed", "root", "global", "children", "getState", "useSelect"],
+		});
+
+		// Convert mutations into Redux Toolkit reducers.
+		const reducers = expose("mutation", props.mutations, (key, item) => {
+			const isRedux = item?._reducerDefinitionType === ReducerType.asyncThunk || "reducer" in { ...(item || {}) };
+			if (isRedux) return devConsole.error(sliceErrors.ReduxReducerConflict());
+			if (typeof item !== "function") return devConsole.error(sliceErrors.InvalidMutation(key));
+			return (state: any, action: any) => {
+				if (action?.meta?.path === meta.path) return item(state, ...action.payload);
+			};
+		});
+
+		// Create and register the underlying Redux Toolkit slice.
+		meta.redux = sliceCreator({
+			name: props.name,
+			initialState: props.state,
+			reducers: reducers,
+		});
+
+		object.defineReadonly(slice, "name", () => props.name);
+		object.defineReadonly(slice, "path", () => meta.path);
+		object.defineReadonly(slice, "global", () => getGlobalUtils());
+		object.defineReadonly(slice, "root", () => store().node as any);
+
+		object.defineMethod(slice, "getState", () => normalizeState(store("slice.getState").redux.getState(), meta.path));
+
+		object.defineMethod(slice, "useSelect", (selector: any) => {
+			const context = { global: getGlobalUtils(), root: store("slice.useSelect").node };
+			return useSelector((state: any) => {
+				return selector.apply(context, [normalizeState(state, meta.path), context]);
+			});
+		});
+
+		// Exposing Redux Toolkit actions as auto-dispatching mutations
+		Object.entries(meta.redux.actions).map(([key, action]: [string, any]) => {
+			(slice as any)[key] = (...args: any[]) => {
+				store("slice mutation").redux.dispatch({ ...action(args), meta: { path: meta.path } });
+			};
+		});
+
+		// Exposing methods with binding to the slice instance as their `this` context.
+		expose("method", props.methods, (key, item) => {
+			if (typeof item !== "function") return devConsole.error(sliceErrors.InvalidMethod(key));
+			return (slice[key] = (...args: any[]) => item.apply(slice, args));
+		});
+
+		// Exposing children and normalize reducers
+		let hasChildren = false;
+		meta.reducers = {};
+
+		// expose("child", (props as any).children, (key, item) => {
+			// const errors = { UnknownNode: (key: string) => devConsole.error(sliceErrors.InvalidChild(key)) };
+			// const it = attach(key, item, slice, meta, errors);
+			// if (it) ((hasChildren = true), (meta.reducers[key] = instances.get(it)!.reducers), ((slice as any)[key] = it));
+		// });
+
+		meta.reducers = hasChildren ? combineReducers({ "": meta.redux.reducer, ...meta.reducers }) : meta.redux.reducer;
+
+		return slice;
+	},
+
+	options: {
+		adapt(props) {
+			return normalizeProps(props, {
+				method: "createSlice",
+				objects: ["mutations", "computed", "methods", "children"],
+				unsupported: ["computed", "children"],
+				redux: ["reducers", "extraReducers", "reducerPath", "initialState", "selectors"],
+				validate(options) {
+					validateKey(options.name, sliceErrors.RequiredName(), sliceErrors.InvalidName(options.name));
+					const init = options.state;
+					if (typeof init !== "function") return void validateState(options.name, init);
+					options.state = () => validateState(options.name, init());
+				},
+			});
+		},
+
+		clone(props, meta) {
+			const state = meta.redux.getInitialState();
+			return { ...props, state };
+		},
+	},
+});
+
+/** Validate the slice initial state. */
+const validateState = (name: string, state: any) => {
+	if (typeof state !== "object") {
+		const message = sliceErrors.InvalidState(name, state);
+		if (message.every((m) => typeof m === "string")) throw new Error(message.join(" "));
+		devConsole.error(...message);
+		throw new Error();
+	}
+	if (!state) throw new Error(sliceErrors.RequiredState(name));
+	return state;
+};
 
 /** Creates and initializes an OrcheStore slice. */
-const createSlice = <S, R extends Mutations<S>, M>(props: SliceOptions<S, R, M>): Slice<S, R, M> => {
-	const sliceData = { children: {}, roots: [] } satisfies Partial<SliceData> as any as SliceData;
-	const slice = (sliceData.slice = {} as any);
-	const options = normalizeProps(props, {
-		method: "createSlice",
-		objects: ["mutations", "computed", "methods", "children"],
-		unsupported: ["computed", "children"],
-		redux: ["reducers", "extraReducers", "reducerPath", "initialState", "selectors"],
-		validate: validateStateAndName,
-	});
+const createSlice = <S, R extends Mutations<S>, M>(props: SliceOptions<S, R, M>): Slice<S, R, M> =>
+	(create as any)(props);
 
-	const expose = createExposer({
-		module: "createSlice",
-		slice: options.name,
-		reserved: ["name", "computed", "root", "global", "getState", "useSelect", "getPath"],
-	});
-
-	// Convert mutations into Redux Toolkit reducers.
-	expose("mutation", options.mutations, (key, item) => {
-		const isReduxOnly = item?._reducerDefinitionType === ReducerType.asyncThunk || "reducer" in { ...(item || {}) };
-		if (isReduxOnly) return devConsole.error(sliceErrors.ReduxReducerConflict());
-		else if (typeof item !== "function") return devConsole.error(sliceErrors.InvalidMutation(key));
-		return ((state: any, action: any) => item(state, ...action.payload)) as any;
-	});
-
-	// Create and register the underlying Redux Toolkit slice.
-	sliceData.redux = create({
-		name: options.name,
-		initialState: options.state,
-		reducers: options.mutations as any,
-	});
-
-	object.defineReadonly(slice, "name", () => options.name);
-
-	object.defineReadonly(slice, "global", () => getGlobalUtils());
-
-	object.defineMethod(slice, "getPath", () => getPath(slice));
-
-	object.defineMethod(slice, "getState", () => {
-		const errors = sliceErrors.InvalidStore(undefined, "slice.getState", options.name);
-		const state = getStore(sliceData, undefined, errors).redux.getState();
-		return normalizeState(state, getPath(slice));
-	});
-
-	object.defineMethod(slice, "useSelect", (selector: any) => {
-		const errors = sliceErrors.InvalidStore(undefined, "slice.useSelect", options.name);
-		getStore(sliceData, undefined, errors);
-		return useSelector((state: any) => {
-			const context = { global: getGlobalUtils() };
-			return selector.call(context, normalizeState(state, getPath(slice)), context);
-		});
-	});
-
-	// Exposing Redux Toolkit actions as auto-dispatching mutations
-	Object.entries(sliceData.redux.actions).map(([key, action]: [string, any]) => {
-		slice[key] = (...args: any[]) => {
-			const errors = sliceErrors.InvalidStore(undefined, "slice mutation", options.name);
-			const storeData = getStore(sliceData, undefined, errors);
-			return storeData.redux.dispatch(action(args));
-		};
-	});
-
-	// Bind methods to the slice instance as their `this` context.
-	expose("method", options.methods, (key, item) => {
-		if (typeof item !== "function") return devConsole.error(sliceErrors.InvalidMethod(key));
-		return (slice[key] = (...args: any[]) => item.apply(slice, args));
-	});
-
-	// Exposing children
-	// expose("child", options.children, (key, item) => {
-	// 	const childData = getSlice(item);
-	// 	if (!childData) return devConsole.error(sliceErrors.InvalidChild(key));
-	// 	return (childData.children[key] = item);
-	// });
-
-	slices.push(sliceData);
-	return slice as Slice<S, R, M>;
-};
-
-/** Returns the Redux Toolkit slice associated with the provided OrcheStore slice. */
-export function getSlice(slice: Slice<any, Mutations<any>, any>): SliceData | undefined {
-	return slices.find((it) => it.slice === slice);
-}
-
-// prettier-ignore
-export const exposeSliceToParent = (name: string, childData: SliceData, parent: any, store: Store<any>, reducers: any) => {
-	const { redux: reduxSlice, children } = childData;
-	childData.path = name;
-	childData.roots.push(store);
-	reducers[name] = reduxSlice.reducer;
-	Object.entries(children).forEach(([key, child]) => {
-		exposeSliceToParent(name + nestingSeparator + key, getSlice(child)!, childData.slice, store, reducers);
-	});
-	return (parent[name] = childData.slice);
-};
-
-// Validate the slice name and the initial state.
-const validateStateAndName = (options: Dict) => {
-	const validateState = (state: any) => {
-		if (typeof state !== "object") {
-			const message = sliceErrors.InvalidState(options.name, state);
-			if (message.every((m) => typeof m === "string")) throw new Error(message.join(" "));
-			devConsole.error(...message);
-			throw new Error();
-		}
-		if (!state) throw new Error(sliceErrors.RequiredState(options.name));
-		return state;
-	};
-
-	validateKey(options.name, sliceErrors.RequiredName(), sliceErrors.InvalidName(options.name));
-	if (typeof options.state === "function") {
-		const initFunc = options.state;
-		options.state = () => validateState(initFunc());
-	} else validateState(options.state);
-};
-
-const getPath = (slice: Slice<any, Mutations<any>, any>) => slice.name;
-
-export { createSlice };
+export { instances as slices, createSlice, attach as attachSlice };

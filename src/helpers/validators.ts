@@ -32,13 +32,12 @@ export const createExposer = (context: ExposeContext) => {
 	const exposed: string[] = [];
 	const reserved = [context.reserved, exposed];
 	return (type: string, layer: any, adapter: ExposeAdapter) => {
-		Object.entries(layer).forEach(([key, item]) => {
+		const response = {} as any;
+		Object.entries(layer as any).forEach(([key, item]) => {
 			const newValue = validateLayerKey(context, type, key, reserved) ? adapter(key, item) : undefined;
-			if (newValue === undefined) return delete layer[key];
-			layer[key] = newValue;
-			exposed.push(key);
+			if (newValue !== undefined) (((response as any)[key] = newValue), exposed.push(key));
 		});
-		return layer;
+		return response;
 	};
 };
 

@@ -2,12 +2,12 @@ import { typeChecker } from "./type-checker";
 import type { ExposeContext } from "../../types/internal";
 
 export const storeProviderErrors = {
-	InvalidStore: (store: any) => ({
-		StoreType: [
+	InvalidStore: {
+		InvalidType: (store: any) => [
 			"[OrcheStore::StoreProvider] Expected a store instance created with createStore(...).\n",
 			...typeChecker(store),
 		],
-	}),
+	},
 };
 
 export const globalUtilsErrors = {
@@ -39,23 +39,19 @@ export const storeErrors = {
 };
 
 export const sliceErrors = {
-	InvalidStore: (store: any, type: string, name: string) => ({
-		StoreType: [
-			`[OrcheStore::${type}] Unable to resolve a valid store instance.\n` +
-				`This operation requires a store created with createStore(...).\n`,
-			...typeChecker(store),
-		],
-
+	InvalidStore: (type: string, name: string) => ({
 		NeverExposed: [
-			`[OrcheStore::${type}] Slice {${name}} has not been exposed in any store.\n` +
-				`Ensure the slice is reachable from a store instance.\n` +
-				`This can be done by exposing the slice directly through createStore({ slices: ... }) or indirectly through a parent slice using createSlice({ children: ... }).`,
+			`[OrcheStore::${type}] Slice {${name}} is not reachable from any store instance.\n` +
+				`A slice must be connected to a store via one of the following:\n` +
+				`• createStore({ slices: ... }) — expose it directly in the root store\n` +
+				`• createSlice({ children: ... }) — attach it under another slice that is already reachable`,
 		],
 
-		NotInTree: [
-			`[OrcheStore::${type}] Slice {${name}} is not exposed within the target store.\n` +
-				`A slice can only be accessed through stores that expose it.\n`,
-			...typeChecker.prefixed("Current store", false, store),
+		InvalidType: (parent: any) => [
+			`[OrcheStore::${type}] Slice {${name}} depends on parent slice {${parent.name}}, but that parent is not reachable from any store instance.\n` +
+				`Fix the parent first using one of the following:\n` +
+				`• createStore({ slices: ... }) — expose the parent directly in the root store\n` +
+				`• createSlice({ children: ... }) — attach the parent under another parent slice that is already reachable`,
 		],
 	}),
 

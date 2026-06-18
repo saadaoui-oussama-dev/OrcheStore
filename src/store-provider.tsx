@@ -8,7 +8,7 @@ import type { StoreProviderProps } from "../types/internal";
 export function StoreProvider<T>(props: StoreProviderProps<T>): React.JSX.Element {
 	const { store, ...rest } = { ...(props || {}) };
 
-	const storeData = getStore(undefined, store as any, storeProviderErrors.InvalidStore(store));
+	const storeData = getStore(store as any, undefined, storeProviderErrors.InvalidStore);
 
 	return <Provider {...rest} store={storeData.redux} />;
 }

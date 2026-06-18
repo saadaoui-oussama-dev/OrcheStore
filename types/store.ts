@@ -42,12 +42,14 @@ type StoreProviderProps<T = any> = Omit<ProviderProps, "store" | "serverState" |
 	store: store<T>;
 };
 
-/** Internal store runtime state. Not intended for public use. */
-type StoreData = { name: string, store: store<any>; redux: EnhancedStore };
-
 /** Reserved store member names that cannot be overridden by user-defined APIs. */
 type ReservedStoreKeys<R = {}, M = {}> =
 	| ("name" | "computed" | "global" | "getState" | "useSelect")
 	| (keyof R | keyof M);
 
-export type { store as Store, storeOptions as StoreOptions, StoreProviderProps, StoreData, StoreState };
+	
+type AnyStore = store<any>;
+
+type AnyStoreOptions = storeOptions<any>;
+
+export type { store as Store, storeOptions as StoreOptions, StoreProviderProps, StoreState, AnyStore, AnyStoreOptions };

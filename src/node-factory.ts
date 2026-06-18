@@ -31,8 +31,8 @@ const { createNodeFactory }: Factory = {
 
 		/** Creates a detached sibling in the same lineage. */
 		const clone: FactoryOutput<T, P, E>["clone"] = (node, errors) => {
-			let meta = instances.get(node)!;
-			let family = (meta ? families.get(meta.familyId) : undefined)!;
+			const meta = instances.get(node)!;
+			const family = (meta ? families.get(meta.familyId) : undefined)!;
 			if (!meta || !family) {
 				if (errors?.UnknownNode) return void errors?.UnknownNode?.("", node) as any;
 				throw new Error(`[OrcheStore] ${factoryName} factory: Unknown node`);
@@ -43,8 +43,8 @@ const { createNodeFactory }: Factory = {
 		/** Attaches a node under a parent, cloning only when ownership changes. */
 		const attach: FactoryOutput<T, P, E>["attach"] = (key, node, parent, parentMetadata, errors) => {
 			// Ensure the node is managed by this factory and belongs to a known lineage.
-			let meta = instances.get(node)!;
-			let family = (meta ? families.get(meta.familyId) : undefined)!;
+			const meta = instances.get(node)!;
+			const family = (meta ? families.get(meta.familyId) : undefined)!;
 			if (!meta || !family) {
 				if (errors?.UnknownNode) return void errors?.UnknownNode?.(key, node) as any;
 				throw new Error(`[OrcheStore] ${factoryName} factory: Unknown node`);
@@ -70,9 +70,7 @@ const { createNodeFactory }: Factory = {
 			const parents = [parent, ...parentMeta.parents] as T[];
 
 			// Reconcile ownership and attach the resulting node.
-			return cloneUnlessOrphan(path, parents, meta, family, false, (clone) =>
-				parentMeta.children.set(key, clone),
-			);
+			return cloneUnlessOrphan(path, parents, meta, family, false, (clone) => parentMeta.children.set(key, clone));
 		};
 
 		/** Reconciles ownership by reusing or cloning nodes as needed. */
@@ -103,10 +101,10 @@ const { createNodeFactory }: Factory = {
 
 			// Propagate ownership reconciliation through the subtree.
 			for (const [key, child] of [...meta.children.entries()]) {
-				let meta = instances.get(child)!;
-				let family = (meta ? families.get(meta.familyId) : undefined)!;
+				const childMeta = instances.get(child)!;
+				const childFamily = (childMeta ? families.get(childMeta.familyId) : undefined)!;
 				const childPath = `${path}${path ? "." : ""}${key}`;
-				cloneUnlessOrphan(childPath, [meta.node, ...parents], meta, family, force, (clone) => {
+				cloneUnlessOrphan(childPath, [meta.node, ...parents], childMeta, childFamily, false, (clone) => {
 					if (clone !== child) meta.children.set(key, clone);
 				});
 			}
