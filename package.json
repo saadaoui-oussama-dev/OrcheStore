@@ -70,6 +70,14 @@
     "typescript",
     "orchestration",
     "state-management",
-    "state-orchestration"
+    "state-orchestration",
+    "pinia",
+    "vuex",
+    "react-pinia",
+    "react-vuex",
+    "redux-pinia",
+    "redux-vuex",
+    "store-pinia",
+    "store-vuex"
   ]
 }
