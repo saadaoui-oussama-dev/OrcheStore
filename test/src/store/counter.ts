@@ -114,10 +114,10 @@ export const counter = createSlice({
 	state: { value: 0 },
 	mutations: {
 		increment(state, amount: number = 1) {
-			state.subCounter2.subCounter = 45;
-			state.subCounter.subSubCounter2.subSubValue2 += amount;
-			if (state.subCounter.subSubCounter2.subSubValue2 === 10) state.subCounter.subSubCounter2.subSubValue2 = 0;
-			state.value += amount;
+			return {
+				...state,
+				value: state.value + amount,
+			};
 		},
 		decrement(state, amount: number = 1) {
 			state.value -= amount;
