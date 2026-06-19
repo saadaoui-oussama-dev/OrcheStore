@@ -79,7 +79,9 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 };
 
 /** Defines the mutations available on a slice. */
-type Mutations<S extends Obj, C> = Dict<(state: SliceState.Draft<S, C>, ...args: any[]) => void | S>;
+type Mutations<S extends Obj, C> = Dict<
+	(state: SliceState.Draft<S, C>, ...args: any[]) => void | SliceState.Draft<S, C>
+>;
 
 /** Derived state shape exposed by a slice, excluding internal framework fields. */
 namespace SliceState {
