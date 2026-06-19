@@ -12,6 +12,7 @@
     "init": "node scripts/install.mjs",
     "start": "tsup && node scripts/build.mjs",
     "build": "tsup && node scripts/build.mjs",
+    "test": "node scripts/test.mjs",
     "deploy": "tsup && node scripts/publish.mjs",
     "check": "tsc --noEmit",
     "lint": "eslint ."
