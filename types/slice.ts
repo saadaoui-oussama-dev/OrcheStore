@@ -1,4 +1,4 @@
-import type { Dict, GlobalUtils, Obj, OmitNever, ReadOnly, RootStore, Tail } from "./internal";
+import type { Dict, GlobalUtils, Obj, OmitNever, ReadOnly, RootStore, Store, Tail } from "./internal";
 
 /** Runtime slice API exposed by createSlice(...). */
 type slice<S extends Obj, R extends Mutations<S, C>, M, C> = GlobalUtils & {
@@ -14,7 +14,29 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = GlobalUtils & {
 	/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `root` store, `rootState` and `global` utilities. */
 	readonly useSelect: <T>(selector: (this: GlobalUtils, state: SliceState.State<S, C>, context: GlobalUtils) => T) => T;
 
+	/** Root store that owns this slice instance. */
+	root: Store<any>;
+
+	/** Parent slice in the hierarchy, if mounted under another slice. */
+	parent: slice<any, Mutations<any, any>, any, any> | undefined;
+
+	/** Runtime lineage and cloning utilities for this slice instance. */
+	readonly prototype: {
+		/** Creates a new detached clone within the same lineage. */
+		readonly clone: () => slice<S, R, M, C>;
+
+		/** Returns all slice instances in the same lineage, including this one. */
+		readonly getLineage: () => slice<S, R, M, C>[];
+
+		/** Returns all sibling instances in the same lineage, excluding this one. */
+		readonly getClones: () => slice<S, R, M, C>[];
+
+		/** Returns true if both slices belong to the same lineage. */
+		readonly isTypeOf: (other: any) => boolean;
+	};
+
 	/** Collection of derived state functions. */
+	readonly computed: undefined;
 	// readonly computed: {
 	// 	readonly [K in keyof G]: (...args: Tail<Parameters<G[K]>>) => ReturnType<G[K]>;
 	// };
@@ -77,7 +99,7 @@ namespace SliceState {
 
 /** Reserved slice member names that cannot be overridden by user-defined APIs. */
 type ReservedSliceKeys<R = {}, M = {}> =
-	| ("name" | "path" | "computed" | "root" | "global" | "children" | "getState" | "useSelect")
+	| ("name" | "path" | "computed" | "root" | "parent" | "prototype" | "global" | "getState" | "useSelect")
 	| (keyof R | keyof M);
 
 type AnySlice = slice<any, Mutations<any, any>, any, any>;

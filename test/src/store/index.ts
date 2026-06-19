@@ -5,5 +5,6 @@ export { StoreProvider } from "orchestore";
 export const store = createStore({
 	slices: {
 		counter: counter,
+		counter2: counter,
 	},
 });

@@ -112,7 +112,7 @@ const { createNodeFactory }: Factory = {
 			return meta.node;
 		}
 
-		return { instances, create, attach, clone };
+		return { families, instances, create, attach, clone };
 	},
 };
 

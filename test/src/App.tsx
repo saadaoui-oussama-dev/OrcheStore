@@ -4,29 +4,29 @@ import { store } from "./store";
 import { provideGlobalUtils } from "orchestore";
 
 declare module "orchestore" {
-  export namespace OrcheStore {
-    interface Slots {
-      global: {
-        sleep: (ms: number) => Promise<void>;
-      };
-    }
-  }
+	export namespace OrcheStore {
+		interface Slots {
+			global: {
+				sleep: (ms: number) => Promise<void>;
+			};
+		}
+	}
 }
 
 provideGlobalUtils({
-  sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  },
+	sleep(ms) {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	},
 });
 
 function App() {
-  const state = store.useSelect((state) => JSON.stringify(state, null, 2));
-  // const subCount = subCounter.useSelect((state) => state);
-  // const subCount2 = subCounter2.useSelect((state) => state);
-  // const subSubCount = subSubCounter.useSelect((state) => state);
-  // const subSubCount2 = subSubCounter2.useSelect((state) => state);
+	const state = store.useSelect((state) => JSON.stringify(state, null, 2));
+	// const subCount = subCounter.useSelect((state) => state);
+	// const subCount2 = subCounter2.useSelect((state) => state);
+	// const subSubCount = subSubCounter.useSelect((state) => state);
+	// const subSubCount2 = subSubCounter2.useSelect((state) => state);
 
-  return (
+	return (
 		<>
 			<pre style={{ textAlign: "left" }}>state: {state}</pre>
 			{/* <pre style={{ textAlign: "left" }}>

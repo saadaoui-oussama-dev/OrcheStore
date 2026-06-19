@@ -54,6 +54,9 @@ type FactoryOptions<T, P = any, E = {}> = {
 };
 
 type FactoryOutput<T, P = any, E = {}> = {
+	/** Registry of clone lineages. */
+	families: Map<symbol, FamilyMeta<T, P>>;
+
 	/** Runtime metadata for all nodes managed by this factory. */
 	instances: Map<T, NodeMeta<T, E>>;
 

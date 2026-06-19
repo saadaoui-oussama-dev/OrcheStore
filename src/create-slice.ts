@@ -9,10 +9,12 @@ import { object } from "./helpers/object-utils";
 import { createExposer, normalizeProps, validateKey } from "./helpers/validators";
 import type { AnySlice, AnySliceOptions, Mutations, Obj, Slice, SliceOptions } from "../types/internal"; // prettier-ignore
 
-const { instances, create, attach } = createNodeFactory<AnySlice, AnySliceOptions, { redux: any; reducers: any }>({
+type ExtraMeta = { redux: any; reducers: any };
+
+const { families, instances, create, attach, clone } = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta>({
 	factoryName: "slice",
 
-	instantiate(props, meta) {
+	instantiate(props, meta, family) {
 		const slice = {} as AnySlice;
 
 		const store = (type?: string) =>
@@ -21,7 +23,7 @@ const { instances, create, attach } = createNodeFactory<AnySlice, AnySliceOption
 		const expose = createExposer({
 			module: "createSlice",
 			slice: props.name,
-			reserved: ["name", "path", "computed", "root", "global", "children", "getState", "useSelect"],
+			reserved: ["name", "path", "computed", "root", "parent", "prototype", "global", "getState", "useSelect"],
 		});
 
 		// Convert mutations into Redux Toolkit reducers.
@@ -39,17 +41,24 @@ const { instances, create, attach } = createNodeFactory<AnySlice, AnySliceOption
 			reducers: reducers,
 		});
 
+		// Core slice identity metadata.
 		object.defineReadonly(slice, "name", () => props.name);
 		object.defineReadonly(slice, "path", () => meta.path);
+
+		// Runtime ownership and global context access.
 		object.defineReadonly(slice, "global", () => getGlobalUtils());
 		object.defineReadonly(slice, "root", () => store().node as any);
+		object.defineReadonly(slice, "parent", () => {
+			const parentSlice = meta.parents[0];
+			return (parentSlice ? instances.get(parentSlice) : undefined)?.node;
+		});
 
+		// State access and React subscription APIs.
 		object.defineMethod(slice, "getState", () => {
 			let state = store("slice.getState").redux.getState();
 			meta.path.split(".").forEach((part) => (state = (state || {})[part]));
 			return state;
 		});
-
 		object.defineMethod(slice, "useSelect", (selector: any) => {
 			const context = { global: getGlobalUtils(), root: store("slice.useSelect").node };
 			return useSelector((state: any) => {
@@ -57,27 +66,41 @@ const { instances, create, attach } = createNodeFactory<AnySlice, AnySliceOption
 				return selector.apply(context, [state, context]);
 			});
 		});
+		object.defineReadonly(slice, "computed", () => undefined);
 
-		// Exposing Redux Toolkit actions as auto-dispatching mutations
+		// Lineage inspection and clone management utilities.
+		const prototype = {} as AnySlice["prototype"];
+		const getLineage = () => [...(family.siblings.values() || [])];
+		object.defineReadonly(slice, "prototype", () => prototype);
+		object.defineMethod(prototype, "clone", () => clone(slice));
+		object.defineMethod(prototype, "getLineage", () => getLineage());
+		object.defineMethod(prototype, "getClones", () => getLineage().filter((it) => it !== slice));
+		object.defineMethod(prototype, "isTypeOf", (other: any) => {
+			const id = instances.get(other)?.familyId;
+			return id ? family === families.get(id) : false;
+		});
+
+		// Redux Toolkit actions mapped to auto-dispatching slice mutations
 		Object.entries(meta.redux.actions).map(([key, action]: [string, any]) => {
 			(slice as any)[key] = (...args: any[]) => {
 				store("slice mutation").redux.dispatch({ ...action(args), meta: { path: meta.path } });
 			};
 		});
 
-		// Exposing methods with binding to the slice instance as their `this` context.
+		// Bind user-defined methods to the slice instance as `this`
 		expose("method", false, props.methods, (key, item) => {
 			if (typeof item !== "function") return devConsole.error(sliceErrors.InvalidMethod(key));
 			return (slice[key] = (...args: any[]) => item.apply(slice, args));
 		});
 
-		// Exposing children and normalize reducers
+		// Register child slices and collect their reducers for composition
 		const childReducers = expose("child", true, (props as any).children, (key, item) => {
 			const errors = { UnknownNode: (key: string) => devConsole.error(sliceErrors.InvalidChild(key)) };
 			const it = attach(key, item, slice, meta, errors);
 			if (it) return (((slice as any)[key] = it), instances.get(it)!.reducers);
 		});
 
+		// Slice-local reducer wrapper with child reducer propagation.
 		meta.reducers = (state: any, action: any) => {
 			const actionPath = action?.meta?.path;
 			if (typeof actionPath === "string" && !actionPath.startsWith(meta.path)) return state;
@@ -94,7 +117,7 @@ const { instances, create, attach } = createNodeFactory<AnySlice, AnySliceOption
 			return normalizeProps(props, {
 				method: "createSlice",
 				objects: ["mutations", "computed", "methods", "children"],
-				unsupported: ["computed", "children"],
+				unsupported: ["computed"],
 				redux: ["reducers", "extraReducers", "reducerPath", "initialState", "selectors"],
 				validate(options) {
 					validateKey(options.name, sliceErrors.RequiredName(), sliceErrors.InvalidName(options.name));

@@ -9,7 +9,10 @@ import { object } from "./helpers/object-utils";
 import { createExposer, normalizeProps } from "./helpers/validators";
 import type { AnyStore, AnyStoreOptions, Store, StoreOptions } from "../types/internal";
 
-const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, { redux: any; reducers: any }>({
+type ExtraMeta = { redux: any; reducers: any };
+type Errors = { NeverExposed?: any[]; InvalidType: (store: any) => any[] };
+
+const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, ExtraMeta>({
 	factoryName: "slice",
 
 	instantiate(props, meta) {
@@ -56,8 +59,6 @@ const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, { red
 		},
 	},
 });
-
-type Errors = { NeverExposed?: any[]; InvalidType: (store: any) => any[] };
 
 /** Returns the OrcheStore store instance with its associated Redux store. */
 export const getStore = (store?: AnyStore, childMeta?: any, errors: Errors | false = false) => {

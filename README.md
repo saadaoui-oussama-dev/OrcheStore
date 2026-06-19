@@ -51,8 +51,9 @@ The goal is simple:
 	- [Mutations](#mutations)
 	- [Methods](#methods)
 	- [Computed State (Planned)](#computed-state-planned)
-	- [Nested Slices (Planned)](#nested-slices-planned)
-		- [Runtime Paths](#runtime-paths-planned)
+	- [Nested Slices](#nested-slices)
+		- [Reusing Slices](#reusing-slices)
+		- [Runtime Paths](#runtime-paths)
 
 - [State Access & Subscriptions](#state-access--subscriptions)
 	- [State Snapshots](#state-snapshots)
@@ -65,6 +66,12 @@ The goal is simple:
 	- [Accessing Slices through Store](#accessing-slices-through-store)
 	- [Accessing Store from Slices](#accessing-store-from-slices)
 	- [Root Store Type Extension (Planned)](#root-store-type-extension-planned)
+
+- [Lineage & Clones](#lineage--clones)
+	- [Automatic Cloning](#automatic-cloning)
+	- [Manual Cloning](#manual-cloning)
+	- [Inspecting a Lineage](#inspecting-a-lineage)
+	- [Definition Type Checking](#definition-type-checking)
 
 - [Global Utilities](#global-utilities)
 	- [Accessing Global Utilities](#accessing-global-utilities)
@@ -119,16 +126,17 @@ This allows state and application logic to evolve together within the same domai
 
 Many common Redux patterns are automated by default:
 
-| Traditional Redux Pattern     | OrcheStore                |
-| ----------------------------- | ------------------------- |
-| Action creators               | Direct callable mutations |
-| Thunks                        | Built-in methods          |
-| Dispatch calls                | Direct function calls     |
-| `PayloadAction` wrappers      | Native function arguments |
-| Cross-slice imports           | Root store access         |
-| Shared service wiring         | Global utilities          |
-| Manual state tree composition | Nested slices             |
-| Complex type declarations     | Automatic inference       |
+| Traditional Redux Pattern     | OrcheStore                                      |
+| ----------------------------- | ----------------------------------------------- |
+| Action creators               | Direct callable mutations                       |
+| Thunks                        | Built-in methods                                |
+| Dispatch calls                | Direct function calls                           |
+| `PayloadAction` wrappers      | Native function arguments                       |
+| Cross-slice imports           | Root store access                               |
+| Shared service wiring         | Global utilities                                |
+| Manual state tree composition | Nested slices with automatic cloning & isolation |
+| Complex type declarations     | Automatic inference                             |
+| Instance identity management  | Lineage-based slice model (shared definition, isolated mounts) |
 
 The result is a simpler architecture with fewer moving parts, less boilerplate, and a more direct development experience.
 
@@ -140,33 +148,35 @@ OrcheStore builds on top of Redux Toolkit while providing a higher-level API for
 
 | Feature                        | OrcheStore | Redux Toolkit |
 | ------------------------------ | ---------- | ------------- |
-| Direct callable mutations      | ✅          | ❌             |
 | Multiple mutation arguments    | ✅          | ❌             |
-| Dispatch required              | ❌          | ✅             |
+| Direct callable mutations      | ✅          | ❌             |
 | `PayloadAction` wrappers       | ❌          | ✅             |
+| Dispatch required              | ❌          | ✅             |
 | Built-in orchestration methods | ✅          | ❌             |
-| Nested slice composition       | ⌛ Planned  | ⚠️ Manual     |
-| Automatic path generation      | ⌛ Planned  | ⚠️ Manual     |
+| Nested slice composition       | ✅ (isolated context) | ⚠️ Manual (shared state) |
+| Automatic path generation      | ✅          | ⚠️ Manual     |
 | Global utilities               | ✅          | ❌             |
 | Unified slice API              | ✅          | ❌             |
 | Per-slice React hooks          | ✅          | ❌             |
 | Deep TypeScript inference      | ✅          | ⚠️ Partial    |
+| Lineage & cloning model        | ✅          | ❌             |
 
 OrcheStore does not replace Redux Toolkit. Instead, it builds on top of it by automating common patterns and providing a more cohesive developer experience.
 
 ## Architecture Overview
 
-| Layer       | Responsibility                 |
-| ----------- | ------------------------------ |
-| `name`      | Unique slice identifier        |
-| `path`      | Hierarchical slice path        |
-| `state`     | Slice data storage definition  |
-| `mutations` | Synchronous state transitions  |
-| `methods`   | Orchestration and side effects |
-| `computed`  | Derived and computed state     |
-| `children`  | Nested slice composition       |
-| `getState`  | Imperative state access        |
-| `useSelect` | Reactive state subscriptions   |
+| Layer       | Responsibility                           |
+| ----------- | ---------------------------------------- |
+| `name`      | Unique slice identifier                  |
+| `path`      | Hierarchical slice path                  |
+| `state`     | Slice data storage definition            |
+| `mutations` | Synchronous state transitions            |
+| `methods`   | Orchestration and side effects           |
+| `computed`  | Derived and computed state               |
+| `children`  | Nested slice composition                 |
+| `getState`  | Imperative state access                  |
+| `useSelect` | Reactive state subscriptions             |
+| `prototype` | Lineage, cloning, and instance utilities |
 
 ---
 
@@ -345,7 +355,6 @@ export default function App() {
 OrcheStore exposes direct usable child slices through a unified store instance.
 
 ```tsx
-// store.counter is equivalent to counter, import only one and use it
 import { store } from "./store/index";
 import { counter } from "./store/counterSlice";
 
@@ -364,6 +373,10 @@ export function CounterComponent() {
 	);
 }
 ```
+
+> 📌 If the slice is mounted only once, `store.counter` and `counter` refer to the same runtime instance and can be used interchangeably.
+>
+> 🔄 When a slice is mounted multiple times, each mount receives its own isolated instance. See [Reusing Slices](#reusing-slices) and [Lineage & Clones](#lineage--clones) for details.
 
 ---
 
@@ -385,7 +398,7 @@ const counter = createSlice({
 
 	methods: {},
 
-	children: {}, // Planned
+	children: {},
 
 	subscribe: {}, // Planned
 });
@@ -605,80 +618,127 @@ This currently not supported
 
 ---
 
-## Nested Slices (Planned)
+## Nested Slices
 
-This currently not supported
+Slices can be composed by registering other slice instances through the `children` property.
 
-~~Slices can be composed by registering other slices through the `children` property.~~
-
-~~This allows related state and behavior to be organized into a hierarchical structure while preserving full type inference.~~
+This allows related state and behavior to be organized into a hierarchical structure while preserving full type inference and ownership isolation.
 
 ```ts
-// import { counter } from "./counterSlice";
-// import { users } from "./usersSlice";
+import { products } from "./productsSlice";
+import { categories } from "./categoriesSlice";
 
-// export const app = createSlice({
-//   name: "app",
+export const shop = createSlice({
+  name: "shop",
 
-//   state: {},
+  state: {},
 
-//   children: {
-//     counter,
-//     users,
-//   },
-// });
+  children: {
+    products,
+    categories,
+  },
+});
 ```
 
-**~~Rules:~~**
+**Accessing Child Slices:**
 
-- ~~A slice instance can only be registered once within the same state tree~~
-- ~~Existing slice instances cannot be wrapped again with `createSlice`~~
-- ~~Child slices must be registered through the `children` property~~
-
-**~~Accessing Child Slices:~~**
-
-~~Child slices are exposed directly on their parent slice.~~
+Child slices are exposed directly on their parent slice.
 
 ```ts
-// app.counter.increment(1);
+shop.products.add(...)
+shop.categories.create(...)
 
-// console.log(app.counter.getState());
+console.log(shop.products.getState());
 ```
 
-~~Deeply nested slice hierarchies are fully supported.~~
+Deeply nested slice hierarchies are fully supported.
 
 ```ts
-// admin.users.permissions.grant(...);
+admin.users.permissions.grant(...);
 
-// console.log(admin.users.permissions.getState());
+console.log(admin.users.permissions.getState());
 ```
 
-### Runtime Paths (Planned)
+### Reusing Slices
 
-~~Every slice exposes a runtime path through `slice.path`.~~
+A slice can be mounted multiple times within the same tree.
+
+When the same slice definition is reused, OrcheStore automatically creates a separate mounted instance for each location.
 
 ```ts
-// store.counter.name; // "counter"
-// store.counter.path; // "counter"
+const paginationSlice = createSlice({ ... });
+
+const shopSlice = createSlice({
+  name: "shop",
+
+  state: {},
+
+  children: {
+    categories: paginationSlice,
+    products: paginationSlice,
+  },
+});
+
+const adminSlice = createSlice({
+  name: "admin",
+
+  state: {},
+
+  children: {
+    products: paginationSlice,
+  },
+});
 ```
 
-~~Nested slices automatically inherit their parent path.~~
+Each mounted instance has:
+
+- its own path
+- its own ownership context
+- its own runtime state
+
+**Runtime identity:**
+
+Although all mounted slices originate from `paginationSlice`, they are not necessarily the same runtime instance.
 
 ```ts
-// store.admin.users.name; // "users"
-// store.admin.users.path; // "admin.users"
+paginationSlice === shopSlice.categories; // First mount uses the original instance
 
-// store.admin.users.permissions.name; // "permissions"
-// store.admin.users.permissions.path; // "admin.users.permissions"
+paginationSlice !== shopSlice.products;   // Different mount location creates a clone
+paginationSlice !== adminSlice.products;  // Different mount location creates a clone
+
+shopSlice.products !== adminSlice.products; // Independent mounted clones
 ```
 
-**~~Notes:~~**
+Every mount location receives its own isolated instance.
 
-~~Paths are generated automatically from the slice hierarchy.~~
+For a deeper explanation of how slice reuse works, see [Lineage & Clones](#lineage--clones).
 
-~~OrcheStore builds on the same concepts as Redux Toolkit's `reducerPath` and `combinedReducers`, but automates path generation, reducer registration, and nested slice composition.~~
+### Runtime Paths
 
-~~No manual path configuration or reducer injection is required.~~
+Every slice exposes a runtime path through `slice.path`.
+
+```ts
+store.counter.name; // "counter"
+store.counter.path; // "counter"
+```
+
+Nested slices automatically inherit their parent path.
+
+```ts
+store.admin.users.name; // "users"
+store.admin.users.path; // "admin.users"
+
+store.admin.users.permissions.name; // "permissions"
+store.admin.users.permissions.path; // "admin.users.permissions"
+```
+
+**Notes:**
+
+Paths are generated automatically from the slice hierarchy.
+
+OrcheStore builds on the same concepts as Redux Toolkit's `reducerPath` and `combineReducers`, but automates path generation, reducer registration, and nested slice composition.
+
+No manual path configuration or reducer injection is required.
 
 ---
 
@@ -906,6 +966,158 @@ this.root; // After: fully typed store
 
 ---
 
+# Lineage & Clones
+
+OrcheStore uses a lineage-based model for slice identity.
+
+**Why?**
+
+Slices can be used in multiple places in the store tree.
+
+When this happens, OrcheStore creates a separate runtime instance for each usage. These instances are called **clones**.
+
+A clone is an independent instance copy of a slice at runtime. It has its own state and runs separately from other clones, while still remaining part of a shared lineage.
+
+A lineage (or family) is the set of all instances that come from the same slice definition.
+
+**This means:**
+
+- slices are not singletons
+- a slice can appear multiple times in a tree
+- each clone is fully isolated
+- all instances cloned from the same slice are linked through lineage
+
+## Automatic Cloning
+
+When a slice is reused through `children` or `slices`, OrcheStore automatically creates a new mounted instance for each usage.
+
+```ts
+const paginationSlice = createSlice({ ... });
+
+const shopSlice = createSlice({
+	name: "shop",
+
+	state: {},
+
+	children: {
+		a: paginationSlice,
+		b: paginationSlice,
+	},
+});
+
+const adminSlice = createSlice({
+	name: "admin",
+
+	state: {},
+
+	children: {
+		a: paginationSlice,
+	},
+});
+```
+
+Each mount becomes a separate runtime node:
+
+```ts
+shopSlice.a !== shopSlice.b;
+shopSlice.a !== adminSlice.a;
+shopSlice.b !== adminSlice.a;
+```
+
+Each instance also receives its own path and its own ownership context:
+
+```ts
+shopSlice.a.path;   // "shop.a"
+shopSlice.b.path;   // "shop.b"
+adminSlice.a.path;  // "admin.a"
+```
+
+Although these instances are independent at runtime, they still belong to the same lineage.
+
+## Manual Cloning
+
+A new detached clone can be created manually from any slice instance:
+
+```ts
+const clone = slice.prototype.clone();
+```
+
+The new instance:
+
+- belongs to the same lineage
+- starts detached from the tree
+- has no mounted path initially
+- has its own ownership context
+
+## Inspecting a Lineage
+
+**Get All Related Instances:**
+
+Returns every instance in the lineage, **including** the current one.
+
+```ts
+const lineage = slice.prototype.getLineage();
+```
+
+Useful for:
+
+- debugging slice reuse
+- inspecting mounted instances
+- understanding tree distribution
+
+**Get Clones:**
+
+Returns all lineage members **except** the current instance.
+
+```ts
+const siblings = slice.prototype.getClones();
+```
+
+Useful for:
+
+- communicating between clones
+- broadcast or synchronization scenarios
+- comparing mounted instances
+
+## Definition Type Checking
+
+You can determine whether two slices belong to the same lineage:
+
+You can check whether two slices belong to the same lineage:
+
+```ts
+const isSameLineage = slice.prototype.isTypeOf(otherSlice);
+```
+
+Returns `true` when both slices originate from the same slice definition, even if they are different runtime instances.
+
+```ts
+const slice1 = createSlice(...);
+const slice2 = createSlice(...);
+
+const clone1 = slice1.prototype.clone();
+const clone2 = clone1.prototype.clone();
+
+slice1.prototype.isTypeOf(clone1); // true
+clone1.prototype.isTypeOf(clone2); // true
+clone2.prototype.isTypeOf(slice1); // true
+
+slice1.prototype.isTypeOf(slice2); // false
+slice2.prototype.isTypeOf(clone1); // false
+```
+
+## Summary
+
+- Reusing a slice automatically creates mounted clones.
+- `clone()` creates a new detached lineage member.
+- Every clone is isolated at runtime.
+- All clones from the same definition belong to a shared lineage.
+- `getLineage()` returns all instances in a lineage.
+- `getClones()` returns all related instances except the current one.
+- `isTypeOf()` checks whether two instances belong to the same lineage.
+
+---
+
 # Global Utilities
 
 Global utilities allow slices and the root store to access shared runtime services through `global`.
@@ -1055,15 +1267,15 @@ const counter = createSlice({
 		},
 	},
 
-	// children: {
-	//   subCounter: createSlice({
-	//     name: "subCounter",
+	children: {
+	  subCounter: createSlice({
+	    name: "subCounter",
 
-	//     state: {
-	//       value: 0,
-	//     },
-	//   }),
-	// },
+	    state: {
+	      value: 0,
+	    },
+	  }),
+	},
 });
 ```
 
@@ -1071,11 +1283,10 @@ Automatically produces:
 
 ```ts
 counter.getState();
-// { value: number }
-// { value: number, subCounter: { value: number } } // Planned
+// { value: number, subCounter: { value: number } }
 
-// counter.subCounter.getState();
-// { value: number } // Planned
+counter.subCounter.getState();
+// { value: number }
 
 counter.increment(amount: number): void;
 
