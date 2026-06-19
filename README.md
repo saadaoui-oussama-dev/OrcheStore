@@ -434,9 +434,8 @@ methods: {
 
 **Rules:**
 
-- Slice names should not contain `"."` or `"/"`, because dots are reserved for nested slice paths
+- Names should not contain `"."` or `"/"`, because they are reserved for nested slice paths
 - Two slices cannot share the same name
-- Registering the same slice instance multiple times with the same name is not allowed
 
 ---
 
