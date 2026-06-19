@@ -75,10 +75,7 @@ const { families, instances, create, attach, clone } = createNodeFactory<AnySlic
 		object.defineMethod(prototype, "clone", () => clone(slice));
 		object.defineMethod(prototype, "getLineage", () => getLineage());
 		object.defineMethod(prototype, "getClones", () => getLineage().filter((it) => it !== slice));
-		object.defineMethod(prototype, "isTypeOf", (other: any) => {
-			const id = instances.get(other)?.familyId;
-			return id ? family === families.get(id) : false;
-		});
+		object.defineMethod(prototype, "isTypeOf", (other) => family === families.get(instances.get(other)?.familyId!));
 
 		// Redux Toolkit actions mapped to auto-dispatching slice mutations
 		Object.entries(meta.redux.actions).map(([key, action]: [string, any]) => {

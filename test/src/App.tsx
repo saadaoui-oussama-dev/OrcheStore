@@ -26,6 +26,8 @@ function App() {
 	// const subSubCount = subSubCounter.useSelect((state) => state);
 	// const subSubCount2 = subSubCounter2.useSelect((state) => state);
 
+  console.log(store.counter.subCounter.prototype.isTypeOf(store.counter2.subCounter));
+
 	return (
 		<>
 			<pre style={{ textAlign: "left" }}>state: {state}</pre>
