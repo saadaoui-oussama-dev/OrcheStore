@@ -50,4 +50,4 @@ type AnyStore = store<any>;
 
 type AnyStoreOptions = storeOptions<any>;
 
-export type { store as Store, storeOptions as StoreOptions, StoreProviderProps, StoreState, AnyStore, AnyStoreOptions };
+export type { store as Store, storeOptions as StoreOptions, StoreProviderProps, AnyStore, AnyStoreOptions };

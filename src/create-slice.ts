@@ -114,9 +114,16 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		adapt(props) {
 			props = normalizeProps(props, {
 				method: "createSlice",
-				objects: ["mutations", "computed", "methods", "children"],
-				unsupported: ["computed"],
-				redux: ["reducers", "extraReducers", "reducerPath", "initialState", "selectors"],
+				objects: ["mutations", "computed", "methods", "subscribe", "children"],
+				mismatch: {
+					initialState: "'state'",
+					reducer: "'mutations'",
+					reducers: "'mutations'",
+					extraReducers: "'subscribe'",
+					selectors: "'computed'",
+					reducerPath: "nested slices throught 'children'",
+				},
+				unsupported: ["computed", "subscribe"],
 				validate(options) {
 					validateKey(options.name, sliceErrors.RequiredName(), sliceErrors.InvalidName(options.name));
 					const init = options.state;

@@ -54,7 +54,15 @@ const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, Extra
 			return normalizeProps(props, {
 				method: "createStore",
 				objects: ["slices"],
-				redux: ["reducer", "devTools", "duplicateMiddlewareCheck", "enhancers", "middleware", "preloadedState"],
+				mismatch: {
+					reducer: "'slices'",
+					reducers: "'slices'",
+					devTools: "",
+					duplicateMiddlewareCheck: "",
+					enhancers: "",
+					middleware: "",
+					preloadedState: "",
+				},
 			});
 		},
 	},

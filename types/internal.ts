@@ -19,6 +19,6 @@ export type NormalizePropsConfig = {
 	method: string;
 	objects?: string[];
 	unsupported?: string[];
-	redux?: string[];
+	mismatch?: Dict<string>;
 	validate?: (options: Dict) => void;
 };

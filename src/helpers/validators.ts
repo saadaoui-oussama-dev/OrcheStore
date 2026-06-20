@@ -50,9 +50,10 @@ export const normalizeProps = <T>(props: T, config: NormalizePropsConfig): Requi
 		options[layer] = typeof options[layer] === "object" && options[layer] ? { ...options[layer] } : {};
 	});
 	config.validate?.(options);
-	config.redux?.forEach((layer) => {
+	Object.entries(((config.mismatch || {}) as NormalizePropsConfig["mismatch"])!).forEach(([layer, replace]) => {
 		if (options[layer] === undefined) return;
-		devConsole.warn(`[OrcheStore::${config.method}] '${layer}' property is a Redux Toolkit option and is ignored by OrcheStore.`); // prettier-ignore
+		else if (replace) devConsole.warn(`[OrcheStore::${config.method}] '${layer}' property is a Redux Toolkit option, use ${replace} instead.`); // prettier-ignore
+		else devConsole.warn(`[OrcheStore::${config.method}] '${layer}' property is a Redux Toolkit that is not yet supported and will be ignored.`); // prettier-ignore
 	});
 	config.unsupported?.forEach((layer) => {
 		if (Object.keys((options as any)[layer]).length < 1) return;
