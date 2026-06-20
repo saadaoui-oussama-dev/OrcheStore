@@ -68,8 +68,8 @@ The goal is simple:
 	- [Root Store Type Extension (Planned)](#root-store-type-extension-planned)
 
 - [Lineage & Clones](#lineage--clones)
-	- [Automatic Cloning](#automatic-cloning)
 	- [Manual Cloning](#manual-cloning)
+	- [Automatic Cloning](#automatic-cloning)
 	- [Inspecting a Lineage](#inspecting-a-lineage)
 	- [Definition Type Checking](#definition-type-checking)
 
@@ -986,53 +986,6 @@ A lineage (or family) is the set of all instances that come from the same slice 
 - each clone is fully isolated
 - all instances cloned from the same slice are linked through lineage
 
-## Automatic Cloning
-
-When a slice is reused through `children` or `slices`, OrcheStore automatically creates a new mounted instance for each usage.
-
-```ts
-const paginationSlice = createSlice({ ... });
-
-const shopSlice = createSlice({
-	name: "shop",
-
-	state: {},
-
-	children: {
-		a: paginationSlice,
-		b: paginationSlice,
-	},
-});
-
-const adminSlice = createSlice({
-	name: "admin",
-
-	state: {},
-
-	children: {
-		a: paginationSlice,
-	},
-});
-```
-
-Each mount becomes a separate runtime node:
-
-```ts
-shopSlice.a !== shopSlice.b;
-shopSlice.a !== adminSlice.a;
-shopSlice.b !== adminSlice.a;
-```
-
-Each instance also receives its own path and its own ownership context:
-
-```ts
-shopSlice.a.path;   // "shop.a"
-shopSlice.b.path;   // "shop.b"
-adminSlice.a.path;  // "admin.a"
-```
-
-Although these instances are independent at runtime, they still belong to the same lineage.
-
 ## Manual Cloning
 
 A new detached clone can be created manually from any slice instance.
@@ -1070,15 +1023,15 @@ The state transformer:
 
 ```ts
 const crudSlice = createSlice({
-	name: "CRUDSlice",
+  name: "CRUD-Slice",
 
   state: {
     endpoint: "",
   },
 
   children: {
-    pagination: paginationSlice.prototype.clone(),
-    dropdown: searchDropdownSlice.prototype.clone(),
+    pagination: paginationSlice,
+    dropdown: searchDropdownSlice,
   },
 });
 
@@ -1099,6 +1052,85 @@ const categoriesSlice = crudSlice.prototype.clone((state) => {
 	state.pagination.supported = false;
 });
 ```
+
+## Automatic Cloning
+
+OrcheStore creates slice instances automatically in two cases:
+
+### 1. Reuse through `children` / `slices`
+
+When a slice is reused through `children` (or `slices`), OrcheStore creates a new mounted instance for each usage.
+
+```ts
+const paginationSlice = createSlice({ ... });
+
+const shopSlice = createSlice({
+	name: "shop",
+
+	state: {},
+
+	children: {
+		a: paginationSlice,
+		b: paginationSlice,
+	},
+});
+
+const adminSlice = createSlice({
+	name: "admin",
+
+	state: {},
+
+	children: {
+		a: paginationSlice,
+	},
+});
+```
+
+Each mount becomes a separate runtime node:
+
+```ts
+shopSlice.a !== shopSlice.b;
+shopSlice.a !== adminSlice.a;
+shopSlice.b !== adminSlice.a;
+```
+
+Each instance has its own ownership context:
+
+```ts
+shopSlice.a.path;  // "shop.a"
+shopSlice.b.path;  // "shop.b"
+adminSlice.a.path; // "admin.a"
+```
+
+### 2. Cloning a parent slice (cascade cloning)
+
+When a parent slice is cloned or reused, all its nested children are automatically cloned as well.
+
+```ts
+const crudSlice = createSlice({
+  name: "CRUD-Slice",
+
+  state: {
+    endpoint: "",
+  },
+
+  children: {
+    pagination: paginationSlice,
+    dropdown: searchDropdownSlice,
+  },
+});
+
+const productsSlice = crudSlice.prototype.clone();
+const categoriesSlice = crudSlice.prototype.clone();
+```
+
+Each clone receives its own independent subtree:
+
+```ts
+productsSlice.pagination !== categoriesSlice.pagination;
+```
+
+This ensures that both parent and child slices remain fully isolated across all clone instances.
 
 ## Inspecting a Lineage
 
@@ -1159,9 +1191,9 @@ slice2.prototype.isTypeOf(clone1); // false
 
 ## Summary
 
-- Reusing a slice automatically creates mounted clones.
 - `clone()` creates a new detached lineage member.
 - `clone(stateModifier)` allows per-instance state customization at creation time.
+- Reusing a slice automatically creates mounted clones.
 - Every clone is isolated at runtime.
 - All clones from the same definition belong to a shared lineage.
 - `getLineage()` returns all instances in a lineage.
