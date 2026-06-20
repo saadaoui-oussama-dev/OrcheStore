@@ -34,12 +34,15 @@ type AttachErrors<T> = {
 	InfiniteOwnership?: <U = T>(key: string, node: T, parent: U) => void;
 };
 
-type FactoryOptions<T, P = any, E = {}, A = undefined> = {
+type FactoryOptions<T, P = any, E = {}, A = undefined, I = {}> = {
 	/** Human-readable identifier for debugging, diagnostics, and tooling. */
 	factoryName: string;
 
-	/** Creates a node and provides lazy access to its runtime metadata. */
-	instantiate: (props: P, metadata: NodeMeta<T, E>, family: FamilyMeta<T, P>) => T;
+	/** Creates a node and provides access to its runtime metadata during initialization. */
+	instantiate: (props: P, metadata: NodeMeta<T, E>, family: FamilyMeta<T, P>, cloning: boolean) => I & { node: T };
+
+	/** Finalizes node setup after instantiation and applies composition or wiring logic. */
+	afterInstantiate?: (node: T, metadata: NodeMeta<T, E>, family: FamilyMeta<T, P>, cloning: boolean, payload: I) => T;
 
 	options?: {
 		/** Transforms user-provided props before node creation and registration. */
@@ -94,7 +97,9 @@ type Factory = {
 	 *
 	 * while both nodes still belong to the same clone lineage.
 	 */
-	createNodeFactory<T, P = any, E = {}, A = undefined>(options: FactoryOptions<T, P, E, A>): FactoryOutput<T, P, E, A>;
+	createNodeFactory<T, P = any, E = {}, A = undefined, I = {}>(
+		options: FactoryOptions<T, P, E, A, I>,
+	): FactoryOutput<T, P, E, A>;
 };
 
 export type { NodeMeta, FamilyMeta, FactoryOptions, FactoryOutput, Factory };

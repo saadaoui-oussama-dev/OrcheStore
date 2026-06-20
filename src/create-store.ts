@@ -9,7 +9,7 @@ import { object } from "./helpers/object-utils";
 import { createExposer, normalizeProps } from "./helpers/validators";
 import type { AnyStore, AnyStoreOptions, Store, StoreOptions } from "../types/internal";
 
-type ExtraMeta = { redux: any; reducers: any };
+type ExtraMeta = { redux: any; reducer: any };
 type Errors = { NeverExposed?: any[]; InvalidType: (store: any) => any[] };
 
 const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, ExtraMeta>({
@@ -35,18 +35,18 @@ const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, Extra
 		});
 
 		// Combine all slices into one combined reducer.
-		meta.reducers = expose("slice", false, props.slices, (key, item) => {
+		meta.reducer = expose("slice", false, props.slices, (key, item) => {
 			const errors = { UnknownNode: (key: string) => devConsole.error(storeErrors.InvalidChild(key)) };
 			const slice = attachSlice(key, item, store, meta, errors);
-			if (slice) return (((store as any)[key] = slice), slices.get(slice)!.reducers);
+			if (slice) return (((store as any)[key] = slice), slices.get(slice)!.reducer);
 		});
 
 		// Create and register the underlying Redux Toolkit store.
 		meta.redux = configureStore({
-			reducer: meta.reducers,
+			reducer: meta.reducer,
 		});
 
-		return store;
+		return { node: store };
 	},
 
 	options: {

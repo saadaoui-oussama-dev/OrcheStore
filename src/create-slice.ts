@@ -7,14 +7,16 @@ import { devConsole } from "./helpers/console";
 import { sliceErrors } from "./helpers/errors";
 import { object } from "./helpers/object-utils";
 import { createExposer, normalizeProps, validateKey } from "./helpers/validators";
-import type { AnySlice, AnySliceOptions, CloneArgs, Mutations, Obj, Slice, SliceOptions } from "../types/internal"; // prettier-ignore
+import type { AnySlice, AnySliceOptions, CloneArgs, ExposerFunction, Mutations, Obj, Slice, SliceOptions } from "../types/internal"; // prettier-ignore
 
-type ExtraMeta = { redux: any; reducers: any };
+type ExtraMeta = { redux: any; reducer: any };
 
-const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, CloneArgs<any, any>>({
+type Instantiate = { props: AnySliceOptions; expose: ExposerFunction };
+
+const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, CloneArgs<any, any>, Instantiate>({
 	factoryName: "slice",
 
-	instantiate(props, meta, family) {
+	instantiate(props, meta, family, cloning) {
 		const slice = {} as AnySlice;
 
 		const store = (type?: string) =>
@@ -91,19 +93,27 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 			return (slice[key] = (...args: any[]) => item.apply(slice, args));
 		});
 
+		return { node: slice, props, expose };
+	},
+
+	afterInstantiate(slice, meta, _, cloning, { expose, props }) {
 		// Register child slices and collect their reducers for composition
-		const childReducers = expose("child", true, (props as any).children, (key, item) => {
-			const errors = { UnknownNode: (key: string) => devConsole.error(sliceErrors.InvalidChild(key)) };
-			const it = attach(key, item, slice, meta, errors);
-			if (it) return (((slice as any)[key] = it), instances.get(it)!.reducers);
-		});
+		const children = cloning
+			? [...meta.children.entries()].map(([key, child]) => {
+					return [key, (((slice as any)[key] = child), instances.get(child)!.reducer)];
+				})
+			: expose("child", true, (props as any).children, (key, item) => {
+					const errors = { UnknownNode: (key: string) => devConsole.error(sliceErrors.InvalidChild(key)) };
+					const child = attach(key, item, slice, meta, errors);
+					if (child) return (((slice as any)[key] = child), instances.get(child)!.reducer);
+				});
 
 		// Slice-local reducer wrapper with child reducer propagation.
-		meta.reducers = (state: any, action: any) => {
+		meta.reducer = (state: any, action: any) => {
 			const actionPath = action?.meta?.path;
 			if (typeof actionPath === "string" && !actionPath.startsWith(meta.path)) return state;
 			const nextState = { ...meta.redux.reducer(state, action) };
-			for (const [key, reducer] of childReducers) nextState[key] = reducer(nextState?.[key], action);
+			for (const [key, reducer] of children) nextState[key] = reducer(nextState?.[key], action);
 			return nextState;
 		};
 
@@ -135,7 +145,7 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		},
 
 		clone(props, meta, _, stateTransformer) {
-			const originState = meta.reducers(undefined, { type: "@@CLONE" });
+			const originState = meta.reducer(undefined, { type: "@@CLONE" });
 			const clonedState = stateTransformer ? stateTransformer(originState) : originState;
 			return { ...props, state: clonedState === undefined ? originState : clonedState };
 		},

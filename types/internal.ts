@@ -10,11 +10,15 @@ export type * from "./slots";
 export type ErrorMode = "" | "error" | "warn";
 
 /** Context information used for validation and member exposure. */
-export type ExposeContext = { module: string; slice?: string, reserved: string[] };
+export type ExposeContext = { module: string; slice?: string; reserved: string[] };
 
 /** Transforms a layer member before it is exposed. */
 export type ExposeAdapter = <K extends string>(key: K, item: any) => any;
 
+/** Function that validates, adapts, and exposes structured layer members. */
+export type ExposerFunction = (type: string, entries: boolean, layer: any, adapter: ExposeAdapter) => any;
+
+/** Configuration for normalizing API input properties and structure. */
 export type NormalizePropsConfig = {
 	method: string;
 	objects?: string[];
