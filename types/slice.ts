@@ -23,7 +23,7 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = GlobalUtils & {
 	/** Runtime lineage and cloning utilities for this slice instance. */
 	readonly prototype: {
 		/** Creates a new detached clone within the same lineage. */
-		readonly clone: (stateModifier?: CloneArgs<S, C>) => slice<S, R, M, C>;
+		readonly clone: (stateTransformer?: CloneArgs<S, C>) => slice<S, R, M, C>;
 
 		/** Returns all slice instances in the same lineage, including this one. */
 		readonly getLineage: () => slice<S, R, M, C>[];

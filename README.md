@@ -1192,7 +1192,7 @@ slice2.prototype.isTypeOf(clone1); // false
 ## Summary
 
 - `clone()` creates a new detached lineage member.
-- `clone(stateModifier)` allows per-instance state customization at creation time.
+- `clone(stateTransformer)` allows per-instance state customization at creation time.
 - Reusing a slice automatically creates mounted clones.
 - Every clone is isolated at runtime.
 - All clones from the same definition belong to a shared lineage.

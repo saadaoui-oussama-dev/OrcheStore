@@ -134,9 +134,9 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 			return props;
 		},
 
-		clone(props, meta, _, stateModifier) {
+		clone(props, meta, _, stateTransformer) {
 			const originState = meta.reducers(undefined, { type: "@@CLONE" });
-			const clonedState = stateModifier ? stateModifier(originState) : originState;
+			const clonedState = stateTransformer ? stateTransformer(originState) : originState;
 			return { ...props, state: clonedState === undefined ? originState : clonedState };
 		},
 	},
