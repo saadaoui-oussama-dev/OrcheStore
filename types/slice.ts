@@ -23,7 +23,7 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = GlobalUtils & {
 	/** Runtime lineage and cloning utilities for this slice instance. */
 	readonly prototype: {
 		/** Creates a new detached clone within the same lineage. */
-		readonly clone: () => slice<S, R, M, C>;
+		readonly clone: (stateModifier?: CloneArgs<S, C>) => slice<S, R, M, C>;
 
 		/** Returns all slice instances in the same lineage, including this one. */
 		readonly getLineage: () => slice<S, R, M, C>[];
@@ -32,7 +32,7 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = GlobalUtils & {
 		readonly getClones: () => slice<S, R, M, C>[];
 
 		/** Returns true if both slices belong to the same lineage. */
-		readonly isTypeOf: (other: any) => boolean;
+		readonly isTypeOf: (other?: any) => boolean;
 	};
 
 	/** Collection of derived state functions. */
@@ -108,4 +108,6 @@ type AnySlice = slice<any, Mutations<any, any>, any, any>;
 
 type AnySliceOptions = sliceOptions<any, Mutations<any, any>, any, any>;
 
-export type { slice as Slice, sliceOptions as SliceOptions, SliceState, Mutations, AnySlice, AnySliceOptions };
+type CloneArgs<S extends Obj, C> = (state: SliceState.Draft<S, C>) => void | SliceState.Draft<S, C>;
+
+export type { slice as Slice, sliceOptions as SliceOptions, SliceState, Mutations, AnySlice, AnySliceOptions, CloneArgs }; // prettier-ignore

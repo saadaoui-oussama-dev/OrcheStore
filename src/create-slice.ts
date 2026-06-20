@@ -7,11 +7,11 @@ import { devConsole } from "./helpers/console";
 import { sliceErrors } from "./helpers/errors";
 import { object } from "./helpers/object-utils";
 import { createExposer, normalizeProps, validateKey } from "./helpers/validators";
-import type { AnySlice, AnySliceOptions, Mutations, Obj, Slice, SliceOptions } from "../types/internal"; // prettier-ignore
+import type { AnySlice, AnySliceOptions, CloneArgs, Mutations, Obj, Slice, SliceOptions } from "../types/internal"; // prettier-ignore
 
 type ExtraMeta = { redux: any; reducers: any };
 
-const { families, instances, create, attach, clone } = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta>({
+const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, CloneArgs<any, any>>({
 	factoryName: "slice",
 
 	instantiate(props, meta, family) {
@@ -31,7 +31,10 @@ const { families, instances, create, attach, clone } = createNodeFactory<AnySlic
 			const isRedux = item?._reducerDefinitionType === ReducerType.asyncThunk || "reducer" in { ...(item || {}) };
 			if (isRedux) return devConsole.error(sliceErrors.ReduxReducerConflict());
 			if (typeof item !== "function") return devConsole.error(sliceErrors.InvalidMutation(key));
-			return (state: any, action: any) => (action?.meta?.path === meta.path ? item(state, ...action.payload) : state);
+			return (state: any, action: any) => {
+				if (action?.meta?.path !== meta.path) return;
+				return item(state, ...(Array.isArray(action?.payload) ? action?.payload : []));
+			};
 		});
 
 		// Create and register the underlying Redux Toolkit slice.
@@ -48,22 +51,19 @@ const { families, instances, create, attach, clone } = createNodeFactory<AnySlic
 		// Runtime ownership and global context access.
 		object.defineReadonly(slice, "global", () => getGlobalUtils());
 		object.defineReadonly(slice, "root", () => store().node as any);
-		object.defineReadonly(slice, "parent", () => {
-			const parentSlice = meta.parents[0];
-			return (parentSlice ? instances.get(parentSlice) : undefined)?.node;
-		});
+		object.defineReadonly(slice, "parent", () => instances.get(meta.parents[0])?.node);
 
 		// State access and React subscription APIs.
 		object.defineMethod(slice, "getState", () => {
 			let state = store("slice.getState").redux.getState();
 			meta.path.split(".").forEach((part) => (state = (state || {})[part]));
-			return state;
+			return state || {};
 		});
 		object.defineMethod(slice, "useSelect", (selector: any) => {
 			const context = { global: getGlobalUtils(), root: store("slice.useSelect").node };
 			return useSelector((state: any) => {
 				meta.path.split(".").forEach((part) => (state = (state || {})[part]));
-				return selector.apply(context, [state, context]);
+				return selector.apply(context, [state || {}, context]);
 			});
 		});
 		object.defineReadonly(slice, "computed", () => undefined);
@@ -72,7 +72,7 @@ const { families, instances, create, attach, clone } = createNodeFactory<AnySlic
 		const prototype = {} as AnySlice["prototype"];
 		const getLineage = () => [...(family.siblings.values() || [])];
 		object.defineReadonly(slice, "prototype", () => prototype);
-		object.defineMethod(prototype, "clone", () => clone(slice));
+		object.defineMethod(prototype, "clone", (stateMdofier) => clone(slice, undefined, stateMdofier));
 		object.defineMethod(prototype, "getLineage", () => getLineage());
 		object.defineMethod(prototype, "getClones", () => getLineage().filter((it) => it !== slice));
 		object.defineMethod(prototype, "isTypeOf", (other) => family === families.get(instances.get(other)?.familyId!));
@@ -80,7 +80,8 @@ const { families, instances, create, attach, clone } = createNodeFactory<AnySlic
 		// Redux Toolkit actions mapped to auto-dispatching slice mutations
 		Object.entries(meta.redux.actions).map(([key, action]: [string, any]) => {
 			(slice as any)[key] = (...args: any[]) => {
-				store("slice mutation").redux.dispatch({ ...action(args), meta: { path: meta.path } });
+				args = args.length ? action(args) : action();
+				store("slice mutation").redux.dispatch({ ...args, meta: { path: meta.path } });
 			};
 		});
 
@@ -111,7 +112,7 @@ const { families, instances, create, attach, clone } = createNodeFactory<AnySlic
 
 	options: {
 		adapt(props) {
-			return normalizeProps(props, {
+			props = normalizeProps(props, {
 				method: "createSlice",
 				objects: ["mutations", "computed", "methods", "children"],
 				unsupported: ["computed"],
@@ -123,14 +124,18 @@ const { families, instances, create, attach, clone } = createNodeFactory<AnySlic
 					options.state = () => validateState(options.name, init());
 				},
 			});
+			return props;
 		},
 
-		clone(props, meta) {
-			const state = meta.redux.getInitialState();
-			return { ...props, state };
+		clone(props, meta, _, stateModifier) {
+			const originState = meta.reducers(undefined, { type: "@@CLONE" });
+			const clonedState = stateModifier ? stateModifier(originState) : originState;
+			return { ...props, state: clonedState === undefined ? originState : clonedState };
 		},
 	},
 });
+
+const { families, instances, create, attach, clone } = sliceFactory;
 
 /** Validate the slice initial state. */
 const validateState = (name: string, state: any) => {

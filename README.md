@@ -1035,7 +1035,9 @@ Although these instances are independent at runtime, they still belong to the sa
 
 ## Manual Cloning
 
-A new detached clone can be created manually from any slice instance:
+A new detached clone can be created manually from any slice instance.
+
+### 1. Clone without state transformation
 
 ```ts
 const clone = slice.prototype.clone();
@@ -1047,6 +1049,56 @@ The new instance:
 - starts detached from the tree
 - has no mounted path initially
 - has its own ownership context
+- uses the exact initial state of the source slice
+
+### 2. Clone with state transformation
+
+```ts
+const clone = slice.prototype.clone((state) => newState);
+```
+
+The provided function receives the fully resolved initial state (including nested slices) and returns the modified state for the new instance.
+
+The state transformer:
+
+- does not affect other lineage members
+- supports nested slice state updates
+- supports immutable updates (returning a new state object)
+- supports mutable updates (Immer-style — no return required)
+
+**Example:**
+
+```ts
+const crudSlice = createSlice({
+	name: "CRUDSlice",
+
+  state: {
+    endpoint: "",
+  },
+
+  children: {
+    pagination: paginationSlice.prototype.clone(),
+    dropdown: searchDropdownSlice.prototype.clone(),
+  },
+});
+
+// Immutable style (returns new state object)
+const productsSlice = crudSlice.prototype.clone((state) => ({
+	...state,
+	endpoint: "api/v1/products",
+
+	dropdown: {
+		...state.dropdown,
+		supported: false,
+	},
+}));
+
+// Immer-style mutation (no return needed)
+const categoriesSlice = crudSlice.prototype.clone((state) => {
+	state.endpoint = "api/v1/categories";
+	state.pagination.supported = false;
+});
+```
 
 ## Inspecting a Lineage
 
@@ -1109,6 +1161,7 @@ slice2.prototype.isTypeOf(clone1); // false
 
 - Reusing a slice automatically creates mounted clones.
 - `clone()` creates a new detached lineage member.
+- `clone(stateModifier)` allows per-instance state customization at creation time.
 - Every clone is isolated at runtime.
 - All clones from the same definition belong to a shared lineage.
 - `getLineage()` returns all instances in a lineage.
