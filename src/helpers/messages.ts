@@ -9,19 +9,18 @@ let reportLevel = { logs: true, warnings: true, errors: true };
 export const devConsole = {
 	log(message: any[]) {
 		if (!message || !message.length || !reportLevel.logs) return;
-		informDiagnostics();
 		log?.(...message);
 	},
 
 	warn(message: any[]) {
 		if (!message || !message.length || !reportLevel.warnings) return;
-		informDiagnostics();
+		informReporting();
 		warn?.(...message);
 	},
 
 	error(message: any[]) {
 		if (!message || !message.length || !reportLevel.errors) return;
-		informDiagnostics();
+		informReporting();
 		error?.(...message);
 	},
 
@@ -32,6 +31,28 @@ export const devConsole = {
 		throw new Error();
 	},
 };
+
+function informReporting() {
+	if (informed) return;
+	informed = true;
+	const DiagnosticsMessage = "[OrcheStore] Warning and error reporting is enabled.\nConfigure it with setReporting(...) to control console output.\n"; // prettier-ignore
+	devConsole.log([DiagnosticsMessage]);
+}
+
+/** Enables or disables diagnostic logs, warnings, and errors. */
+export function setReporting(enabled: boolean): void;
+export function setReporting(config: { all?: boolean; logs?: boolean; warnings?: boolean; errors?: boolean }): void;
+export function setReporting(level: "logs" | "warnings" | "errors" | "all", enabled: boolean): void;
+export function setReporting(level: any, enabled?: boolean) {
+	if (typeof level === "boolean") level = { logs: enabled, warnings: enabled, errors: enabled };
+	if (typeof level === "string") level = { [level]: enabled };
+	if (!level || typeof level !== "object") return;
+
+	level = { ...level };
+	reportLevel.logs = !!(level.logs ?? level.all ?? reportLevel.logs);
+	reportLevel.warnings = !!(level.warnings ?? level.all ?? reportLevel.warnings);
+	reportLevel.errors = !!(level.errors ?? level.all ?? reportLevel.errors);
+}
 
 export const MESSAGES = (method: string, slice?: string | undefined) => {
 	const exceptions = {
@@ -95,28 +116,6 @@ export const MESSAGES = (method: string, slice?: string | undefined) => {
 		},
 	});
 };
-
-function informDiagnostics() {
-	if (informed) return;
-	informed = true;
-	const DiagnosticsMessage = "[OrcheStore] Warning and error reporting is enabled.\nConfigure it with setReporting(...) to control console output.\n"; // prettier-ignore
-	devConsole.log([DiagnosticsMessage]);
-}
-
-/** Enables or disables diagnostic logs, warnings, and errors. */
-export function setReporting(enabled: boolean): void;
-export function setReporting(config: { all?: boolean; logs?: boolean; warnings?: boolean; errors?: boolean }): void;
-export function setReporting(level: "logs" | "warnings" | "errors" | "all", enabled: boolean): void;
-export function setReporting(level: any, enabled?: boolean) {
-	if (typeof level === "boolean") level = { logs: enabled, warnings: enabled, errors: enabled };
-	if (typeof level === "string") level = { [level]: enabled };
-	if (!level || typeof level !== "object") return;
-
-	level = { ...level };
-	reportLevel.logs = !!(level.logs ?? level.all ?? reportLevel.logs);
-	reportLevel.warnings = !!(level.warnings ?? level.all ?? reportLevel.warnings);
-	reportLevel.errors = !!(level.errors ?? level.all ?? reportLevel.errors);
-}
 
 function typed<T>(value: T, prefix = "Receive"): any[] {
 	if (value === null || value === undefined) return [`\n${prefix}: ${value}`];

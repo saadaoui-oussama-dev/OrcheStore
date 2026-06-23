@@ -226,6 +226,15 @@ export const counter = createSlice({
 ```tsx
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 
+// Separate APIs for async workflows
+export const incrementAfter = createAsyncThunk(
+	"counter/incrementAfter",
+	async ({ amount, delay }: { amount: number; delay: number }) => {
+		await new Promise((resolve) => setTimeout(resolve, delay));
+		return amount;
+	}
+);
+
 export const counter = createSlice({
 	name: "counter",
 
@@ -247,20 +256,14 @@ export const counter = createSlice({
 			);
 		},
 	},
-});
 
-// Separate APIs for async workflows
-export const incrementAfter = createAsyncThunk(
-	"counter/incrementAfter",
-	async (
-		{ amount, delay }: { amount: number; delay: number },
-		{ dispatch }
-	) => {
-		await new Promise((resolve) => setTimeout(resolve, delay));
-
-		dispatch(counter.actions.increment(amount));
+	extraReducers: (builder) => {
+		// Handles fulfilled async thunk result
+		builder.addCase(incrementAfter.fulfilled, (state, action) => {
+			state.value += action.payload;
+		});
 	},
-);
+});
 ```
 
 ## Slice Usage
@@ -545,19 +548,8 @@ Methods are designed for centralizing any slice-related logic:
 Methods should NOT:
 
 - include slice-unrelated logic.
+- include UI layer logic.
 - mutate state directly. use mutations instead.
-
-Prefer:
-
-```ts
-this.increment(1);
-```
-
-Instead of:
-
-```ts
-this.getState().value++;
-```
 
 **Example:**
 
