@@ -925,42 +925,6 @@ this.root.auth.getState().isAuthenticated;
 - avoiding circular imports
 - application-wide orchestration
 
-## Root Store Type Extension (Planned)
-
-Overriding `OrcheStore.Slots.root` provides full root store typing throughout the application.
-
-> 🐞 Under active development: this currently causes a circular type inference limitation.
-
-```ts
-import { createStore } from "orchestore";
-
-export const store = createStore({
-	slices: {
-		counter,
-	},
-});
-
-declare module "orchestore" {
-	namespace OrcheStore {
-		interface Slots {
-			root: typeof store; // Bugfix: Causes a circular type inference
-		}
-	}
-}
-```
-
-```ts
-this.root; // Before: any
-this.root; // After: fully typed store
-```
-
-**Rules:**
-
-- `root` must be a store instance created using `createStore`
-- `null` and `undefined` are excluded automatically
-	- `typeof store | null | undefined` is equivalent to `typeof store`
-- Invalid types fall back to `any`
-
 ---
 
 # Lineage & Clones
@@ -1392,42 +1356,6 @@ counter.incrementAfter(amount: number, delay?: number): Promise<number>;
 ```
 
 No manual type declarations required.
-
-## Framework Type Extensions
-
-OrcheStore also exposes user-definable type slots through `OrcheStore.Slots`.
-
-These slots allow application-specific types to be injected into the framework and become available everywhere with full type safety.
-
-| Slot                     | Purpose                           |
-| ------------------------ | --------------------------------- |
-| `OrcheStore.Slots.root`  | Root store typing                 |
-| `OrcheStore.Slots.utils` | Application-wide utilities typing |
-
-```ts
-declare module "orhestore" {
-	namespace OrcheStore {
-		interface Slots {
-			root: typeof store; // Bugfix: Causes a circular type inference
-
-			utils: {
-				navigate: NavigateFunction;
-				notify(type: "info" | "error" | "success", message: string): void;
-			};
-		}
-	}
-}
-```
-
-This provides full typing for APIs such as:
-
-```ts
-this.root;
-
-store.utils;
-counter.utils;
-this.utils;
-```
 
 ---
 

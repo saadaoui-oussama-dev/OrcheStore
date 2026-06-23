@@ -3,4 +3,4 @@ export type * from "./factory";
 export type * from "./helpers";
 export type * from "./slice";
 export type * from "./store";
-export type * from "./slots";
+export type * from "./utils";

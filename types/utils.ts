@@ -1,4 +1,4 @@
-import type { Dict, Store } from "./internal";
+import type { Dict } from "./internal";
 
 declare global {
 	namespace OrcheStore {
@@ -20,7 +20,4 @@ type Utils = {
 	utils: Definition<"utils", Dict, any>;
 };
 
-/** Resolved type for the application root store. */
-type RootStore = Definition<"root", Store<unknown>, any>;
-
-export type { RootStore, Utils };
+export type { Utils };

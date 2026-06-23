@@ -1,4 +1,4 @@
-import type { Dict, Utils, Obj, OmitNever, ReadOnly, RootStore, Store, Tail } from "./internal";
+import type { Dict, Utils, Obj, OmitNever, ReadOnly, Store, Tail } from "./internal";
 
 /** Runtime slice API exposed by createSlice(...). */
 type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
@@ -69,7 +69,7 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	mutations?: R & ThisType<Utils>;
 
 	/** Collection of slice methods and orchestration logic. */
-	methods?: M & ThisType<slice<S, R, M, C> & { root: RootStore }>;
+	methods?: M & ThisType<Slice<S, R, M, C>>;
 
 	/** Collection of derived state functions. */ // TODO: Including root, and child slices.
 	// computed?: G & ThisType<Utils & Omit<G, "utils">>;
