@@ -3,41 +3,46 @@ import { useSelector } from "react-redux";
 import { getUtils } from "./global-utils";
 import { createNodeFactory } from "./node-factory";
 import { attachSlice, slices } from "./create-slice";
-import { devConsole } from "./helpers/console";
-import { storeErrors } from "./helpers/errors";
-import { object } from "./helpers/object-utils";
+import { MESSAGES } from "./helpers/messages";
+import { defineMethod, defineReadonly } from "./helpers/object-utils";
 import { createExposer, normalizeProps } from "./helpers/validators";
 import type { AnyStore, AnyStoreOptions, Store, StoreOptions } from "../types/internal";
 
 type ExtraMeta = { redux: any; reducer: any };
-type Errors = { NeverExposed?: any[]; InvalidType: (store: any) => any[] };
+type Errors = { NeverExposed?: () => void; InvalidType?: (parent: any) => void };
 
 const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, ExtraMeta>({
-	factoryName: "slice",
+	factoryName: "store",
+
+	options: {
+		adapt(props) {
+			const mismatch = { reducer: "'slices'", reducers: "'slices'", devTools: "", duplicateMiddlewareCheck: "", enhancers: "", middleware: "", preloadedState: "" }; // prettier-ignore
+			return normalizeProps(props, { method: "createStore", mismatch, objects: ["slices"] });
+		},
+	},
 
 	instantiate(props, meta) {
 		const store = {} as any;
 
-		const expose = createExposer({
-			module: "createStore",
-			reserved: ["name", "computed", "global", "getState", "useSelect"],
-		});
+		const reservedKeys = ["name", "computed", "utils", "getState", "useSelect"];
+		const expose = createExposer("createStore", undefined, reservedKeys);
 
-		object.defineReadonly(store, "name", () => "default");
+		defineReadonly(store, "name", () => "default");
 
-		object.defineReadonly(store, "utils", () => getUtils());
+		defineReadonly(store, "utils", () => getUtils());
 
-		object.defineMethod(store, "getState", () => meta.redux.getState());
+		defineMethod(store, "getState", () => meta.redux.getState());
 
-		object.defineMethod(store, "useSelect", (selector: any) => {
-			const context = { global: getGlobalUtils(), root: store };
+		defineMethod(store, "useSelect", (selector: any) => {
+			const context = { utils: getUtils(), root: store };
 			return useSelector((state: any) => selector.apply(context, [state, context]));
 		});
 
 		// Combine all slices into one combined reducer.
 		meta.reducer = expose("slice", false, props.slices, (key, item) => {
-			const errors = { UnknownNode: (key: string) => devConsole.error(storeErrors.InvalidChild(key)) };
-			const slice = attachSlice(key, item, store, meta, errors);
+			const slice = attachSlice(key, item, store, meta, {
+				UnknownNode: () => MESSAGES("createStore").InvalidChild(key, item),
+			});
 			if (slice) return (((store as any)[key] = slice), slices.get(slice)!.reducer);
 		});
 
@@ -48,49 +53,19 @@ const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, Extra
 
 		return { node: store };
 	},
-
-	options: {
-		adapt(props) {
-			return normalizeProps(props, {
-				method: "createStore",
-				objects: ["slices"],
-				mismatch: {
-					reducer: "'slices'",
-					reducers: "'slices'",
-					devTools: "",
-					duplicateMiddlewareCheck: "",
-					enhancers: "",
-					middleware: "",
-					preloadedState: "",
-				},
-			});
-		},
-	},
 });
 
 /** Returns the OrcheStore store instance with its associated Redux store. */
-export const getStore = (store?: AnyStore, childMeta?: any, errors: Errors | false = false) => {
+export const getStore = (store?: AnyStore, childMeta?: any, errors?: Errors) => {
 	if ((errors as any) === true) return [...instances.values()][0];
 
 	store ||= childMeta?.parents?.at?.(-1);
-
 	const meta = store ? instances.get(store) : undefined;
 
-	let error: any[] | undefined = [];
+	if (childMeta && !store) return void errors?.NeverExposed?.();
+	else if (!meta) return void errors?.InvalidType?.(store);
 
-	if (childMeta && !store) {
-		error = errors === false ? [] : errors.NeverExposed;
-	} else if (!meta) {
-		error = errors === false ? [] : errors.InvalidType(store);
-	}
-
-	if (error && error.length) {
-		if (error.every((m) => typeof m === "string")) throw new Error(error.join(" "));
-		devConsole.error(...error);
-		throw new Error();
-	}
-
-	return meta!;
+	return meta;
 };
 
 /** Creates and initializes an OrcheStore instance. */

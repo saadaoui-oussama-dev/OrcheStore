@@ -1,23 +1,34 @@
 import { createStore, getStore } from "./create-store";
 import { createSlice } from "./create-slice";
 import { StoreProvider } from "./store-provider";
-import { getGlobalUtils, provideGlobalUtils } from "./global-utils";
-import { configureDiagnostics, devConsole } from "./helpers/console";
-import { storeErrors } from "./helpers/errors";
+import { getUtils, provideUtils } from "./global-utils";
+import { setReporting, devConsole } from "./helpers/messages";
 import type { Mutations, Obj, Slice, SliceOptions, Store, StoreOptions } from "../types/internal";
 
+let informed = false;
+const prereleasMessage =
+	"[OrcheStore] 🚧 Pre-release Notice\n" +
+	"Thank you for your interest in OrcheStore.\n" +
+	"OrcheStore is currently under active development and is not yet ready for production use.\n" +
+	"APIs, behavior, and internal implementation details may change without notice.\n" +
+	"The first stable release is currently planned for 2026-06-30.\n" +
+	"Stay tuned for updates!\n";
+
 /** Creates and initializes an OrcheStore slice. */
-const createSliceWrapper = <S extends Obj, R extends Mutations<S, C>, M, C>(props: SliceOptions<S, R, M, C>): Slice<S, R, M, C> => {
-	devConsole.inform("prerelease");
+const createSliceWrapper = <S extends Obj, R extends Mutations<S, C>, M, C>(
+	props: SliceOptions<S, R, M, C>,
+): Slice<S, R, M, C> => {
+	if (!informed) ((informed = true), devConsole.log([prereleasMessage]));
 	return createSlice(props);
 };
 
 /** Creates and initializes an OrcheStore instance. */
 const createStoreWrapper = <T>(props: StoreOptions<T>): Store<T> => {
-	devConsole.inform("prerelease");
-	if (getStore(undefined, undefined, true as any)) {
-		devConsole.warn(storeErrors.singletonLimitation());
-		return getStore(undefined, undefined, true as any).node as any;
+	if (!informed) ((informed = true), devConsole.log([prereleasMessage]));
+	const store = getStore(undefined, undefined, true as any);
+	if (store) {
+		devConsole.warn(["[OrcheStore::createStore] createStore(...) was called more than once.\nOrcheStore currently supports only one global store and will return the existing instance."]); // prettier-ignore
+		return store?.node as any;
 	}
 	return createStore(props);
 };
@@ -32,14 +43,14 @@ const defaultExport = {
 	/** Provides an OrcheStore instance to the React component tree. */
 	StoreProvider,
 
-	/** Registers or updates application-wide global utilities. */
-	provideGlobalUtils,
+	/** Registers or updates application-wide utilities. */
+	provideUtils,
 
-	/** Returns the current global utilities object. */
-	getGlobalUtils,
+	/** Returns the current utilities object. */
+	getUtils,
 
-	/** Configures diagnostics output level ("off" | "errors" | "all"). */
-	configureDiagnostics,
+	/** Enables or disables diagnostic logs, warnings, and errors. */
+	setReporting,
 };
 
 export {
@@ -47,9 +58,9 @@ export {
 	createStoreWrapper as createStore,
 	createSliceWrapper as createSlice,
 	StoreProvider,
-	provideGlobalUtils,
-	getGlobalUtils,
-	configureDiagnostics,
+	provideUtils,
+	getUtils,
+	setReporting,
 };
 
 export type * from "../types";

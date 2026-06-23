@@ -1,6 +1,6 @@
-type NodeMeta<T, E> = E & {
+type NodeMeta<N, E> = E & {
 	/** Node associated with this metadata. */
-	node: T;
+	node: N;
 
 	/** Clone lineage shared by all related nodes. */
 	familyId: symbol;
@@ -9,40 +9,40 @@ type NodeMeta<T, E> = E & {
 	path: string;
 
 	/** Ownership chain, nearest owner first. */
-	parents: T[];
+	parents: N[];
 
 	/** Directly owned children. */
-	children: Map<string, T>;
+	children: Map<string, N>;
 };
 
-type FamilyMeta<T, P> = {
+type FamilyMeta<N, P> = {
 	/** Default props inherited by clones. */
 	props: P;
 
 	/** All nodes belonging to this lineage. */
-	siblings: Set<T>;
+	siblings: Set<N>;
 };
 
-type AttachErrors<T> = {
+type FactoryErrors<N> = {
 	/** Invoked when a node is unknown to this factory. */
 	UnknownNode?: (key: string, node: any) => void;
 
 	/** Invoked when the specified owner is unknown. */
-	UnknownParent?: (key: string, node: T, parent: any) => void;
+	UnknownParent?: (key: string, node: N, parent: any) => void;
 
 	/** Invoked when an attachment would introduce recursive ownership. */
-	InfiniteOwnership?: <U = T>(key: string, node: T, parent: U) => void;
+	InfiniteOwnership?: <U = N>(key: string, node: N, parent: U) => void;
 };
 
-type FactoryOptions<T, P = any, E = {}, A = undefined, I = {}> = {
+type FactoryOptions<N, P = any, E = {}, A = undefined, I = {}> = {
 	/** Human-readable identifier for debugging, diagnostics, and tooling. */
 	factoryName: string;
 
 	/** Creates a node and provides access to its runtime metadata during initialization. */
-	instantiate: (props: P, metadata: NodeMeta<T, E>, family: FamilyMeta<T, P>, cloning: boolean) => I & { node: T };
+	instantiate: (props: P, metadata: NodeMeta<N, E>, family: FamilyMeta<N, P>, cloning: boolean) => I & { node: N };
 
 	/** Finalizes node setup after instantiation and applies composition or wiring logic. */
-	afterInstantiate?: (node: T, metadata: NodeMeta<T, E>, family: FamilyMeta<T, P>, cloning: boolean, payload: I) => T;
+	afterInstantiate?: (node: N, metadata: NodeMeta<N, E>, family: FamilyMeta<N, P>, cloning: boolean, payload: I) => N;
 
 	options?: {
 		/** Transforms user-provided props before node creation and registration. */
@@ -52,25 +52,25 @@ type FactoryOptions<T, P = any, E = {}, A = undefined, I = {}> = {
 		register?: (props: P) => P;
 
 		/** Produces the props used when cloning a family member. */
-		clone?: (firstRegisteredProps: P, originMetadata: NodeMeta<T, E>, family: FamilyMeta<T, P>, payload?: A) => P;
+		clone?: (firstRegisteredProps: P, originMetadata: NodeMeta<N, E>, family: FamilyMeta<N, P>, payload?: A) => P;
 	};
 };
 
-type FactoryOutput<T, P = any, E = {}, A = undefined> = {
+type FactoryOutput<N, P = any, E = {}, A = undefined> = {
 	/** Registry of clone lineages. */
-	families: Map<symbol, FamilyMeta<T, P>>;
+	families: Map<symbol, FamilyMeta<N, P>>;
 
 	/** Runtime metadata for all nodes managed by this factory. */
-	instances: Map<T, NodeMeta<T, E>>;
+	instances: Map<N, NodeMeta<N, E>>;
 
 	/** Creates the first member of a new lineage. */
-	create: (props: P) => T;
+	create: (props: P) => N;
 
 	/** Creates a detached sibling in the same lineage. */
-	clone: (node: T, errors?: AttachErrors<T>, payload?: A) => T;
+	clone: (node: N, errors?: FactoryErrors<N>, payload?: A) => N | undefined;
 
 	/** Attaches a node under a parent, cloning only when ownership changes. */
-	attach: <U = T, F = E>(key: string, node: T, parent: U, parentMeta?: NodeMeta<U, F>, errors?: AttachErrors<T>) => T;
+	attach: <U = N, F = E>(key: string, node: N, parent: U, parentMeta?: NodeMeta<U, F>, errors?: FactoryErrors<N>) => N;
 };
 
 type Factory = {
@@ -97,9 +97,9 @@ type Factory = {
 	 *
 	 * while both nodes still belong to the same clone lineage.
 	 */
-	createNodeFactory<T, P = any, E = {}, A = undefined, I = {}>(
-		options: FactoryOptions<T, P, E, A, I>,
-	): FactoryOutput<T, P, E, A>;
+	createNodeFactory<N, P = any, E = {}, A = undefined, I = {}>(
+		options: FactoryOptions<N, P, E, A, I>,
+	): FactoryOutput<N, P, E, A>;
 };
 
-export type { NodeMeta, FamilyMeta, FactoryOptions, FactoryOutput, Factory };
+export type { Factory, FactoryOptions, FactoryOutput, FactoryErrors, NodeMeta, FamilyMeta };

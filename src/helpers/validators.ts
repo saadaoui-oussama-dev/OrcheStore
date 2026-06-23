@@ -1,63 +1,60 @@
-import { devConsole } from "./console";
-import { validatorErrors } from "./errors";
-import type { ErrorMode, ExposeContext, NormalizePropsConfig, ExposerFunction } from "../../types/internal"; // prettier-ignore
+import { MESSAGES } from "./messages";
+import type { Dict } from "../../types/internal";
 
-/** Reports a validation message by throwing, logging, or warning. */
-const report = (message: string, mode?: ErrorMode) => {
-	if (!message) return false;
-	else if (mode === "warn") devConsole.warn(message);
-	else if (mode === "error") devConsole.error(message);
-	else throw new Error(message);
-};
+/** Function that validates, adapts, and exposes structured layer members. */
+export type ExposerFunction = (
+	type: string,
+	entries: boolean,
+	layer: any,
+	adapter: <K extends string>(key: K, item: any) => any,
+) => any;
 
-/** Validates that a key is a non-empty string without "." or "/". */
-export const validateKey = (key: unknown, req = "", spec = "", opt?: [ErrorMode, ErrorMode]): key is string => {
-	if (typeof key !== "string" || !key) return !!report(req, opt?.[0]);
-	if (key.includes(".") || key.includes("/")) return !!report(spec, opt?.[1]);
-	return true;
-};
-
-/** Validates a layer key before exposing its member. */
-export const validateLayerKey = (context: ExposeContext, type: string, key: string, reserved: string[][]) => {
-	const requiredName = validatorErrors.RequiredName(context, type);
-	const invalidName = validatorErrors.InvalidName(context, type, key);
-	if (!validateKey(key, requiredName, invalidName, ["error", "error"])) return;
-	else if (reserved[0].includes(key)) return devConsole.error(validatorErrors.ReservedKey(context, type, key));
-	else if (reserved[1].includes(key)) return devConsole.error(validatorErrors.DuplicateKey(context, type, key));
-	return true;
-};
-
-/** Validates, adapts, and exposes layer members. */
-export const createExposer = (context: ExposeContext): ExposerFunction => {
-	const exposed: string[] = [];
-	const reserved = [context.reserved, exposed];
-	return (type, entries, layer, adapter) => {
-		const response: any = entries ? [] : {};
-		Object.entries(layer as any).forEach(([key, item]) => {
-			const value = validateLayerKey(context, type, key, reserved) ? adapter(key, item) : undefined;
-			if (value === undefined) return;
-			entries ? response.push([key, value]) : ((response as any)[key] = value);
-			exposed.push(key);
-		});
-		return response;
-	};
+/** Configuration for normalizing API input properties and structure. */
+export type NormalizePropsConfig = {
+	method: string;
+	slice?: string | undefined;
+	objects?: string[];
+	mismatch?: Dict<string>;
+	validate?: (options: Dict) => void;
 };
 
 /** Validates and normalizes definition options. */
-export const normalizeProps = <T>(props: T, config: NormalizePropsConfig): Required<T> => {
+export const normalizeProps = <T>(props: T, { method, slice, ...config }: NormalizePropsConfig): Required<T> => {
 	const options = { ...(props || {}) } as any;
-	config.objects?.forEach((layer) => {
-		options[layer] = typeof options[layer] === "object" && options[layer] ? { ...options[layer] } : {};
+
+	config.objects?.forEach((prop) => {
+		options[prop] = typeof options[prop] === "object" && options[prop] ? { ...options[prop] } : {};
 	});
+
 	config.validate?.(options);
-	Object.entries(((config.mismatch || {}) as NormalizePropsConfig["mismatch"])!).forEach(([layer, replace]) => {
-		if (options[layer] === undefined) return;
-		else if (replace) devConsole.warn(`[OrcheStore::${config.method}] '${layer}' property is a Redux Toolkit option, use ${replace} instead.`); // prettier-ignore
-		else devConsole.warn(`[OrcheStore::${config.method}] '${layer}' property is a Redux Toolkit that is not yet supported and will be ignored.`); // prettier-ignore
+
+	Object.entries(((config.mismatch || {}) as NormalizePropsConfig["mismatch"])!).forEach(([prop, replace]) => {
+		if (options[prop] === undefined) return;
+		if (replace) MESSAGES(method, slice).ReduxMismatchProp(prop, replace);
+		else MESSAGES(method, slice).UnsupportedReduxProp(prop);
 	});
-	config.unsupported?.forEach((layer) => {
-		if (Object.keys((options as any)[layer]).length < 1) return;
-		devConsole.warn(`[OrcheStore::${config.method}] '${layer}' property is not yet supported and will be ignored.`); // prettier-ignore
-	});
+
 	return options as Required<T>;
+};
+
+/** Validates, adapts, and exposes layer members. */
+export const createExposer = (method: string, slice: string | undefined, reserved: string[]): ExposerFunction => {
+	return (prop, entries, layer, adapter) => {
+		const response: any = entries ? [] : {};
+
+		Object.entries(layer as any).forEach(([key, item]) => {
+			// Validates a layer key before exposing its member
+			if (!key || typeof key !== "string" || key.includes(".") || key.includes("/"))
+				return MESSAGES(method, slice).InvalidKey(prop, key);
+			if (reserved.includes(key)) return MESSAGES(method, slice).DuplicateKey(prop, key);
+
+			// Exposing a layer member
+			const value = adapter(key, item);
+			if (value === undefined) return;
+			entries ? response.push([key, value]) : ((response as any)[key] = value);
+			reserved.push(key);
+		});
+
+		return response;
+	};
 };
