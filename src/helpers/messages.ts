@@ -72,7 +72,9 @@ export const MESSAGES = (method: string, slice?: string | undefined) => {
 
 		InvalidKey: (layer: string, value: any) => [`${layer} key must be a non-empty string without '.' or '/'.`, ...typed(value)], // prettier-ignore
 
-		InvalidState: (any: any) => [`"state" must be a non-null object or a function returning one.`, ...typed(any)],
+		InvalidStateProp: (any: any) => [`"state" must be a non-null object or a function returning one.`, ...typed(any)],
+
+		InvalidStateClone: (any: any) => [`cloned state must be a non-null object.`, ...typed(any)],
 
 		InvalidMutation: (key: string, any: any) => [`Mutation '${key}' must be a function.`, ...typed(any)],
 
@@ -115,11 +117,12 @@ export const MESSAGES = (method: string, slice?: string | undefined) => {
 	});
 };
 
-function typed<T>(value: T, prefix = "Receive"): any[] {
+function typed<T>(value: T, prefix = "Got"): any[] {
 	if (value === null || value === undefined) return [`\n${prefix}: ${value}`];
 	if (Array.isArray(value)) return [`\n${prefix}: array`, value];
 	if (typeof value === "object") return [`\n${prefix}: object`, value];
 	if (typeof value === "function") return [`\n${prefix}: function`, value];
+	if (value === "") return [`\n${prefix}: Empty string`];
 	return [`\n${prefix}: ${typeof value} (${value})`];
 }
 

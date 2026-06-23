@@ -48,8 +48,14 @@ type FactoryOptions<N, P = any, E = {}, A = undefined, I = {}> = {
 		/** Stores the lineage's initial props, later used as the clone baseline. */
 		register?: (props: P) => P;
 
-		/** Produces the props used when cloning a family member. */
+		/** Produces the props used when creating a cloned sibling. */
 		clone?: (firstRegisteredProps: P, originMetadata: NodeMeta<N, E>, family: FamilyMeta<N, P>, payload?: A) => P;
+
+		/** Refines cloned props into the portion owned by the node being instantiated. */
+		resolve?: (props: P) => P;
+
+		/** Extracts the payload used to clone child nodes from the parent's cloned props. */
+		childPayload?: (key: string, props: P) => A;
 	};
 };
 

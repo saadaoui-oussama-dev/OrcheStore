@@ -74,6 +74,7 @@ const { createNodeFactory }: Factory = {
 		function updateOwnership(...args: [string, N[], NodeMeta<N, E>, FamilyMeta<N, P>, boolean, A, (c: N) => void]) {
 			let [path, parents, meta, family, force, payload, onSetOwnership] = args;
 			let instantiatePayload: I & { node: N } = undefined!;
+			let parentProps: P = undefined!;
 
 			// A node can only have one owner. Clone when ownership changes.
 			force = force || (meta.parents.length > 0 && (meta.parents[0] !== parents[0] || meta.path.split(".").at(-1) !== path.split(".").at(-1))); // prettier-ignore
@@ -81,7 +82,8 @@ const { createNodeFactory }: Factory = {
 			if (force) {
 				// Prepare metadata and props for a new sibling in the same lineage.
 				const $meta = { familyId: meta.familyId, path, children: new Map(meta.children), parents } as any;
-				const props = options.clone ? options.clone(family.props, meta, family, payload) : family.props;
+				parentProps = options.clone ? options.clone(family.props, meta, family, payload) : family.props;
+				const props = options.resolve ? options.resolve(parentProps) : parentProps;
 				meta = $meta;
 
 				// Instantiate a sibling within the same lineage with access to its runtime metadata.
@@ -102,7 +104,9 @@ const { createNodeFactory }: Factory = {
 			for (const [key, child] of [...meta.children.entries()]) {
 				const childPath = `${path}${path ? "." : ""}${key}`;
 				const [childMeta, childFamily] = getData(childPath, child)!;
-				updateOwnership(childPath, [meta.node, ...parents], childMeta, childFamily, false, undefined!, (clone) => {
+				const childPayload =
+					options.childPayload && parentProps ? options.childPayload(key, parentProps) : undefined!;
+				updateOwnership(childPath, [meta.node, ...parents], childMeta, childFamily, false, childPayload, (clone) => {
 					if (clone !== child) meta.children.set(key, clone);
 				});
 			}

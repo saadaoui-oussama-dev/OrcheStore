@@ -21,10 +21,23 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 			return normalizeProps(props, { method: "createSlice", slice, objects, mismatch, validate: validateNameAndState });
 		},
 
-		clone(props, meta, _, stateTransformer) {
+		clone(props, meta, _, payload) {
+			if (payload?.object) return { ...props, state: payload?.object };
 			const originState = meta.reducer(undefined, { type: "@@CLONE" });
-			const clonedState = stateTransformer ? stateTransformer(originState) : originState;
-			return { ...props, state: clonedState === undefined ? originState : clonedState };
+			const transformedState = payload?.transform ? payload.transform(originState) : undefined;
+			const clonedState = transformedState === undefined ? originState : transformedState;
+			const state = normalizeSafeState("slice.clone", payload?.name ?? "", clonedState);
+			return { ...props, state };
+		},
+
+		resolve: (props) => {
+			const state = { ...props.state };
+			Object.keys(props.children).forEach((c) => delete state[c]);
+			return { ...props, state };
+		},
+
+		childPayload: (key, props) => {
+			return { object: { ...props.state[key] } };
 		},
 	},
 
@@ -87,7 +100,7 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		const prototype = {} as AnySlice["prototype"];
 		const getLineage = () => [...(family.siblings.values() || [])];
 		defineReadonly(slice, "prototype", () => prototype);
-		defineMethod(prototype, "clone", (stateMdofier) => clone(slice, undefined, stateMdofier)!);
+		defineMethod(prototype, "clone", (transform) => clone(slice, undefined, { name: props.name, transform })!);
 		defineMethod(prototype, "getLineage", () => getLineage());
 		defineMethod(prototype, "getClones", () => getLineage().filter((it) => it !== slice));
 		defineMethod(prototype, "isTypeOf", (other) => family === families.get(instances.get(other)?.familyId!));
@@ -96,7 +109,7 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		Object.entries(meta.redux.actions).map(([key, action]: [string, any]) => {
 			(slice as any)[key] = (...args: any[]) => {
 				args = args.length ? action(args) : action();
-				store("slice mutation")?.redux.dispatch({ ...args, meta: { path: meta.path } });
+				store("slice-mutation")?.redux.dispatch({ ...args, meta: { path: meta.path } });
 			};
 		});
 
@@ -143,17 +156,15 @@ const validateNameAndState = (props: Dict) => {
 	if (!Object.hasOwn(props, "name")) return MESSAGES("createSlice").RequiredName(props);
 	if (!props.name || typeof props.name !== "string" || props.name.includes(".") || props.name.includes("/"))
 		MESSAGES("createSlice").InvalidName(props.name);
+	props.state = normalizeSafeState("createSlice", props.name, props.state, true);
+};
 
-	const init = props.state;
-	if (props.state === undefined) props.state = {};
-	else if (init && typeof init === "object" && !Array.isArray(init)) return;
-	else if (typeof init !== "function") props.state = (MESSAGES("createSlice", props.name).InvalidState(init), {});
-	else
-		props.state = () => {
-			const state = init();
-			if (state && typeof state === "object" && !Array.isArray(state)) return state;
-			return (MESSAGES("createSlice", props.name).InvalidState(state), {});
-		};
+/** Normalizes a slice state value into a safe plain object and optionally resolves lazy state initializers. */
+const normalizeSafeState = (method: string, name: string, state: any, acceptLazy?: boolean) => {
+	if (state === undefined || (state && typeof state === "object" && !Array.isArray(state))) return state || {};
+	else if (typeof state === "function" && acceptLazy) return () => normalizeSafeState(method, name, state(), false);
+	if (acceptLazy === false) return (MESSAGES(method, name).InvalidStateProp(state), {});
+	else return (MESSAGES(method, name).InvalidStateClone(state), {});
 };
 
 /** Creates and initializes an OrcheStore slice. */
