@@ -12,5 +12,5 @@ export function StoreProvider<T>(props: StoreProviderProps<T>): React.JSX.Elemen
 		InvalidType: () => MESSAGES("StoreProvider").InvalidStore(store),
 	});
 
-	return <Provider {...rest} store={storeData?.redux} />;
+	return React.createElement(Provider, { ...rest, store: storeData?.redux });
 }
