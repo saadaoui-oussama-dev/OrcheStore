@@ -75,7 +75,7 @@ export const MESSAGES = (method: string, slice?: string | undefined) => {
 
 		UnsupportedReduxProp: (prop: string) => [`'${prop}' is a Redux Toolkit option that is not yet supported and will be ignored.`], // prettier-ignore
 
-		GetMissingUtil: (prop: string) => [`'${prop}' was accessed before registration. Register it with provideUtils(...) or set it to undefined if optional to suppress this warning.`], // prettier-ignore
+		GetMissingUtil: (prop: string) => [`'${prop}' was accessed before registration. Register it with setUtils(...) or set it to undefined if optional to suppress this warning.`], // prettier-ignore
 	};
 
 	type API = typeof exceptions & typeof errors & typeof warnings;

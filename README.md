@@ -38,46 +38,45 @@ The goal is simple:
 ## Table of Contents
 
 - [Introduction](#orchestore)
-	- [Core Principles](#core-principles)
-	- [Why OrcheStore?](#why-orchestore)
-	- [Redux Toolkit Comparison](#redux-toolkit-comparison)
-	- [Architecture Overview](#architecture-overview)
+  - [Core Principles](#core-principles)
+  - [Why OrcheStore?](#why-orchestore)
+  - [Redux Toolkit Comparison](#redux-toolkit-comparison)
+  - [Architecture Overview](#architecture-overview)
 
 - [Quick Example](#quick-example)
 
 - [Slice Layers](#slice-layers)
-	- [name](#name)
-	- [state](#state)
-	- [Mutations](#mutations)
-	- [Methods](#methods)
-	- [Computed State (Planned)](#computed-state-planned)
-	- [Nested Slices](#nested-slices)
-		- [Reusing Slices](#reusing-slices)
-		- [Runtime Paths](#runtime-paths)
+  - [name](#name)
+  - [state](#state)
+  - [Mutations](#mutations)
+  - [Methods](#methods)
+  - [Computed State (Planned)](#computed-state-planned)
+  - [Nested Slices](#nested-slices)
+    - [Reusing Slices](#reusing-slices)
+    - [Runtime Paths](#runtime-paths)
 
 - [State Access & Subscriptions](#state-access--subscriptions)
-	- [State Snapshots](#state-snapshots)
-	- [State Subscriptions](#state-subscriptions)
-	- [Draft State](#draft-state)
+  - [State Snapshots](#state-snapshots)
+  - [State Subscriptions](#state-subscriptions)
+  - [Draft State](#draft-state)
 
 - [Store Integration](#store-integration)
-	- [Creating the Store](#creating-the-store)
-	- [Store Provider](#store-provider)
-	- [Accessing Slices through Store](#accessing-slices-through-store)
-	- [Accessing Store from Slices](#accessing-store-from-slices)
-	- [Root Store Type Extension (Planned)](#root-store-type-extension-planned)
+  - [Creating the Store](#creating-the-store)
+  - [Store Provider](#store-provider)
+  - [Accessing Slices through Store](#accessing-slices-through-store)
+  - [Accessing Store from Slices](#accessing-store-from-slices)
 
 - [Lineage & Clones](#lineage--clones)
-	- [Manual Cloning](#manual-cloning)
-	- [Automatic Cloning](#automatic-cloning)
-	- [Inspecting a Lineage](#inspecting-a-lineage)
-	- [Definition Type Checking](#definition-type-checking)
+  - [Manual Cloning](#manual-cloning)
+  - [Automatic Cloning](#automatic-cloning)
+  - [Inspecting a Lineage](#inspecting-a-lineage)
+  - [Definition Type Checking](#definition-type-checking)
 
 - [Utilities](#utilities)
-	- [Accessing Utilities](#accessing-utilities)
-	- [Utilities Type Extension](#utilities-type-extension)
-	- [Providing Runtime Utilities](#providing-runtime-utilities)
-	- [Using Utilities in Slices](#using-utilities-in-slices)
+  - [Accessing Utilities](#accessing-utilities)
+  - [Utilities Type Extension](#utilities-type-extension)
+  - [Providing Runtime Utilities](#providing-runtime-utilities)
+  - [Using Utilities in Slices](#using-utilities-in-slices)
 
 - [TypeScript Inference](#typescript-inference)
 
@@ -145,8 +144,8 @@ Developers can focus on application behavior rather than framework plumbing.
 
 OrcheStore builds on top of Redux Toolkit while providing a higher-level API for organizing state and behavior.
 
-| Feature                        | OrcheStore           | Redux Toolkit           |
-| ------------------------------ | -------------------- | ----------------------- |
+| Feature                        | OrcheStore            | Redux Toolkit            |
+| ------------------------------ | --------------------- | ------------------------ |
 | Multiple mutation arguments    | ✅                    | ❌ (payload wrappers)    |
 | Direct callable mutations      | ✅                    | ❌ (dispatch required)   |
 | Built-in orchestration methods | ✅                    | ❌                       |
@@ -260,7 +259,7 @@ export const incrementAfter = createAsyncThunk(
 		await new Promise((resolve) => setTimeout(resolve, delay));
 
 		dispatch(counter.actions.increment(amount));
-	}
+	},
 );
 ```
 
@@ -523,10 +522,10 @@ Methods are the orchestration layer of a slice.
 - receive any number of arguments
 - can return synchronous values or Promises
 - can access:
-	- state, mutations, slibling methods, nested slices (through `this`)
-	- Root store (`this.root`)
-	- Parent slice (`this.parent`)
-	- Application-wide utilities (`this.utils`)
+  - state, mutations, slibling methods, nested slices (through `this`)
+  - Root store (`this.root`)
+  - Parent slice (`this.parent`)
+  - Application-wide utilities (`this.utils`)
 
 Methods are not serialized, replayable, or represented in Redux DevTools action history.
 
@@ -627,14 +626,14 @@ import { products } from "./productsSlice";
 import { categories } from "./categoriesSlice";
 
 export const shop = createSlice({
-  name: "shop",
+	name: "shop",
 
-  state: {},
+	state: {},
 
-  children: {
-    products,
-    categories,
-  },
+	children: {
+		products,
+		categories,
+	},
 });
 ```
 
@@ -1022,16 +1021,16 @@ The state transformer:
 
 ```ts
 const crudSlice = createSlice({
-  name: "CRUD-Slice",
+	name: "CRUD-Slice",
 
-  state: {
-    endpoint: "",
-  },
+	state: {
+		endpoint: "",
+	},
 
-  children: {
-    pagination: paginationSlice,
-    dropdown: searchDropdownSlice,
-  },
+	children: {
+		pagination: paginationSlice,
+		dropdown: searchDropdownSlice,
+	},
 });
 
 // Immutable style (returns new state object)
@@ -1107,16 +1106,16 @@ When a parent slice is cloned or reused, all its nested children are automatical
 
 ```ts
 const crudSlice = createSlice({
-  name: "CRUD-Slice",
+	name: "CRUD-Slice",
 
-  state: {
-    endpoint: "",
-  },
+	state: {
+		endpoint: "",
+	},
 
-  children: {
-    pagination: paginationSlice,
-    dropdown: searchDropdownSlice,
-  },
+	children: {
+		pagination: paginationSlice,
+		dropdown: searchDropdownSlice,
+	},
 });
 
 const productsSlice = crudSlice.prototype.clone();
@@ -1203,7 +1202,7 @@ slice2.prototype.isTypeOf(clone1); // false
 
 # Utilities
 
-Application-wide utilities allow slices and the root store to access shared runtime services through `utils`.
+Application-wide utilities allow slices and stores to access shared runtime services through `utils`.
 
 Common use cases include:
 
@@ -1214,28 +1213,33 @@ Common use cases include:
 - runtime values that are difficult to access directly from slices
 - integrations with React hooks and third-party libraries
 
-Utilities are registered using `provideUtils` and are accessible from any slice or the root store.
+Utilities are registered using `setUtils` and are accessible from any slice or the root store.
 
 ## Accessing Utilities
 
 **Available:**
 
-- Through the exposed store or slice instances
+- Through exposed store and slice instances
 
 ```ts
 store.utils;
 slice.utils;
+this.utils; // Inside slice methods and mutations
 ```
 
-- Inside slice methods
+- Through `getUtils`
 
 ```ts
-this.utils.notify("success", "Saved!");
+import { getUtils } from "orchestore";
+
+const utils = getUtils();
 ```
 
 ## Utilities Type Extension
 
-Overriding `OrcheStore.Slots.utils` provides full typing everywhere.
+OrcheStore exposes user-definable type slots through `OrcheStore.Slots`.
+
+By overriding `OrcheStore.Slots.utils`, application-specific utilities become available throughout the framework with full type safety.
 
 ```ts
 import type { NavigateFunction } from "react-router";
@@ -1253,16 +1257,27 @@ declare module "orchestore" {
 }
 ```
 
+**Note:**
+
+`OrcheStore.Slots` can be extended using either `declare module "orchestore"` or `declare global`, depending on your project's type organization preferences.
+
+**Type Safety:**
+
 ```ts
-this.utils; // Before: any
-this.utils; // After: fully typed
+// Before augmentation
+this.utils; // any
+import type { Utils } from "orchestore"; // any
+
+// After augmentation
+this.utils; // fully typed
+import type { Utils } from "orchestore"; // fully typed
 ```
 
 **Rules:**
 
 - `utils` must be an object
 - `null` and `undefined` are excluded automatically
-	- `object | null | undefined` is equivalent to `object`
+  - `object | null | undefined` is equivalent to `object`
 - Invalid types fall back to `any`
 
 ## Providing Runtime Utilities
@@ -1272,11 +1287,11 @@ Application-wide utility values can be registered or updated at runtime.
 ```ts
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { provideUtils } from "orchestore";
+import { setUtils } from "orchestore";
 import { feedbacks } from "./ui-feedbacks";
 import { store } from "./store";
 
-provideUtils({
+setUtils({
 	notify(type, message) {
 		feedbacks.notify(type, message);
 	},
@@ -1286,7 +1301,7 @@ export default function App() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		provideUtils({ navigate });
+		setUtils({ navigate });
 	}, [navigate]);
 
 	return (
@@ -1351,13 +1366,13 @@ const counter = createSlice({
 	},
 
 	children: {
-	  subCounter: createSlice({
-	    name: "subCounter",
+		subCounter: createSlice({
+			name: "subCounter",
 
-	    state: {
-	      value: 0,
-	    },
-	  }),
+			state: {
+				value: 0,
+			},
+		}),
 	},
 });
 ```

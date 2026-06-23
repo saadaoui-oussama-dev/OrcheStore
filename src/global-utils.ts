@@ -21,8 +21,8 @@ export function getUtils(): Utils["utils"] {
 }
 
 /** Registers or updates application-wide utilities. */
-export function provideUtils(value: Partial<Utils["utils"]>): Utils["utils"] {
+export function setUtils(value: Partial<Utils["utils"]>): Utils["utils"] {
 	if (value && typeof value === "object" && !Array.isArray(value)) Object.assign(utils, value);
-	else MESSAGES("provideUtils").InvalidUtilsArgs(value);
+	else MESSAGES("setUtils").InvalidUtilsArgs(value);
 	return utils;
 }

@@ -1,7 +1,7 @@
 import { createStore, getStore } from "./create-store";
 import { createSlice } from "./create-slice";
 import { StoreProvider } from "./store-provider";
-import { getUtils, provideUtils } from "./global-utils";
+import { getUtils, setUtils } from "./global-utils";
 import { setReporting, devConsole } from "./helpers/messages";
 import type { Mutations, Obj, Slice, SliceOptions, Store, StoreOptions } from "../types/internal";
 
@@ -44,7 +44,7 @@ const defaultExport = {
 	StoreProvider,
 
 	/** Registers or updates application-wide utilities. */
-	provideUtils,
+	setUtils,
 
 	/** Returns the current utilities object. */
 	getUtils,
@@ -58,8 +58,8 @@ export {
 	createStoreWrapper as createStore,
 	createSliceWrapper as createSlice,
 	StoreProvider,
-	provideUtils,
 	getUtils,
+	setUtils,
 	setReporting,
 };
 

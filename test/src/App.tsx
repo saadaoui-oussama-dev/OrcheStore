@@ -1,7 +1,7 @@
 import "./App.css";
 import { store } from "./store";
 // import { counter, subCounter, subCounter2, subSubCounter, subSubCounter2 } from "./store/counter";
-import { provideUtils } from "orchestore";
+import { setUtils } from "orchestore";
 
 declare module "orchestore" {
 	export namespace OrcheStore {
@@ -13,7 +13,7 @@ declare module "orchestore" {
 	}
 }
 
-provideUtils({
+setUtils({
 	sleep(ms) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	},
