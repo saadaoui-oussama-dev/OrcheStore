@@ -2,7 +2,7 @@ import type { Factory, FactoryOptions, FactoryOutput, FactoryErrors, FamilyMeta,
 
 const { createNodeFactory }: Factory = {
 	createNodeFactory<N, P, E, A, I>(opts: FactoryOptions<N, P, E, A, I>) {
-		const { factoryName, instantiate, afterInstantiate, options = {} } = opts;
+		const { instantiate, afterInstantiate, options = {} } = opts;
 
 		/** Runtime metadata for all nodes managed by this factory. */
 		const instances = new Map<N, NodeMeta<N, E>>();

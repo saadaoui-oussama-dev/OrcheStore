@@ -63,7 +63,7 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	name: string;
 
 	/** Initial state object or lazy state initializer. */
-	state: S | (() => S);
+	state?: S | (() => S);
 
 	/** Collection of synchronous state transition functions. */
 	mutations?: R & ThisType<Utils>;

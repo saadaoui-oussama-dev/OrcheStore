@@ -13,8 +13,6 @@ type ExtraMeta = { redux: any; reducer: any };
 type Instantiate = { props: AnySliceOptions; expose: ExposerFunction };
 
 const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, CloneArgs<any, any>, Instantiate>({
-	factoryName: "slice",
-
 	options: {
 		adapt(props) {
 			const slice = props?.name;
@@ -147,7 +145,7 @@ const validateNameAndState = (props: Dict) => {
 		MESSAGES("createSlice").InvalidName(props.name);
 
 	const init = props.state;
-	if (!Object.hasOwn(props, "state")) props.state = (MESSAGES("createSlice", props.name).RequiredState(props), {});
+	if (props.state === undefined) props.state = {};
 	else if (init && typeof init === "object" && !Array.isArray(init)) return;
 	else if (typeof init !== "function") props.state = (MESSAGES("createSlice", props.name).InvalidState(init), {});
 	else

@@ -68,13 +68,11 @@ export const MESSAGES = (method: string, slice?: string | undefined) => {
 	};
 
 	const errors = {
-		RequiredState: (any: any) => [`Missing required "state" object.`, ...typed(any, "In")],
-
-		InvalidState: (any: any) => [`"state" must be a non-null object or a function returning one.`, ...typed(any)],
+		DuplicateKey: (layer: string, key: string) => [`${layer} '${key}' conflicts with another exposed member.`],
 
 		InvalidKey: (layer: string, value: any) => [`${layer} key must be a non-empty string without '.' or '/'.`, ...typed(value)], // prettier-ignore
 
-		DuplicateKey: (layer: string, key: string) => [`${layer} '${key}' conflicts with another exposed member.`],
+		InvalidState: (any: any) => [`"state" must be a non-null object or a function returning one.`, ...typed(any)],
 
 		InvalidMutation: (key: string, any: any) => [`Mutation '${key}' must be a function.`, ...typed(any)],
 

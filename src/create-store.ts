@@ -12,8 +12,6 @@ type ExtraMeta = { redux: any; reducer: any };
 type Errors = { NeverExposed?: () => void; InvalidType?: (parent: any) => void };
 
 const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, ExtraMeta>({
-	factoryName: "store",
-
 	options: {
 		adapt(props) {
 			const mismatch = { reducer: "'slices'", reducers: "'slices'", devTools: "", duplicateMiddlewareCheck: "", enhancers: "", middleware: "", preloadedState: "" }; // prettier-ignore

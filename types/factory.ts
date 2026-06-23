@@ -35,9 +35,6 @@ type FactoryErrors<N> = {
 };
 
 type FactoryOptions<N, P = any, E = {}, A = undefined, I = {}> = {
-	/** Human-readable identifier for debugging, diagnostics, and tooling. */
-	factoryName: string;
-
 	/** Creates a node and provides access to its runtime metadata during initialization. */
 	instantiate: (props: P, metadata: NodeMeta<N, E>, family: FamilyMeta<N, P>, cloning: boolean) => I & { node: N };
 
