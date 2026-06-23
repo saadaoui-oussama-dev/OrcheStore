@@ -1,34 +1,28 @@
-import { devConsole } from "./helpers/console";
-import { typeChecker } from "./helpers/type-checker";
-import { object, array, reflect } from "./helpers/object-utils";
-import { globalUtilsErrors } from "./helpers/errors";
-import type { GlobalUtils } from "../types";
+import { MESSAGES } from "./helpers/messages";
+import type { Utils } from "../types";
 
-const globalUtils = new Proxy({} as GlobalUtils["global"], {
+const props = new Set<string | symbol>(["toJSON", "toString"]);
+
+const utils = new Proxy({} as Utils["utils"], {
 	get(target, prop, receiver) {
-		if (!(prop in target)) devConsole.error(...globalUtilsErrors.GetMissingProp(prop));
-		return reflect.get(target, prop, receiver);
+		if (!props.has(prop)) MESSAGES("utils").GetMissingUtil(prop.toString());
+		return Reflect.get(target, prop, receiver);
 	},
 
 	set(target, prop, value, receiver) {
-		return reflect.set(target, prop, value, receiver);
-	},
-
-	deleteProperty(target, prop) {
-		devConsole.warn(...globalUtilsErrors.DeleteProp(prop));
-		return reflect.delete(target, prop);
+		props.add(prop);
+		return Reflect.set(target, prop, value, receiver);
 	},
 });
 
-/** Returns the current global utilities object. */
-export function getGlobalUtils(): GlobalUtils["global"] {
-	return globalUtils;
+/** Returns the current utilities object. */
+export function getUtils(): Utils["utils"] {
+	return utils;
 }
 
-/** Registers or updates application-wide global utilities. */
-export function provideGlobalUtils(value: Partial<GlobalUtils["global"]>): GlobalUtils["global"] {
-	const typeError = typeChecker(value, (v) => v && typeof v === 'object' && !array.isArray(v)); // prettier-ignore
-	if (typeError) devConsole.error(globalUtilsErrors.InvalidArgs(), ...typeError);
-	else object.assign(globalUtils, value);
-	return globalUtils;
+/** Registers or updates application-wide utilities. */
+export function provideUtils(value: Partial<Utils["utils"]>): Utils["utils"] {
+	if (value && typeof value === "object" && !Array.isArray(value)) Object.assign(utils, value);
+	else MESSAGES("provideUtils").InvalidUtilsArgs(value);
+	return utils;
 }

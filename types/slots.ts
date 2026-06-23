@@ -14,13 +14,13 @@ type Definition<T, Rule, Default> = T extends keyof OrcheStore.Slots
 		: Default
 	: Default;
 
-/** Resolved type for application-wide global utilities. */
-type GlobalUtils = {
-	/** Application-wide global utilities. */
-	global: Definition<"global", Dict, any>;
+/** Resolved type for application-wide utilities. */
+type Utils = {
+	/** Application-wide utilities. */
+	utils: Definition<"utils", Dict, any>;
 };
 
 /** Resolved type for the application root store. */
 type RootStore = Definition<"root", Store<unknown>, any>;
 
-export type { RootStore, GlobalUtils };
+export type { RootStore, Utils };

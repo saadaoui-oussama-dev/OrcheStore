@@ -1,19 +1,19 @@
 import "./App.css";
 import { store } from "./store";
 // import { counter, subCounter, subCounter2, subSubCounter, subSubCounter2 } from "./store/counter";
-import { provideGlobalUtils } from "orchestore";
+import { provideUtils } from "orchestore";
 
 declare module "orchestore" {
 	export namespace OrcheStore {
 		interface Slots {
-			global: {
+			utils: {
 				sleep: (ms: number) => Promise<void>;
 			};
 		}
 	}
 }
 
-provideGlobalUtils({
+provideUtils({
 	sleep(ms) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	},
@@ -25,8 +25,6 @@ function App() {
 	// const subCount2 = subCounter2.useSelect((state) => state);
 	// const subSubCount = subSubCounter.useSelect((state) => state);
 	// const subSubCount2 = subSubCounter2.useSelect((state) => state);
-
-  console.log(store.counter.subCounter.prototype.isTypeOf(store.counter2.subCounter));
 
 	return (
 		<>

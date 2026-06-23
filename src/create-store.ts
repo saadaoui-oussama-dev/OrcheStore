@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
-import { getGlobalUtils } from "./global-utils";
+import { getUtils } from "./global-utils";
 import { createNodeFactory } from "./node-factory";
 import { attachSlice, slices } from "./create-slice";
 import { devConsole } from "./helpers/console";
@@ -25,7 +25,7 @@ const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, Extra
 
 		object.defineReadonly(store, "name", () => "default");
 
-		object.defineReadonly(store, "global", () => getGlobalUtils());
+		object.defineReadonly(store, "utils", () => getUtils());
 
 		object.defineMethod(store, "getState", () => meta.redux.getState());
 

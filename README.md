@@ -73,11 +73,11 @@ The goal is simple:
 	- [Inspecting a Lineage](#inspecting-a-lineage)
 	- [Definition Type Checking](#definition-type-checking)
 
-- [Global Utilities](#global-utilities)
-	- [Accessing Global Utilities](#accessing-global-utilities)
+- [Utilities](#utilities)
+	- [Accessing Utilities](#accessing-utilities)
 	- [Utilities Type Extension](#utilities-type-extension)
 	- [Providing Runtime Utilities](#providing-runtime-utilities)
-	- [Using Global Utilities in Slices](#using-global-utilities-in-slices)
+	- [Using Utilities in Slices](#using-utilities-in-slices)
 
 - [TypeScript Inference](#typescript-inference)
 
@@ -126,16 +126,15 @@ This allows state and application logic to evolve together within the same domai
 
 Many common Redux patterns are automated by default:
 
-| Traditional Redux Pattern     | OrcheStore                                      |
-| ----------------------------- | ----------------------------------------------- |
-| Action creators               | Direct callable mutations                       |
-| Thunks                        | Built-in methods                                |
-| Dispatch calls                | Direct function calls                           |
-| `PayloadAction` wrappers      | Native function arguments                       |
-| Cross-slice imports           | Root store access                               |
-| Shared service wiring         | Global utilities                                |
+| Traditional Redux Pattern     | OrcheStore                                       |
+| ----------------------------- | ------------------------------------------------ |
+| Dispatch with Action creators | Direct callable mutations                        |
+| `PayloadAction` wrappers      | Native function arguments                        |
+| Thunks                        | Built-in methods                                 |
+| Cross-slice imports           | Root store access                                |
+| Shared service wiring         | Application-wide utilities                       |
 | Manual state tree composition | Nested slices with automatic cloning & isolation |
-| Complex type declarations     | Automatic inference                             |
+| Complex type declarations     | Automatic inference                              |
 | Instance identity management  | Lineage-based slice model (shared definition, isolated mounts) |
 
 The result is a simpler architecture with fewer moving parts, less boilerplate, and a more direct development experience.
@@ -146,20 +145,18 @@ Developers can focus on application behavior rather than framework plumbing.
 
 OrcheStore builds on top of Redux Toolkit while providing a higher-level API for organizing state and behavior.
 
-| Feature                        | OrcheStore | Redux Toolkit |
-| ------------------------------ | ---------- | ------------- |
-| Multiple mutation arguments    | ✅          | ❌             |
-| Direct callable mutations      | ✅          | ❌             |
-| `PayloadAction` wrappers       | ❌          | ✅             |
-| Dispatch required              | ❌          | ✅             |
-| Built-in orchestration methods | ✅          | ❌             |
+| Feature                        | OrcheStore           | Redux Toolkit           |
+| ------------------------------ | -------------------- | ----------------------- |
+| Multiple mutation arguments    | ✅                    | ❌ (payload wrappers)    |
+| Direct callable mutations      | ✅                    | ❌ (dispatch required)   |
+| Built-in orchestration methods | ✅                    | ❌                       |
 | Nested slice composition       | ✅ (isolated context) | ⚠️ Manual (shared state) |
-| Automatic path generation      | ✅          | ⚠️ Manual     |
-| Global utilities               | ✅          | ❌             |
-| Unified slice API              | ✅          | ❌             |
-| Per-slice React hooks          | ✅          | ❌             |
-| Deep TypeScript inference      | ✅          | ⚠️ Partial    |
-| Lineage & cloning model        | ✅          | ❌             |
+| Automatic path generation      | ✅                    | ⚠️ Manual                |
+| Application-wide utilities     | ✅                    | ❌                       |
+| Unified slice API              | ✅                    | ❌                       |
+| Per-slice React hooks          | ✅                    | ❌                       |
+| Deep TypeScript inference      | ✅                    | ⚠️ Partial               |
+| Lineage & cloning model        | ✅                    | ❌                       |
 
 OrcheStore does not replace Redux Toolkit. Instead, it builds on top of it by automating common patterns and providing a more cohesive developer experience.
 
@@ -527,7 +524,9 @@ Methods are the orchestration layer of a slice.
 - can return synchronous values or Promises
 - can access:
 	- state, mutations, slibling methods, nested slices (through `this`)
-	- Application-wide utilities (`this.global`)
+	- Root store (`this.root`)
+	- Parent slice (`this.parent`)
+	- Application-wide utilities (`this.utils`)
 
 Methods are not serialized, replayable, or represented in Redux DevTools action history.
 
@@ -581,7 +580,7 @@ const counter = createSlice({
 		async incrementAfter(amount: number, delay = 1000) {
 			await new Promise((resolve) => setTimeout(resolve, delay));
 			this.increment(amount);
-			this.global.logger.info("Counter incremented");
+			this.utils.logger.info("Counter incremented");
 		},
 	},
 });
@@ -1202,9 +1201,9 @@ slice2.prototype.isTypeOf(clone1); // false
 
 ---
 
-# Global Utilities
+# Utilities
 
-Global utilities allow slices and the root store to access shared runtime services through `global`.
+Application-wide utilities allow slices and the root store to access shared runtime services through `utils`.
 
 Common use cases include:
 
@@ -1215,28 +1214,28 @@ Common use cases include:
 - runtime values that are difficult to access directly from slices
 - integrations with React hooks and third-party libraries
 
-Utilities are registered using `provideGlobalUtils` and are accessible from any slice or the root store.
+Utilities are registered using `provideUtils` and are accessible from any slice or the root store.
 
-## Accessing Global Utilities
+## Accessing Utilities
 
 **Available:**
 
 - Through the exposed store or slice instances
 
 ```ts
-store.global;
-slice.global;
+store.utils;
+slice.utils;
 ```
 
 - Inside slice methods
 
 ```ts
-this.global.notify("success", "Saved!");
+this.utils.notify("success", "Saved!");
 ```
 
 ## Utilities Type Extension
 
-Overriding `OrcheStore.Slots.global` provides full typing everywhere.
+Overriding `OrcheStore.Slots.utils` provides full typing everywhere.
 
 ```ts
 import type { NavigateFunction } from "react-router";
@@ -1244,7 +1243,7 @@ import type { NavigateFunction } from "react-router";
 declare module "orchestore" {
 	namespace OrcheStore {
 		interface Slots {
-			global: {
+			utils: {
 				navigate: NavigateFunction;
 
 				notify(type: "info" | "error" | "success", message: string): void;
@@ -1255,29 +1254,29 @@ declare module "orchestore" {
 ```
 
 ```ts
-this.global; // Before: any
-this.global; // After: fully typed
+this.utils; // Before: any
+this.utils; // After: fully typed
 ```
 
 **Rules:**
 
-- `global` must be an object
+- `utils` must be an object
 - `null` and `undefined` are excluded automatically
 	- `object | null | undefined` is equivalent to `object`
 - Invalid types fall back to `any`
 
 ## Providing Runtime Utilities
 
-Global utility values can be registered or updated at runtime.
+Application-wide utility values can be registered or updated at runtime.
 
 ```ts
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { provideGlobalUtils } from "orchestore";
+import { provideUtils } from "orchestore";
 import { feedbacks } from "./ui-feedbacks";
 import { store } from "./store";
 
-provideGlobalUtils({
+provideUtils({
 	notify(type, message) {
 		feedbacks.notify(type, message);
 	},
@@ -1287,7 +1286,7 @@ export default function App() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		provideGlobalUtils({ navigate });
+		provideUtils({ navigate });
 	}, [navigate]);
 
 	return (
@@ -1298,9 +1297,9 @@ export default function App() {
 }
 ```
 
-## Using Global Utilities in Slices
+## Using Utilities in Slices
 
-Global utilities can be used anywhere a slice instance is available.
+Application-wide utilities can be used anywhere a slice instance is available.
 
 ```ts
 methods: {
@@ -1310,13 +1309,13 @@ methods: {
 
 			const response = await api.users.add(data);
 
-			this.global.notify("success", "User added successfully!");
+			this.utils.notify("success", "User added successfully!");
 
 			this.setLoading(false);
 
-			this.global.navigate("/users/" + response.id);
+			this.utils.navigate("/users/" + response.id);
 		} catch (error) {
-			this.global.notify("error", "Failed to add user");
+			this.utils.notify("error", "Failed to add user");
 
 			console.error(error);
 		}
@@ -1385,10 +1384,10 @@ OrcheStore also exposes user-definable type slots through `OrcheStore.Slots`.
 
 These slots allow application-specific types to be injected into the framework and become available everywhere with full type safety.
 
-| Slot                       | Purpose                 |
-| -------------------------- | ----------------------- |
-| `OrcheStore.Slots.root`   | Root store typing       |
-| `OrcheStore.Slots.global` | Global utilities typing |
+| Slot                     | Purpose                           |
+| ------------------------ | --------------------------------- |
+| `OrcheStore.Slots.root`  | Root store typing                 |
+| `OrcheStore.Slots.utils` | Application-wide utilities typing |
 
 ```ts
 declare module "orhestore" {
@@ -1396,7 +1395,7 @@ declare module "orhestore" {
 		interface Slots {
 			root: typeof store; // Bugfix: Causes a circular type inference
 
-			global: {
+			utils: {
 				navigate: NavigateFunction;
 				notify(type: "info" | "error" | "success", message: string): void;
 			};
@@ -1409,10 +1408,10 @@ This provides full typing for APIs such as:
 
 ```ts
 this.root;
-this.global;
 
-store.global;
-counter.global;
+store.utils;
+counter.utils;
+this.utils;
 ```
 
 ---

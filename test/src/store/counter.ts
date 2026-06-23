@@ -20,7 +20,7 @@ export const subSubCounter = createSlice({
 
 	methods: {
 		async incrementAfter(amount: number, delay = 1000) {
-			await this.global.sleep(delay);
+			await this.utils.sleep(delay);
 			this.increment(amount);
 		},
 	},
@@ -46,7 +46,7 @@ export const subSubCounter2 = createSlice({
 
 	methods: {
 		async incrementAfter(amount: number, delay = 1000) {
-			await this.global.sleep(delay);
+			await this.utils.sleep(delay);
 			this.increment(amount);
 		},
 	},
@@ -72,7 +72,7 @@ export const subCounter = createSlice({
 
 	methods: {
 		async incrementAfter(amount: number, delay = 1000) {
-			await this.global.sleep(delay);
+			await this.utils.sleep(delay);
 			this.increment(amount);
 		},
 	},
@@ -103,7 +103,7 @@ export const subCounter2 = createSlice({
 
 	methods: {
 		async incrementAfter(amount: number, delay = 1000) {
-			await this.global.sleep(delay);
+			await this.utils.sleep(delay);
 			this.increment(amount);
 		},
 	},
@@ -132,7 +132,7 @@ export const counter = createSlice({
 
 	methods: {
 		async incrementAfter(amount: number, delay = 1000) {
-			await this.global.sleep(delay);
+			await this.utils.sleep(delay);
 			this.increment(amount);
 		},
 	},
@@ -142,3 +142,5 @@ export const counter = createSlice({
 		subCounter2,
 	},
 });
+
+// subSubCounter, subSubCounter2, subCounter, subCounter2, counter

@@ -1,7 +1,7 @@
-import type { Dict, GlobalUtils, Obj, OmitNever, ReadOnly, RootStore, Store, Tail } from "./internal";
+import type { Dict, Utils, Obj, OmitNever, ReadOnly, RootStore, Store, Tail } from "./internal";
 
 /** Runtime slice API exposed by createSlice(...). */
-type slice<S extends Obj, R extends Mutations<S, C>, M, C> = GlobalUtils & {
+type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
 	/** Unique slice identifier. */
 	readonly name: string;
 
@@ -11,8 +11,8 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = GlobalUtils & {
 	/** Returns the latest immutable state snapshot. */
 	readonly getState: () => SliceState.State<S, C>;
 
-	/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `root` store, `rootState` and `global` utilities. */
-	readonly useSelect: <T>(selector: (this: GlobalUtils, state: SliceState.State<S, C>, context: GlobalUtils) => T) => T;
+	/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `root` store, `rootState` and `utils` utilities. */
+	readonly useSelect: <T>(selector: (this: Utils, state: SliceState.State<S, C>, context: Utils) => T) => T;
 
 	/** Root store that owns this slice instance. */
 	root: Store<any>;
@@ -66,13 +66,13 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	state: S | (() => S);
 
 	/** Collection of synchronous state transition functions. */
-	mutations?: R & ThisType<GlobalUtils>;
+	mutations?: R & ThisType<Utils>;
 
 	/** Collection of slice methods and orchestration logic. */
 	methods?: M & ThisType<slice<S, R, M, C> & { root: RootStore }>;
 
 	/** Collection of derived state functions. */ // TODO: Including root, and child slices.
-	// computed?: G & ThisType<GlobalUtils & Omit<G, "global">>;
+	// computed?: G & ThisType<Utils & Omit<G, "utils">>;
 
 	/** Collection of nested child slices. */
 	children?: C;
@@ -101,7 +101,7 @@ namespace SliceState {
 
 /** Reserved slice member names that cannot be overridden by user-defined APIs. */
 type ReservedSliceKeys<R = {}, M = {}> =
-	| ("name" | "path" | "computed" | "root" | "parent" | "prototype" | "global" | "getState" | "useSelect")
+	| ("name" | "path" | "computed" | "root" | "parent" | "prototype" | "utils" | "getState" | "useSelect")
 	| (keyof R | keyof M);
 
 type AnySlice = slice<any, Mutations<any, any>, any, any>;

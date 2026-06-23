@@ -1,7 +1,7 @@
 import { ReducerType, createSlice as sliceCreator } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
 import { getStore } from "./create-store";
-import { getGlobalUtils } from "./global-utils";
+import { getUtils } from "./global-utils";
 import { createNodeFactory } from "./node-factory";
 import { devConsole } from "./helpers/console";
 import { sliceErrors } from "./helpers/errors";
@@ -51,7 +51,7 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		object.defineReadonly(slice, "path", () => meta.path);
 
 		// Runtime ownership and global context access.
-		object.defineReadonly(slice, "global", () => getGlobalUtils());
+		object.defineReadonly(slice, "utils", () => getUtils());
 		object.defineReadonly(slice, "root", () => store().node as any);
 		object.defineReadonly(slice, "parent", () => instances.get(meta.parents[0])?.node);
 
@@ -62,7 +62,7 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 			return state || {};
 		});
 		object.defineMethod(slice, "useSelect", (selector: any) => {
-			const context = { global: getGlobalUtils(), root: store("slice.useSelect").node };
+			const context = { utils: getUtils(), root: store("slice.useSelect")?.node };
 			return useSelector((state: any) => {
 				meta.path.split(".").forEach((part) => (state = (state || {})[part]));
 				return selector.apply(context, [state || {}, context]);

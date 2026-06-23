@@ -1,17 +1,17 @@
 import type { ProviderProps } from "react-redux";
-import type { GlobalUtils, ReadOnly, OmitNever, Slice, SliceState } from "./internal";
+import type { Utils, ReadOnly, OmitNever, Slice, SliceState } from "./internal";
 
 /** Runtime store API exposed by createStore(...). */
 type store<C> = OmitNever<
-	GlobalUtils & {
+	Utils & {
 		/** Unique store identifier. Currently this is set to "default" and is nt configurable */
 		readonly name: "default";
 
 		/** Returns the latest immutable state snapshot. */
 		readonly getState: () => StoreState<C>;
 
-		/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `global` utilities. */
-		readonly useSelect: <T>(selector: (this: GlobalUtils, state: StoreState<C>, context: GlobalUtils) => T) => T;
+		/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `utils` utilities. */
+		readonly useSelect: <T>(selector: (this: Utils, state: StoreState<C>, context: Utils) => T) => T;
 	} & {
 		/** Exposed slices. */
 		readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer R, infer M, infer C>
@@ -43,7 +43,7 @@ type StoreProviderProps<T = any> = Omit<ProviderProps, "store" | "serverState" |
 
 /** Reserved store member names that cannot be overridden by user-defined APIs. */
 type ReservedStoreKeys<R = {}, M = {}> =
-	| ("name" | "computed" | "global" | "getState" | "useSelect")
+	| ("name" | "computed" | "utils" | "getState" | "useSelect")
 	| (keyof R | keyof M);
 
 type AnyStore = store<any>;
