@@ -12,7 +12,9 @@ type ExtraMeta = { redux: ReturnType<typeof sliceCreator>; reducer: Reducer<unkn
 
 type Instantiate = { props: AnySliceOptions; expose: ExposerFunction };
 
-const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, CloneArgs<any, any>, Instantiate>({
+const createSliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, CloneArgs, Instantiate>;
+
+const { families, instances, create, attach, clone } = createSliceFactory({
 	options: {
 		adapt(props) {
 			const slice = props?.name;
@@ -153,8 +155,6 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		return slice;
 	},
 });
-
-const { families, instances, create, attach, clone } = sliceFactory;
 
 /** Validate the slice name and initial state. */
 const validateNameAndState = (props: Dict) => {

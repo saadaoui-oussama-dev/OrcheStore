@@ -117,7 +117,7 @@ type AnySlice = slice<any, Mutations<any, any>, any, any>;
 
 type AnySliceOptions = sliceOptions<any, Mutations<any, any>, any, any>;
 
-type CloneArgs<S extends Obj, C> = {
+type CloneArgs<S extends Obj = any, C = any> = {
 	/** Identifies the originating slice for validation and tracking issues source. */
 	name?: string;
 
