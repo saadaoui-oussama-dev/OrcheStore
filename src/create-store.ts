@@ -48,6 +48,7 @@ const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, Extra
 		// Create and register the underlying Redux Toolkit store.
 		meta.redux = configureStore({
 			reducer: meta.reducer,
+			devTools: props.devTools,
 		});
 
 		return { node: store };

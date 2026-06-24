@@ -109,7 +109,7 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		Object.entries(meta.redux.actions).map(([key, action]: [string, any]) => {
 			(slice as any)[key] = (...args: any[]) => {
 				args = args.length ? action(args) : action();
-				store("slice-mutation")?.redux.dispatch({ ...args, meta: { path: meta.path } } as any);
+				store("slice::mutation")?.redux.dispatch({ ...args, meta: { path: meta.path } } as any);
 			};
 		});
 

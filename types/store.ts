@@ -1,4 +1,5 @@
 import type { ProviderProps } from "react-redux";
+import type { ConfigureStoreOptions } from "@reduxjs/toolkit";
 import type { Utils, ReadOnly, OmitNever, Slice, SliceState } from "./internal";
 
 /** Runtime store API exposed by createStore(...). */
@@ -21,7 +22,10 @@ type store<C> = OmitNever<
 >;
 
 /** Configuration object used to create a store. */
-type storeOptions<C> = {
+type storeOptions<C> = Omit<
+	ConfigureStoreOptions,
+	"reducer" | "middleware" | "duplicateMiddlewareCheck" | "preloadedState" | "enhancers"
+> & {
 	/** Collection of slices. */
 	slices: C;
 };
