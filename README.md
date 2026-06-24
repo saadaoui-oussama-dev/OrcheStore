@@ -37,127 +37,90 @@ The goal is simple:
 
 ## Table of Contents
 
-- [Introduction](#orchestore)
-  - [Core Principles](#core-principles)
-  - [Why OrcheStore?](#why-orchestore)
-  - [Redux Toolkit Comparison](#redux-toolkit-comparison)
-  - [Architecture Overview](#architecture-overview)
+* [Introduction](#orchestore)
+  * [Core Principles](#core-principles)
+  * [Why OrcheStore?](#why-orchestore)
+  * [Architecture Overview](#architecture-overview)
 
-- [Quick Example](#quick-example)
+* [Quick Example](#quick-example)
 
-- [Slice Layers](#slice-layers)
-  - [name](#name)
-  - [state](#state)
-  - [Mutations](#mutations)
-  - [Methods](#methods)
-  - [Computed State (Planned)](#computed-state-planned)
-  - [Nested Slices](#nested-slices)
-    - [Reusing Slices](#reusing-slices)
-    - [Runtime Paths](#runtime-paths)
+* [Slice Layers](#slice-layers)
+  * [name](#name)
+  * [state](#state)
+  * [Mutations](#mutations)
+  * [Methods](#methods)
+  * [Computed State (Planned)](#computed-state-planned)
+  * [Nested Slices](#nested-slices)
+    * [Accessing Children through Parent Slice](#accessing-children-through-parent-slice)
+    * [Accessing Parent Slice from Children](#accessing-parent-slice-from-children)
+    * [Reusing Slices](#reusing-slices)
+    * [Runtime Paths](#runtime-paths)
 
-- [State Access & Subscriptions](#state-access--subscriptions)
-  - [State Snapshots](#state-snapshots)
-  - [State Subscriptions](#state-subscriptions)
-  - [Draft State](#draft-state)
+* [State Access & Subscriptions](#state-access--subscriptions)
+  * [State Snapshots](#state-snapshots)
+  * [State Subscriptions](#state-subscriptions)
+  * [Draft State](#draft-state)
 
-- [Store Integration](#store-integration)
-  - [Creating the Store](#creating-the-store)
-  - [Store Provider](#store-provider)
-  - [Accessing Slices through Store](#accessing-slices-through-store)
-  - [Accessing Store from Slices](#accessing-store-from-slices)
+* [Store Integration](#store-integration)
+  * [Creating the Store](#creating-the-store)
+  * [Store Provider](#store-provider)
+  * [Accessing Slices through Store](#accessing-slices-through-store)
+  * [Accessing Store from Slices](#accessing-store-from-slices)
 
-- [Lineage & Clones](#lineage--clones)
-  - [Manual Cloning](#manual-cloning)
-  - [Automatic Cloning](#automatic-cloning)
-  - [Inspecting a Lineage](#inspecting-a-lineage)
-  - [Definition Type Checking](#definition-type-checking)
+* [Lineage & Clones](#lineage--clones)
+  * [Manual Cloning](#manual-cloning)
+  * [Automatic Cloning](#automatic-cloning)
+  * [Inspecting a Lineage](#inspecting-a-lineage)
+  * [Definition Type Checking](#definition-type-checking)
 
-- [Utilities](#utilities)
-  - [Accessing Utilities](#accessing-utilities)
-  - [Utilities Type Extension](#utilities-type-extension)
-  - [Providing Runtime Utilities](#providing-runtime-utilities)
-  - [Using Utilities in Slices](#using-utilities-in-slices)
+* [Utilities](#utilities)
+  * [Accessing Utilities](#accessing-utilities)
+  * [Utilities Type Extension](#utilities-type-extension)
+  * [Providing Runtime Utilities](#providing-runtime-utilities)
+  * [Using Utilities in Slices](#using-utilities-in-slices)
 
-- [TypeScript Inference](#typescript-inference)
+* [TypeScript Inference](#typescript-inference)
 
-- [Status](#status)
+* [Status](#status)
 
 ---
 
 ## Core Principles
 
-- Simplify state management architecture
-- Automate repetitive Redux patterns
-- Reduce infrastructure code
-- Centralize state and application logic
-- Provide direct and intuitive APIs
-- Preserve predictable state transitions
-- Maintain strong TypeScript inference
-- Scale naturally through composition
+* Simplify state management architecture
+* Automate repetitive Redux patterns
+* Reduce infrastructure code
+* Centralize state and application logic
+* Provide direct and intuitive APIs
+* Preserve predictable state transitions
+* Maintain strong TypeScript inference
+* Scale naturally through composition
 
 ## Why OrcheStore?
 
-Redux Toolkit significantly improves the Redux developer experience, but many applications still require developers to coordinate logic across multiple concepts:
+Redux Toolkit greatly improves the Redux experience, but applications still often require developers to coordinate reducers, actions, selectors, thunks, hooks, utilities, and state composition.
 
-- reducers
-- action creators
-- thunks
-- selectors
-- middleware
-- hooks
-- utility functions
+OrcheStore builds on top of Redux Toolkit and combines these patterns into a unified slice model. A slice can encapsulate state, mutations, methods, computed values, child slices, and shared application utilities within a single module.
 
-As applications grow, state management often becomes less about solving business problems and more about connecting infrastructure.
+The goal is to reduce framework plumbing and allow application behavior to remain close to the state it operates on.
 
-OrcheStore reduces that coordination overhead by exposing state management through unified slice modules.
+| Concern            | Redux Toolkit                            | OrcheStore                                      |
+| ------------------ | ---------------------------------------- | ----------------------------------------------- |
+| State updates      | Actions + dispatch                       | Direct callable mutations                       |
+| Mutation arguments | `PayloadAction` wrappers                 | Native function arguments                       |
+| Async logic        | Separate thunks                          | Built-in methods                                |
+| State selection    | Global store selector hooks              | Global + slice-scoped selection hooks           |
+| Cross-slice access | Imports & wiring                         | Runtime tree access (Root / Parent / Children)  |
+| Shared services    | Manual integration                       | Application-wide utilities                      |
+| State composition  | Manual reducer composition               | Nested slices                                   |
+| Identity model     | Singleton-like slice definition          | Lineage-based identity system                   |
+| Instance reuse     | Function-level reuse of slice reducers   | Reused slices create isolated runtime instances |
+| Cloning model      | Factory pattern required for re-creation | Built-in cloning with lineage tracking          |
+| Exposed API        | Reducers, actions and some helpers       | Direct usable slice APIs                        |
+| Type inference     | Strong                                   | Deep end-to-end inference                       |
+| Developer focus    | Connect infrastructure                   | Implement behavior                              |
 
-A slice is more than a state container. It is a runtime module that can encapsulate:
-
-- state
-- computed state
-- mutations
-- methods
-- selectors
-- child slices
-- shared utilities
-
-This allows state and application logic to evolve together within the same domain boundary.
-
-Many common Redux patterns are automated by default:
-
-| Traditional Redux Pattern     | OrcheStore                                       |
-| ----------------------------- | ------------------------------------------------ |
-| Dispatch with Action creators | Direct callable mutations                        |
-| `PayloadAction` wrappers      | Native function arguments                        |
-| Thunks                        | Built-in methods                                 |
-| Cross-slice imports           | Root store access                                |
-| Shared service wiring         | Application-wide utilities                       |
-| Manual state tree composition | Nested slices with automatic cloning & isolation |
-| Complex type declarations     | Automatic inference                              |
-| Instance identity management  | Lineage-based slice model (shared definition, isolated mounts) |
-
-The result is a simpler architecture with fewer moving parts, less boilerplate, and a more direct development experience.
-
-Developers can focus on application behavior rather than framework plumbing.
-
-## Redux Toolkit Comparison
-
-OrcheStore builds on top of Redux Toolkit while providing a higher-level API for organizing state and behavior.
-
-| Feature                        | OrcheStore            | Redux Toolkit            |
-| ------------------------------ | --------------------- | ------------------------ |
-| Multiple mutation arguments    | ✅                    | ❌ (payload wrappers)    |
-| Direct callable mutations      | ✅                    | ❌ (dispatch required)   |
-| Built-in orchestration methods | ✅                    | ❌                       |
-| Nested slice composition       | ✅ (isolated context) | ⚠️ Manual (shared state) |
-| Automatic path generation      | ✅                    | ⚠️ Manual                |
-| Application-wide utilities     | ✅                    | ❌                       |
-| Unified slice API              | ✅                    | ❌                       |
-| Per-slice React hooks          | ✅                    | ❌                       |
-| Deep TypeScript inference      | ✅                    | ⚠️ Partial               |
-| Lineage & cloning model        | ✅                    | ❌                       |
-
-OrcheStore does not replace Redux Toolkit. Instead, it builds on top of it by automating common patterns and providing a more cohesive developer experience.
+OrcheStore does not replace Redux Toolkit. It builds on top of it, providing a higher-level API for organizing state and application behavior with stronger automation of Redux patterns and reduced coordination overhead for developers.
 
 ## Architecture Overview
 
@@ -611,7 +574,7 @@ This currently not supported
 
 Slices can be composed by registering other slice instances through the `children` property.
 
-This allows related state and behavior to be organized into a hierarchical structure while preserving full type inference and ownership isolation.
+This allows related state and behavior to be structured into a hierarchical ownership tree, while preserving full type inference, runtime path resolution, and instance isolation.
 
 ```ts
 import { products } from "./productsSlice";
@@ -629,9 +592,9 @@ export const shop = createSlice({
 });
 ```
 
-**Accessing Child Slices:**
+### Accessing Children through Parent Slice
 
-Child slices are exposed directly on their parent slice.
+Child slices are exposed directly on their parent slice instance.
 
 ```ts
 shop.products.add(...)
@@ -640,12 +603,22 @@ shop.categories.create(...)
 console.log(shop.products.getState());
 ```
 
-Deeply nested slice hierarchies are fully supported.
+Deeply nested slice trees are fully supported, including recursive composition.
 
 ```ts
 admin.users.permissions.grant(...);
 
 console.log(admin.users.permissions.getState());
+```
+
+### Accessing Parent Slice from Children
+
+Every slice instance has a runtime reference to its parent via `slice.parent`.
+
+This allows also child slices to interact with sibling slices through the parent ownership scope.
+
+```ts
+this.parent.categories.getState().list;
 ```
 
 ### Reusing Slices
@@ -905,7 +878,7 @@ console.log(store.counter.getState());
 
 ## Accessing Store from Slices
 
-Every slice has access to the root store instance through `this.root`.
+Every slice has access to the root store instance via `slice.root`.
 
 ```ts
 this.root.auth.getState().isAuthenticated;
