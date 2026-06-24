@@ -1,4 +1,4 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, type Action, type Reducer } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
 import { getUtils } from "./global-utils";
 import { createNodeFactory } from "./node-factory";
@@ -8,7 +8,8 @@ import { defineMethod, defineReadonly } from "./helpers/object-utils";
 import { createExposer, normalizeProps } from "./helpers/validators";
 import type { AnyStore, AnyStoreOptions, Store, StoreOptions } from "../types/internal";
 
-type ExtraMeta = { redux: any; reducer: any };
+type ExtraMeta = { redux: ReturnType<typeof configureStore>; reducer: Reducer<unknown, Action, unknown> };
+
 type Errors = { NeverExposed?: () => void; InvalidType?: (parent: any) => void };
 
 const { instances, create } = createNodeFactory<AnyStore, AnyStoreOptions, ExtraMeta>({

@@ -1,4 +1,4 @@
-import { ReducerType, createSlice as sliceCreator } from "@reduxjs/toolkit";
+import { ReducerType, createSlice as sliceCreator, type Reducer } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
 import { getStore } from "./create-store";
 import { getUtils } from "./global-utils";
@@ -8,7 +8,7 @@ import { defineMethod, defineReadonly } from "./helpers/object-utils";
 import { createExposer, normalizeProps } from "./helpers/validators";
 import type { AnySlice, AnySliceOptions, CloneArgs, Dict, ExposerFunction, Mutations, Obj, Slice, SliceOptions } from "../types/internal"; // prettier-ignore
 
-type ExtraMeta = { redux: any; reducer: any };
+type ExtraMeta = { redux: ReturnType<typeof sliceCreator>; reducer: Reducer<unknown> };
 
 type Instantiate = { props: AnySliceOptions; expose: ExposerFunction };
 
@@ -23,7 +23,7 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 
 		clone(props, meta, _, payload) {
 			if (payload?.object) return { ...props, state: payload?.object };
-			const originState = meta.reducer(undefined, { type: "@@CLONE" });
+			const originState: any = meta.reducer(undefined, { type: "@@CLONE" });
 			const transformedState = payload?.transform ? payload.transform(originState) : undefined;
 			const clonedState = transformedState === undefined ? originState : transformedState;
 			const state = normalizeSafeState("slice.clone", payload?.name ?? "", clonedState);
@@ -84,7 +84,7 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		// State access and React subscription APIs.
 		defineMethod(slice, "getState", () => {
 			let state = store("slice.getState")?.redux.getState();
-			meta.path.split(".").forEach((part) => (state = (state || {})[part]));
+			meta.path.split(".").forEach((part) => (state = ((state as any) || {})[part]));
 			return state || {};
 		});
 		defineMethod(slice, "useSelect", (selector: any) => {
@@ -109,7 +109,7 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		Object.entries(meta.redux.actions).map(([key, action]: [string, any]) => {
 			(slice as any)[key] = (...args: any[]) => {
 				args = args.length ? action(args) : action();
-				store("slice-mutation")?.redux.dispatch({ ...args, meta: { path: meta.path } });
+				store("slice-mutation")?.redux.dispatch({ ...args, meta: { path: meta.path } } as any);
 			};
 		});
 
@@ -140,7 +140,7 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		meta.reducer = (state: any, action: any) => {
 			const actionPath = action?.meta?.path;
 			if (typeof actionPath === "string" && !actionPath.startsWith(meta.path)) return state;
-			const nextState = { ...meta.redux.reducer(state, action) };
+			const nextState = { ...(meta.redux.reducer(state, action) as any) };
 			for (const [key, reducer] of children) nextState[key] = reducer(nextState?.[key], action);
 			return nextState;
 		};
