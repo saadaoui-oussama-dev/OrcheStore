@@ -82,11 +82,6 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		defineReadonly(slice, "parent", () => instances.get(meta.parents[0])?.node);
 
 		// State access and React subscription APIs.
-		defineMethod(slice, "getState", () => {
-			let state = store("slice.getState")?.redux.getState();
-			meta.path.split(".").forEach((part) => (state = ((state as any) || {})[part]));
-			return state || {};
-		});
 		defineMethod(slice, "useSelect", (selector: any) => {
 			const context = { utils: getUtils(), root: store("slice.useSelect")?.node };
 			return useSelector((state: any) => {
@@ -96,14 +91,24 @@ const sliceFactory = createNodeFactory<AnySlice, AnySliceOptions, ExtraMeta, Clo
 		});
 		defineReadonly(slice, "computed", () => undefined);
 
+		// State access.
+		const getState = (() => {
+			let state = store("slice.getState")?.redux.getState();
+			meta.path.split(".").forEach((part) => (state = ((state as any) || {})[part]));
+			return state || {};
+		}) as AnySlice["getState"];
+		defineMethod(getState, "initial", () => meta.redux.getInitialState() as any);
+		defineMethod(getState, "initialDeep", () => meta.reducer(undefined, { type: "@@INIT" }) as any);
+		defineMethod(slice, "getState", getState);
+
 		// Lineage inspection and clone management utilities.
 		const prototype = {} as AnySlice["prototype"];
 		const getLineage = () => [...(family.siblings.values() || [])];
-		defineReadonly(slice, "prototype", () => prototype);
 		defineMethod(prototype, "clone", (transform) => clone(slice, undefined, { name: props.name, transform })!);
 		defineMethod(prototype, "getLineage", () => getLineage());
 		defineMethod(prototype, "getClones", () => getLineage().filter((it) => it !== slice));
 		defineMethod(prototype, "isTypeOf", (other) => family === families.get(instances.get(other)?.familyId!));
+		defineReadonly(slice, "prototype", () => prototype);
 
 		// Redux Toolkit actions mapped to auto-dispatching slice mutations
 		Object.entries(meta.redux.actions).map(([key, action]: [string, any]) => {

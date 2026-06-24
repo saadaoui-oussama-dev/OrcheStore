@@ -8,17 +8,26 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
 	/** Fully qualified runtime path of the slice. */
 	readonly path: string;
 
-	/** Returns the latest immutable state snapshot. */
-	readonly getState: () => SliceState.State<S, C>;
-
-	/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `root` store, `rootState` and `utils` utilities. */
-	readonly useSelect: <T>(selector: (this: Utils, state: SliceState.State<S, C>, context: Utils) => T) => T;
-
 	/** Root store that owns this slice instance. */
 	root: Store<any>;
 
 	/** Parent slice in the hierarchy, if mounted under another slice. */
 	parent: slice<any, Mutations<any, any>, any, any> | undefined;
+
+	/** Subscribes to state changes within React components. Runs with a context-bound `this` containing `root` store, `rootState` and `utils` utilities. */
+	readonly useSelect: <T>(selector: (this: Utils, state: SliceState.State<S, C>, context: Utils) => T) => T;
+
+	/** Returns the latest immutable state snapshot including all nested child slices. */
+	readonly getState: {
+		/** Returns the latest immutable state snapshot including all nested child slices. */
+		(): SliceState.State<S, C>;
+
+		/** Returns the state created during slice initialization. */
+		readonly initial: () => SliceState.State<S, {}>;
+
+		/** Returns the initial state including all nested child slices. */
+		readonly initialDeep: () => SliceState.State<S, C>;
+	};
 
 	/** Runtime lineage and cloning utilities for this slice instance. */
 	readonly prototype: {

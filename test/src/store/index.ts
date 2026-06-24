@@ -13,8 +13,8 @@ export const store = createStore({
 	},
 });
 
-console.log("subSubCounter", subSubCounter.prototype.getLineage().map(it => it.path));
-console.log("subSubCounter2", subSubCounter2.prototype.getLineage().map(it => it.path));
-console.log("subCounter", subCounter.prototype.getLineage().map(it => it.path));
-console.log("subCounter2", subCounter2.prototype.getLineage().map(it => it.path));
-console.log("counter", counter.prototype.getLineage().map(it => it.path));
+console.log("subSubCounter", subSubCounter.prototype.getLineage().map(it => it.getState.initialDeep()));
+console.log("subSubCounter2", subSubCounter2.prototype.getLineage().map(it => it.getState.initialDeep()));
+console.log("subCounter", subCounter.prototype.getLineage().map(it => it.getState.initialDeep()));
+console.log("subCounter2", subCounter2.prototype.getLineage().map(it => it.getState.initialDeep()));
+console.log("counter", counter.prototype.getLineage().map(it => it.getState.initialDeep()));
