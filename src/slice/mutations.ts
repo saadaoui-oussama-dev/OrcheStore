@@ -37,7 +37,7 @@ export const mutationsToReducers = (name: string, meta: Meta, mutations: any, re
 	const reducer: any = {};
 
 	Object.entries(mutations).forEach(([k, item]) => {
-		const key = validateKey("createSlice", "mutation", k, reserved, name)!;
+		const key = validateKey("createSlice", name, "Slice", "mutation", k, reserved)!;
 		const mutation = key ? validateMutation(name, meta, key, item) : undefined;
 
 		if (!mutation) return delete mutations[key];

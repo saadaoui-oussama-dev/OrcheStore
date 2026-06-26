@@ -11,13 +11,13 @@ type Callbacks<N, E> = { attach: FactoryOutput<N, any, E>["attach"]; respone: (c
  * transformed into caller-defined results. During cloning, previously attached
  * child nodes are reused instead of being attached again.
  */
-export const createAttachHelper = <N, E>(trigger: string, layer: string, { attach, respone }: Callbacks<N, E>) => {
+export const createAttachHelper = <N, E>(trigger: string, type: string, layer: string, callbacks: Callbacks<N, E>) => {
 	return (name: string, meta: NodeMeta<N, E>, afterCloning: boolean, children: any, reserved: string[]) => {
 		// Expose children and collect caller-defined results
 		const expose = (key: string, child: NodeMeta<N, E>) => {
 			(meta.node as any)[key] = child.node;
 			reserved.push(key);
-			return [key, respone(child)] as const;
+			return [key, callbacks.respone(child)] as const;
 		};
 
 		// Reattach existing child nodes when restoring a cloned subtree
@@ -25,12 +25,12 @@ export const createAttachHelper = <N, E>(trigger: string, layer: string, { attac
 
 		// Attach child nodes and collect caller-defined results
 		const reducers = Object.entries(children).map(([k, item]) => {
-			const key = validateKey(trigger, layer, k, reserved, name)!;
+			const key = validateKey(trigger, name, type, layer, k, reserved)!;
 
 			const child = key
-				? attach(key, item as any, meta.node, meta, {
-						UnknownNode: () => MESSAGES(trigger, name).InvalidChild(key, item),
-						InfiniteOwnership: (key) => MESSAGES(trigger, name).InfiniteOwnership(key),
+				? callbacks.attach(key, item as any, meta.node, meta, {
+						UnknownNode: () => MESSAGES(trigger, name, type).InvalidChild(key, item),
+						InfiniteOwnership: (key) => MESSAGES(trigger, name, type).InfiniteOwnership(key),
 					})
 				: undefined;
 

@@ -1,12 +1,12 @@
 import { createStoreGetter } from "./getter";
-import { exposeStoreSelectors } from "./selectors";
+import { exposeStateSelectors } from "./selectors";
+import { exposeContext, validateAndNormalizeProps } from "./context";
 import { createNodeFactory } from "../factory/creator";
 import { attachStoreChildren } from "../slice/creator";
 import { defineMethod } from "../helpers/internal";
 import { configureRTKStore } from "../helpers/imports";
 import type { AnyStore, AnyStoreOptions, Store, StoreOptions } from "../helpers/types";
 import type { ExtraMeta } from "./types";
-import { exposeContext, validateAndNormalizeProps } from "./context";
 
 const createStoreFactory = createNodeFactory<AnyStore, AnyStoreOptions, ExtraMeta, undefined, string[]>;
 
@@ -29,7 +29,7 @@ const { instances, create } = createStoreFactory({
 
 		defineMethod(meta.node, "getState", () => meta.redux.getState() as any);
 
-		exposeStoreSelectors(props.name!, meta);
+		exposeStateSelectors(props.name!, meta);
 
 		return reserved;
 	},

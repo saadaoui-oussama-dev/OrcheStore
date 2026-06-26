@@ -10,7 +10,7 @@ import type { Meta } from "../helpers/types";
  * Provides integration points for subscribing to state changes and consuming
  * derived values within reactive environments.
  */
-export const exposeSliceSelectors = (name: string, meta: Meta) => {
+export const exposeStateSelectors = (name: string, meta: Meta) => {
 	defineMethod(meta.node, "useSelect", (selector: any) => {
 		const rootStore = getStore.of(name, meta, "slice.useSelect");
 		const context = { utils: getUtils(), root: rootStore?.node };

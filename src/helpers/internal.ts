@@ -40,13 +40,13 @@ export const defineMethod = <T, K extends keyof T>(object: T, prop: K, method: T
  *
  * Returns the validated key or reports a development error when invalid.
  */
-export const validateKey = (trigger: string, layer: string, key: string, reserved: string[], slice?: string) => {
+export const validateKey = (trigger: string, name: string, type: string, layer: string, key: string, reserved: string[]) => {
 	if (!key || typeof key !== "string" || key.includes(".") || key.includes("/")) {
-		return void MESSAGES(trigger, slice).InvalidKey(layer, key);
+		return void MESSAGES(trigger, name, type).InvalidKey(layer, key);
 	}
 
 	if (reserved.includes(key)) {
-		return void MESSAGES(trigger, slice).DuplicateKey(layer, key);
+		return void MESSAGES(trigger, name, type).DuplicateKey(layer, key);
 	}
 
 	return key;

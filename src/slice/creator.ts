@@ -1,6 +1,6 @@
 import { exposeContext, validateAndNormalizeProps } from "./context";
 import { exposeMethods } from "./methods";
-import { exposeSliceSelectors } from "./selectors";
+import { exposeStateSelectors } from "./selectors";
 import { exposeMutations, mutationsToReducers } from "./mutations";
 import { createNodeFactory } from "../factory/creator";
 import { createAttachHelper } from "../factory/attach";
@@ -42,7 +42,7 @@ const { instances, create, attach, clone } = createSliceFactory({
 		exposeContext(props.name, meta, instances);
 
 		// Expose React selector hooks.
-		exposeSliceSelectors(props.name, meta);
+		exposeStateSelectors(props.name, meta);
 
 		// Expose imperative state access APIs.
 		exposeStateAccessors(props.name, meta);
@@ -78,8 +78,8 @@ const { instances, create, attach, clone } = createSliceFactory({
 	},
 });
 
-const attachSliceChildren = createAttachHelper("createSlice", "child", { attach, respone: (c) => c.reducer });
-const attachStoreChildren = createAttachHelper("createStore", "slice", { attach, respone: (c) => c.reducer });
+const attachSliceChildren = createAttachHelper("createSlice", "Slice", "child", { attach, respone: (c) => c.reducer });
+const attachStoreChildren = createAttachHelper("createStore", "Store", "slice", { attach, respone: (c) => c.reducer });
 
 /**
  * Creates and initializes a slice runtime instance.

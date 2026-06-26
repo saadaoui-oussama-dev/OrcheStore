@@ -27,7 +27,7 @@ const validateMethod = (name: string, meta: Meta, key: string, method: any) => {
  */
 export const exposeMethods = (name: string, meta: Meta, methods: any, reserved: string[]) => {
 	Object.entries(methods).forEach(([k, item]) => {
-		const key = validateKey("createSlice", "method", k, reserved)!;
+		const key = validateKey("createSlice", name, "Slice", "method", k, reserved)!;
 		const method = key ? validateMethod(name, meta, key, item) : undefined;
 
 		if (!method) return delete methods[key];
