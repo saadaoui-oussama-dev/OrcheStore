@@ -15,7 +15,7 @@ export const exposeStateSelectors = (name: string, meta: Meta) => {
 		const rootStore = getStore.of(name, meta, "slice.useSelect");
 		const context = { utils: getUtils(), root: rootStore?.node };
 
-		return rootStore?.selector((state: any) => {
+		return rootStore?.selector("Slice", name, (state: any) => {
 			const sliceState = resolveDeepState(meta.path, state);
 			return selector.apply(context, [sliceState, context]);
 		});

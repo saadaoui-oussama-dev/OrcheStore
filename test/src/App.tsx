@@ -20,7 +20,7 @@ setUtils({
 });
 
 function App() {
-	const state1 = store.useSelect((state) => JSON.stringify(state, null, 2));
+	const state1 = counter.useSelect((state) => JSON.stringify(state, null, 2));
 	const state2 = store2.useSelect((state) => JSON.stringify(state, null, 2));
 	// const subCount = subCounter.useSelect((state) => state);
 	// const subCount2 = subCounter2.useSelect((state) => state);
@@ -57,9 +57,9 @@ function App() {
 			</div> */}
 
 			<div>
-				<button onClick={() => subCounter.increment()}>Increment</button>
-				<button onClick={() => subCounter.decrement()}>Decrement</button>
-				<button onClick={() => subCounter.incrementAfter(1, 1000)}>Increment After 1s</button>
+				<button onClick={() => counter.increment()}>Increment</button>
+				<button onClick={() => counter.decrement()}>Decrement</button>
+				<button onClick={() => counter.incrementAfter(1, 1000)}>Increment After 1s</button>
 			</div>
 
 			{/* 

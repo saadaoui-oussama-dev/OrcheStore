@@ -101,7 +101,9 @@ export const MESSAGES = (trigger: string, name?: string, type = "Slice") => {
 
 		ParentNeverExposed: (slice: string, parent: string) => [`Slice '${slice}' depends on unreachable parent '${parent}'. Connect the parent through createStore({ slices }) or createSlice({ children }).`], // prettier-ignore
 
-		StoreNotProvided: () => [`The current component is outside the React tree of this store's StoreProvider.`], // prettier-ignore
+		StoreNotProvided: (store: string) => [store
+			? `The current component is outside the React tree of StoreProvider for Store '${store}'.`
+			: `The current component is outside the React tree of StoreProvider for the current store.`], // prettier-ignore
 	};
 
 	const errors = {

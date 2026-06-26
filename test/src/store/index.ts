@@ -23,6 +23,3 @@ export const store2 = createStore({
 		}),
 	},
 });
-
-console.log(store.name);
-console.log(store2.name);

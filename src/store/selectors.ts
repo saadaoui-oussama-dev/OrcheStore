@@ -23,14 +23,15 @@ export const exposeStateSelectors = (name: string, meta: NodeMeta<AnyStore, Extr
 
 	meta.context = context;
 
-	meta.selector = (selector: any) => {
-		const context = useReactContext(meta.context)
+	meta.selector = (childType: string, childName: string, selector: any) => {
+		const context = useReactContext(meta.context);
 		if (context) return useSelector(selector);
-		return void MESSAGES("useSelect", name, "Store").StoreNotProvided();
+		if (childType) MESSAGES("useSelect", childName, childType).StoreNotProvided(name);
+		else MESSAGES("useSelect", name, "Store").StoreNotProvided("");
 	};
 
 	defineMethod(meta.node, "useSelect", (selector: any) => {
 		const context = { utils: getUtils(), root: meta.node };
-		return meta.selector((state: any) => selector.apply(context, [state, context]));
+		return meta.selector("", "", (state: any) => selector.apply(context, [state, context]));
 	});
 };
