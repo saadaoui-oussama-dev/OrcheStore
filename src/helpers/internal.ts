@@ -60,7 +60,11 @@ export const validateKey = (trigger: string, layer: string, key: string, reserve
  *
  * Returns the validated name or reports a development error when invalid.
  */
-export const validateName = (trigger: string, props: Dict) => {
+export const validateName = (trigger: string, props: Dict, defaultName?: string) => {
+	if (defaultName && (props.name === undefined || props.name === null || props.name === "")) {
+		return defaultName;
+	}
+
 	if (!Object.hasOwn(props, "name")) {
 		return void MESSAGES(trigger).RequiredName(props);
 	}

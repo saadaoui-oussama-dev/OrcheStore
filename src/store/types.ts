@@ -12,7 +12,7 @@ export type ExtraMeta = { redux: RTKStore; reducer: Dict; context: any; selector
 type store<C> = OmitNever<
 	Utils & {
 		/** Unique name of the store. */
-		readonly name: "default";
+		readonly name: string;
 
 		/**
 		 * Returns the current immutable state snapshot of the entire store tree.
@@ -49,6 +49,9 @@ type storeOptions<C> = Omit<
 	RTKStoreOptions,
 	"reducer" | "middleware" | "duplicateMiddlewareCheck" | "preloadedState" | "enhancers"
 > & {
+	/** Unique name of the store. */
+	readonly name?: string;
+
 	/**
 	 * Collection of slices registered in this store.
 	 *

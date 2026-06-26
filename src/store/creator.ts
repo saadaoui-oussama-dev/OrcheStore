@@ -1,41 +1,18 @@
 import { createStoreGetter } from "./getter";
 import { exposeStoreSelectors } from "./selectors";
-import { getUtils } from "../utils/app-wide";
 import { createNodeFactory } from "../factory/creator";
 import { attachStoreChildren } from "../slice/creator";
-import { defineMethod, defineReadonly } from "../helpers/internal";
+import { defineMethod } from "../helpers/internal";
 import { configureRTKStore } from "../helpers/imports";
-import { MESSAGES } from "../helpers/messages";
 import type { AnyStore, AnyStoreOptions, Store, StoreOptions } from "../helpers/types";
 import type { ExtraMeta } from "./types";
+import { exposeContext, validateAndNormalizeProps } from "./context";
 
 const createStoreFactory = createNodeFactory<AnyStore, AnyStoreOptions, ExtraMeta, undefined, string[]>;
 
 const { instances, create } = createStoreFactory({
 	options: {
-		/**
-		 * Normalizes and validates store configuration before creation.
-		 *
-		 * Ensures slices are properly shaped and prevents unsupported Redux options
-		 * from leaking into the internal RTK store configuration.
-		 */
-		prepare(props) {
-			const mismatch = { reducer: "'slices'", reducers: "'slices'", devTools: "", duplicateMiddlewareCheck: "", enhancers: "", middleware: "", preloadedState: "" }; // prettier-ignore
-
-			const options = { ...(props || {}) } as any;
-
-			["slices"].forEach((prop) => {
-				options[prop] = typeof options[prop] === "object" && options[prop] ? { ...options[prop] } : {};
-			});
-
-			Object.entries(mismatch).forEach(([prop, replace]) => {
-				if (options[prop] === undefined) return;
-				if (replace) MESSAGES("createStore").ReduxMismatchProp(prop, replace);
-				else MESSAGES("createStore").UnsupportedReduxProp(prop);
-			});
-
-			return options;
-		},
+		prepare: validateAndNormalizeProps,
 	},
 
 	/**
@@ -43,18 +20,16 @@ const { instances, create } = createStoreFactory({
 	 *
 	 * This function builds the OrcheStore root node, attaches utilities.
 	 */
-	instantiate(_props, meta) {
+	instantiate(props, meta) {
 		meta.node = {} as any;
 
 		const reserved = ["name", "computed", "utils", "getState", "useSelect"];
 
-		defineReadonly(meta.node, "name", () => "default" as const);
-
-		defineReadonly(meta.node, "utils", () => getUtils());
+		exposeContext(props.name!, meta);
 
 		defineMethod(meta.node, "getState", () => meta.redux.getState() as any);
 
-		exposeStoreSelectors(meta);
+		exposeStoreSelectors(props.name!, meta);
 
 		return reserved;
 	},
@@ -65,22 +40,12 @@ const { instances, create } = createStoreFactory({
 	 * Attaches slice trees, composes reducers, and creates the underlying
 	 * Redux Toolkit store instance used at runtime.
 	 */
-	afterInstantiate(props, meta, _, cloning, reserved) {
+	afterInstantiate(props, meta, _family, cloning, reserved) {
 		meta.reducer = Object.fromEntries(attachStoreChildren("", meta as any, cloning, props.slices, reserved));
 
-		meta.redux = configureRTKStore({
-			reducer: meta.reducer,
-			devTools: props.devTools,
-		});
+		meta.redux = configureRTKStore({ reducer: meta.reducer, devTools: props.devTools });
 	},
 });
-
-/**
- * Internal store metadata registry accessor.
- *
- * Used to resolve store instances from the internal factory system.
- */
-export const getStore = createStoreGetter(instances);
 
 /**
  * Creates and initializes an OrcheStore root instance.
@@ -153,4 +118,11 @@ export const getStore = createStoreGetter(instances);
  */
 const createStore = <T>(props: StoreOptions<T>): Store<T> => (create as any)(props);
 
-export { createStore };
+/**
+ * Internal store metadata registry accessor.
+ *
+ * Used to resolve store instances from the internal factory system.
+ */
+const getStore = createStoreGetter(instances);
+
+export { createStore, getStore };

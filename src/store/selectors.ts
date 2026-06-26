@@ -17,7 +17,7 @@ import type { AnyStore, ExtraMeta, NodeMeta } from "../helpers/types";
  * bound to the store’s internal context, while `useSelect` exposes a
  * user-friendly API that automatically injects OrcheStore runtime context.
  */
-export const exposeStoreSelectors = (meta: NodeMeta<AnyStore, ExtraMeta>) => {
+export const exposeStoreSelectors = (name: string, meta: NodeMeta<AnyStore, ExtraMeta>) => {
 	const context = ReactContext(null);
 	const useSelector = createRTKSelector(context as any);
 
@@ -25,7 +25,7 @@ export const exposeStoreSelectors = (meta: NodeMeta<AnyStore, ExtraMeta>) => {
 
 	meta.selector = (selector: any) => {
 		const value = useReactContext(meta.context);
-		if (!value) MESSAGES("useSelect", meta.node.name, "Store").StoreNotProvided();
+		if (!value) MESSAGES("useSelect", name, "Store").StoreNotProvided();
 		return useSelector(selector);
 	};
 
