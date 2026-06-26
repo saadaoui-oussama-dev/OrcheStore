@@ -87,7 +87,7 @@ function readable<T>(value: T, prefix = "Got"): any[] {
  * Produces runtime-safe diagnostic messages with structured formatting
  * and consistent prefixing across the framework.
  */
-export const MESSAGES = (trigger: string, slice?: string) => {
+export const MESSAGES = (trigger: string, name?: string, type: "Slice" | "Store" = "Slice") => {
 	type API = typeof exceptions & typeof errors & typeof warnings;
 
 	const exceptions = {
@@ -100,6 +100,8 @@ export const MESSAGES = (trigger: string, slice?: string) => {
 		NeverExposed: (slice: string) => [`Slice '${slice}' is not reachable from any store. Connect it through createStore({ slices }) or createSlice({ children }).`], // prettier-ignore
 
 		ParentNeverExposed: (slice: string, parent: string) => [`Slice '${slice}' depends on unreachable parent '${parent}'. Connect the parent through createStore({ slices }) or createSlice({ children }).`], // prettier-ignore
+
+		StoreNotProvided: () => [`The current component is outside the React tree of this store's StoreProvider.`] // prettier-ignore
 	};
 
 	const errors = {
@@ -136,15 +138,15 @@ export const MESSAGES = (trigger: string, slice?: string) => {
 
 	const wrap = (src: (...args: any[]) => any[], printer: (message: any[]) => void) => {
 		return (...args: any[]) => {
-			printer([`[OrcheStore::${trigger}]${slice ? ` Slice: {${slice}}\n` : ""}`, ...src(...args)]);
+			printer([`[OrcheStore::${trigger}]${name ? ` ${type}: {${name}}\n` : ""}`, ...src(...args)]);
 		};
 	};
 
 	return new Proxy({} as { [k in keyof API]: (...args: Parameters<API[k]>) => void }, {
-		get(_, name: string) {
-			if (Object.hasOwn(exceptions, name)) return wrap(exceptions[name as keyof typeof exceptions], devConsole.throw);
-			if (Object.hasOwn(errors, name)) return wrap(errors[name as keyof typeof errors], devConsole.error);
-			if (Object.hasOwn(warnings, name)) return wrap(warnings[name as keyof typeof warnings], devConsole.warn);
+		get(_, type: string) {
+			if (Object.hasOwn(exceptions, type)) return wrap(exceptions[type as keyof typeof exceptions], devConsole.throw);
+			if (Object.hasOwn(errors, type)) return wrap(errors[type as keyof typeof errors], devConsole.error);
+			if (Object.hasOwn(warnings, type)) return wrap(warnings[type as keyof typeof warnings], devConsole.warn);
 		},
 	});
 };

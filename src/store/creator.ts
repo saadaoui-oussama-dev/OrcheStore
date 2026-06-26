@@ -1,9 +1,10 @@
 import { createStoreGetter } from "./getter";
+import { exposeStoreSelectors } from "./selectors";
 import { getUtils } from "../utils/app-wide";
 import { createNodeFactory } from "../factory/creator";
 import { attachStoreChildren } from "../slice/creator";
 import { defineMethod, defineReadonly } from "../helpers/internal";
-import { configureRTKStore, createRTKSelector, ReactContext } from "../helpers/imports";
+import { configureRTKStore } from "../helpers/imports";
 import { MESSAGES } from "../helpers/messages";
 import type { AnyStore, AnyStoreOptions, Store, StoreOptions } from "../helpers/types";
 import type { ExtraMeta } from "./types";
@@ -53,10 +54,7 @@ const { instances, create } = createStoreFactory({
 
 		defineMethod(meta.node, "getState", () => meta.redux.getState() as any);
 
-		defineMethod(meta.node, "useSelect", (selector: any) => {
-			const context = { utils: getUtils(), root: meta.node };
-			return meta.selector((state: any) => selector.apply(context, [state, context]));
-		});
+		exposeStoreSelectors(meta);
 
 		return reserved;
 	},
@@ -69,10 +67,6 @@ const { instances, create } = createStoreFactory({
 	 */
 	afterInstantiate(props, meta, _, cloning, reserved) {
 		meta.reducer = Object.fromEntries(attachStoreChildren("", meta as any, cloning, props.slices, reserved));
-
-		meta.context = ReactContext(null);
-
-		meta.selector = createRTKSelector(meta.context);
 
 		meta.redux = configureRTKStore({
 			reducer: meta.reducer,

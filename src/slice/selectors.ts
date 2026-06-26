@@ -5,12 +5,12 @@ import { defineMethod, defineReadonly } from "../helpers/internal";
 import type { Meta } from "../helpers/types";
 
 /**
- * Exposes reactive state access APIs on a node.
+ * Exposes reactive slice-level selector APIs on a slice node.
  *
  * Provides integration points for subscribing to state changes and consuming
  * derived values within reactive environments.
  */
-export const exposeStateSelectors = (name: string, meta: Meta) => {
+export const exposeSliceSelectors = (name: string, meta: Meta) => {
 	defineMethod(meta.node, "useSelect", (selector: any) => {
 		const rootStore = getStore.of(name, meta, "slice.useSelect");
 		const context = { utils: getUtils(), root: rootStore?.node };

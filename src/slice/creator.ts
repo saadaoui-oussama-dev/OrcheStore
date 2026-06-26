@@ -1,6 +1,6 @@
 import { exposeContext, validateAndNormalizeProps } from "./context";
 import { exposeMethods } from "./methods";
-import { exposeStateSelectors } from "./selectors";
+import { exposeSliceSelectors } from "./selectors";
 import { exposeMutations, mutationsToReducers } from "./mutations";
 import { createNodeFactory } from "../factory/creator";
 import { createAttachHelper } from "../factory/attach";
@@ -42,7 +42,7 @@ const { instances, create, attach, clone } = createSliceFactory({
 		exposeContext(props.name, meta, instances);
 
 		// Expose React selector hooks.
-		exposeStateSelectors(props.name, meta);
+		exposeSliceSelectors(props.name, meta);
 
 		// Expose imperative state access APIs.
 		exposeStateAccessors(props.name, meta);

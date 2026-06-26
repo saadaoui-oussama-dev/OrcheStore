@@ -1,4 +1,4 @@
-import { createElement as ReactElement, createContext as ReactContext } from "react";
+import { createElement as ReactElement, createContext as ReactContext, useContext as useReactContext } from "react";
 
 import {
 	Provider as RTKProvider,
@@ -32,6 +32,7 @@ export {
 	ReactElement,
 	RTKReducerType,
 	RTKProvider,
+	useReactContext,
 };
 
 export type { RTKStoreOptions, RTKSlice, RTKStore, RTKProviderProps, RTKReducer };

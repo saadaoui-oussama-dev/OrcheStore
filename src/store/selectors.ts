@@ -1,0 +1,36 @@
+import { getUtils } from "../utils/app-wide";
+import { defineMethod } from "../helpers/internal";
+import { createRTKSelector, ReactContext, useReactContext } from "../helpers/imports";
+import { MESSAGES } from "../helpers/messages";
+import type { AnyStore, ExtraMeta, NodeMeta } from "../helpers/types";
+
+/**
+ * Exposes reactive store-level selector APIs on a store node.
+ *
+ * This layer wires the store instance into React via a dedicated context,
+ * enabling `useSelect` to subscribe to state updates scoped to this store.
+ *
+ * It also provides a safe runtime guard to ensure the component is rendered
+ * within the correct StoreProvider tree, preventing cross-store context usage.
+ *
+ * The selector is executed through a React Redux–based selector hook
+ * bound to the store’s internal context, while `useSelect` exposes a
+ * user-friendly API that automatically injects OrcheStore runtime context.
+ */
+export const exposeStoreSelectors = (meta: NodeMeta<AnyStore, ExtraMeta>) => {
+	const context = ReactContext(null);
+	const useSelector = createRTKSelector(context as any);
+
+	meta.context = context;
+
+	meta.selector = (selector: any) => {
+		const value = useReactContext(meta.context);
+		if (!value) MESSAGES("useSelect", meta.node.name, "Store").StoreNotProvided();
+		return useSelector(selector);
+	};
+
+	defineMethod(meta.node, "useSelect", (selector: any) => {
+		const context = { utils: getUtils(), root: meta.node };
+		return meta.selector((state: any) => selector.apply(context, [state, context]));
+	});
+};
