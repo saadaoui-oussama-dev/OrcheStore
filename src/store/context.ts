@@ -29,7 +29,7 @@ export const validateAndNormalizeProps = (props: AnyStoreOptions) => {
 	const options = { ...(props || {}) } as any;
 	const store = options.name;
 
-	options.name = validateName("createStore", options, "default")!;
+	options.name = validateName("createStore", options)!;
 
 	["slices"].forEach((prop) => {
 		options[prop] = typeof options[prop] === "object" && options[prop] ? { ...options[prop] } : {};

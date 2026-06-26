@@ -24,20 +24,24 @@ export const devConsole = {
 	warn(message: any[]) {
 		if (!message?.length || !reportLevel.warnings) return;
 		if (!informed) ((informed = true), devConsole.log([informMessage]));
-		warn?.(...message);
+		warn?.("[OrcheStore] Warning:", ...message);
 	},
 
 	error(message: any[]) {
 		if (!message?.length || !reportLevel.errors) return;
 		if (!informed) ((informed = true), devConsole.log([informMessage]));
-		error?.(...message);
+		error?.("[OrcheStore] Error:", ...message);
 	},
 
 	throw(message: any[]) {
 		if (!message?.length) return;
-		if (message.every((m) => typeof m === "string")) throw new Error(message.join(" "));
+		if (message.every((m) => typeof m === "string")) {
+			const exception = new Error(message.join(" "));
+			throw ((exception.name = "[OrcheStore] Error"), exception);
+		}
 		error?.(...message);
-		throw new Error();
+		const exception = new Error();
+		throw ((exception.name = "[OrcheStore] Error"), exception);
 	},
 };
 
@@ -73,12 +77,12 @@ export function setReporting(level: any, enabled?: boolean) {
  * ```
  */
 function readable<T>(value: T, prefix = "Got"): any[] {
-	if (value === null || value === undefined) return [`\n${prefix}: ${value}`];
-	if (Array.isArray(value)) return [`\n${prefix}: array`, value];
-	if (typeof value === "object") return [`\n${prefix}: object`, value];
-	if (typeof value === "function") return [`\n${prefix}: function`, value];
-	if (value === "") return [`\n${prefix}: empty string`];
-	return [`\n${prefix}: ${typeof value} (${value})`];
+	if (value === null || value === undefined) return [`${prefix}: ${value}`];
+	if (Array.isArray(value)) return [`${prefix}: array`, value];
+	if (typeof value === "object") return [`${prefix}: object`, value];
+	if (typeof value === "function") return [`${prefix}: function`, value];
+	if (value === "") return [`${prefix}: empty string`];
+	return [`${prefix}: ${typeof value} (${value})`];
 }
 
 /**
@@ -87,27 +91,25 @@ function readable<T>(value: T, prefix = "Got"): any[] {
  * Produces runtime-safe diagnostic messages with structured formatting
  * and consistent prefixing across the framework.
  */
-export const MESSAGES = (trigger: string, name?: string, type: "Slice" | "Store" = "Slice") => {
+export const MESSAGES = (trigger: string, name?: string, type = "Slice") => {
 	type API = typeof exceptions & typeof errors & typeof warnings;
 
 	const exceptions = {
-		RequiredName: (value: any) => [`Missing required "name" property.`, ...readable(value, "In")], // prettier-ignore
-
-		InvalidName: (value: any) => [`"name" must be a non-empty string without '.' or '/'`, ...readable(value)], // prettier-ignore
-
 		InvalidStore: (value: any) => [`Expected a store created with createStore(...).`, ...readable(value)], // prettier-ignore
 
 		NeverExposed: (slice: string) => [`Slice '${slice}' is not reachable from any store. Connect it through createStore({ slices }) or createSlice({ children }).`], // prettier-ignore
 
 		ParentNeverExposed: (slice: string, parent: string) => [`Slice '${slice}' depends on unreachable parent '${parent}'. Connect the parent through createStore({ slices }) or createSlice({ children }).`], // prettier-ignore
 
-		StoreNotProvided: () => [`The current component is outside the React tree of this store's StoreProvider.`] // prettier-ignore
+		StoreNotProvided: () => [`The current component is outside the React tree of this store's StoreProvider.`], // prettier-ignore
 	};
 
 	const errors = {
-		DuplicateKey: (layer: string, key: string) => [`${layer} '${key}' conflicts with another exposed member.`], // prettier-ignore
+		InvalidName: (value: any) => [`"name" must be a non-empty string without '.' or '/'`, ...readable(value)], // prettier-ignore
 
 		InvalidKey: (layer: string, value: any) => [`${layer} key must be a non-empty string without '.' or '/'`, ...readable(value)], // prettier-ignore
+
+		DuplicateKey: (layer: string, key: string) => [`${layer} '${key}' conflicts with another exposed member.`], // prettier-ignore
 
 		InvalidStateProp: (value: any) => [`"state" must be a non-null object or a function returning one.`, ...readable(value)], // prettier-ignore
 
@@ -129,7 +131,7 @@ export const MESSAGES = (trigger: string, name?: string, type: "Slice" | "Store"
 	};
 
 	const warnings = {
-		ReduxMismatchProp: (prop: string, replace: string) => [`'${prop}' is a Redux Toolkit option. Use '${replace}' instead.`], // prettier-ignore
+		ReduxMismatchProp: (prop: string, replace: string) => [`'${prop}' is a Redux Toolkit option. Use ${replace} instead.`], // prettier-ignore
 
 		UnsupportedReduxProp: (prop: string) => [`'${prop}' is a Redux Toolkit option that is not yet supported and will be ignored.`], // prettier-ignore
 
@@ -138,7 +140,7 @@ export const MESSAGES = (trigger: string, name?: string, type: "Slice" | "Store"
 
 	const wrap = (src: (...args: any[]) => any[], printer: (message: any[]) => void) => {
 		return (...args: any[]) => {
-			printer([`[OrcheStore::${trigger}]${name ? ` ${type}: {${name}}\n` : ""}`, ...src(...args)]);
+			printer([`At ${trigger}${name ? ` → ${type} '${name}'\n` : "\n"}`, ...src(...args)]);
 		};
 	};
 

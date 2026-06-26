@@ -24,9 +24,9 @@ export const exposeStateSelectors = (name: string, meta: NodeMeta<AnyStore, Extr
 	meta.context = context;
 
 	meta.selector = (selector: any) => {
-		const value = useReactContext(meta.context);
-		if (!value) MESSAGES("useSelect", name, "Store").StoreNotProvided();
-		return useSelector(selector);
+		const context = useReactContext(meta.context)
+		if (context) return useSelector(selector);
+		return void MESSAGES("useSelect", name, "Store").StoreNotProvided();
 	};
 
 	defineMethod(meta.node, "useSelect", (selector: any) => {

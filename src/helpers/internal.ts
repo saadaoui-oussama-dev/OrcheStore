@@ -60,17 +60,14 @@ export const validateKey = (trigger: string, name: string, type: string, layer: 
  *
  * Returns the validated name or reports a development error when invalid.
  */
-export const validateName = (trigger: string, props: Dict, defaultName?: string) => {
-	if (defaultName && (props.name === undefined || props.name === null || props.name === "")) {
-		return defaultName;
-	}
-
-	if (!Object.hasOwn(props, "name")) {
-		return void MESSAGES(trigger).RequiredName(props);
+export const validateName = (trigger: string, props: Dict) => {
+	if ((props.name === undefined || props.name === null || props.name === "")) {
+		return "untitled";
 	}
 
 	if (!props.name || typeof props.name !== "string" || props.name.includes(".") || props.name.includes("/")) {
-		return void MESSAGES(trigger).InvalidName(props.name);
+		MESSAGES(trigger).InvalidName(props.name);
+		return "untitled";
 	}
 
 	return props.name;

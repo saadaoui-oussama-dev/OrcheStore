@@ -41,7 +41,7 @@ const { instances, create } = createStoreFactory({
 	 * Redux Toolkit store instance used at runtime.
 	 */
 	afterInstantiate(props, meta, _family, cloning, reserved) {
-		meta.reducer = Object.fromEntries(attachStoreChildren("", meta as any, cloning, props.slices, reserved));
+		meta.reducer = Object.fromEntries(attachStoreChildren(props.name!, meta as any, cloning, props.slices, reserved));
 
 		meta.redux = configureRTKStore({ reducer: meta.reducer, devTools: props.devTools });
 	},
