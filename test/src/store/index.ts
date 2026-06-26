@@ -4,6 +4,7 @@ import { subSubCounter, subSubCounter2, subCounter, subCounter2, counter } from 
 export { StoreProvider } from "orchestore";
 
 export const store = createStore({
+	name: "test",
 	slices: {
 		counter: counter,
 		counter2: counter.prototype.clone((state) => {
@@ -14,6 +15,7 @@ export const store = createStore({
 });
 
 export const store2 = createStore({
+	name: undefined,
 	slices: {
 		counter: counter.prototype.clone((state) => {
 			state.value = 800;
@@ -21,3 +23,6 @@ export const store2 = createStore({
 		}),
 	},
 });
+
+console.log(store.name);
+console.log(store2.name);

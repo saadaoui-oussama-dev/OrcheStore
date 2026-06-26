@@ -47,9 +47,8 @@ export const exposeContext = (name: string, meta: Meta, instances: Map<AnySlice,
 export const validateAndNormalizeProps = (props: AnySliceOptions) => {
 	const mismatch = { initialState: "'state'", reducer: "'mutations'", reducers: "'mutations'", extraReducers: "'subscribe'", selectors: "'computed'", reducerPath: "nested slices throught 'children'" }; // prettier-ignore
 	const options = { ...(props || {}) } as any;
-	const slice = options.name;
 
-	options.name = validateName("createSlice", options)!;
+	options.name = validateName("createSlice", options, true);
 	options.state = normalizeSafeState("createSlice", options.name, options.state, true);
 
 	["mutations", "computed", "methods", "subscribe", "children"].forEach((prop) => {
@@ -58,7 +57,7 @@ export const validateAndNormalizeProps = (props: AnySliceOptions) => {
 
 	Object.entries(mismatch).forEach(([prop, replace]) => {
 		if (options[prop] === undefined) return;
-		MESSAGES("createSlice", slice).ReduxMismatchProp(prop, replace);
+		MESSAGES("createSlice", options.name).ReduxMismatchProp(prop, replace);
 		delete options[prop];
 	});
 

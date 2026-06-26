@@ -29,7 +29,7 @@ export const validateAndNormalizeProps = (props: AnyStoreOptions) => {
 	const options = { ...(props || {}) } as any;
 	const store = options.name;
 
-	options.name = validateName("createStore", options)!;
+	options.name = validateName("createStore", options, false);
 
 	["slices"].forEach((prop) => {
 		options[prop] = typeof options[prop] === "object" && options[prop] ? { ...options[prop] } : {};
@@ -37,8 +37,8 @@ export const validateAndNormalizeProps = (props: AnyStoreOptions) => {
 
 	Object.entries(mismatch).forEach(([prop, replace]) => {
 		if (options[prop] === undefined) return;
-		if (replace) MESSAGES("createStore", store, "Store").ReduxMismatchProp(prop, replace);
-		else MESSAGES("createStore", store, "Store").UnsupportedReduxProp(prop);
+		if (replace) MESSAGES("createStore", options.name, "Store").ReduxMismatchProp(prop, replace);
+		else MESSAGES("createStore", options.name, "Store").UnsupportedReduxProp(prop);
 		delete options[prop];
 	});
 

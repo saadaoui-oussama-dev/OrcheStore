@@ -105,7 +105,9 @@ export const MESSAGES = (trigger: string, name?: string, type = "Slice") => {
 	};
 
 	const errors = {
-		InvalidName: (value: any) => [`"name" must be a non-empty string without '.' or '/'`, ...readable(value)], // prettier-ignore
+		InvalidName: (value: any, required: boolean) => [required
+			? `"name" must be a non-empty string without '.' or '/' (required).`
+			: `"name" must be a valid string without '.' or '/' (optional).`, ...readable(value)], // prettier-ignore
 
 		InvalidKey: (layer: string, value: any) => [`${layer} key must be a non-empty string without '.' or '/'`, ...readable(value)], // prettier-ignore
 

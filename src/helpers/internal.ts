@@ -55,18 +55,21 @@ export const validateKey = (trigger: string, name: string, type: string, layer: 
 /**
  * Validates and normalizes a node name.
  *
- * Names are required, must be non-empty strings, and cannot contain
- * "." or "/" since those characters are reserved for path semantics.
+ * Ensures the provided name is a valid string and does not contain
+ * reserved characters used for path resolution (such as "." and "/").
  *
- * Returns the validated name or reports a development error when invalid.
+ * When validation fails or no usable name is provided, a fallback
+ * value "untitled" is returned.
+ *
+ * Returns the normalized node name.
  */
-export const validateName = (trigger: string, props: Dict) => {
-	if ((props.name === undefined || props.name === null || props.name === "")) {
+export const validateName = (trigger: string, props: Dict, required: boolean) => {
+	if (!required && (props.name === undefined || props.name === null || props.name === "")) {
 		return "untitled";
 	}
 
 	if (!props.name || typeof props.name !== "string" || props.name.includes(".") || props.name.includes("/")) {
-		MESSAGES(trigger).InvalidName(props.name);
+		MESSAGES(trigger).InvalidName(props.name, required);
 		return "untitled";
 	}
 
