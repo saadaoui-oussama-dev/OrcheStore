@@ -22,3 +22,8 @@ type ReadOnly<T> = T extends (...args: any[]) => any
 			: T;
 
 export type { Dict, Obj, OmitNever, ReadOnly, Tail };
+
+export type * from "../factory/types";
+export type * from "../utils/types";
+export type * from "../slice/types";
+export type * from "../store/types";

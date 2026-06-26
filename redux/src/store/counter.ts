@@ -64,3 +64,20 @@ export const counter = createSlice({
     },
   },
 });
+
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState: { value: 0 },
+  reducers: {
+    // omitted
+  },
+  selectors: {
+    selectValue: (sliceState) => sliceState.value,
+  },
+})
+
+console.log(counterSlice.selectSlice({ counter: { value: 2 } })) // { value: 2 }
+
+const { selectValue } = counterSlice.selectors
+
+console.log(selectValue({ counter: { value: 2 } })); // 2

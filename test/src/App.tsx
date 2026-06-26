@@ -1,6 +1,6 @@
 import "./App.css";
 import { store } from "./store";
-// import { counter, subCounter, subCounter2, subSubCounter, subSubCounter2 } from "./store/counter";
+import { counter, subCounter, subCounter2, subSubCounter, subSubCounter2 } from "./store/counter";
 import { setUtils } from "orchestore";
 
 declare module "orchestore" {
@@ -48,20 +48,19 @@ function App() {
 				<button onClick={() => store.counter.incrementAfter(1, 1000)}>Increment After 1s</button>
 			</div>
 
-			{/* <div>
+			<div>
 				<button onClick={() => store.counter2.increment()}>Increment</button>
 				<button onClick={() => store.counter2.decrement()}>Decrement</button>
 				<button onClick={() => store.counter2.incrementAfter(1, 1000)}>Increment After 1s</button>
-			</div> */}
+			</div>
 
-			{/* <div>
-        <button onClick={() => subCounter.increment()}>Increment</button>
-        <button onClick={() => subCounter.decrement()}>Decrement</button>
-        <button onClick={() => subCounter.incrementAfter(1, 1000)}>
-          Increment After 1s
-        </button>
-      </div>
+			<div>
+				<button onClick={() => subCounter.increment()}>Increment</button>
+				<button onClick={() => subCounter.decrement()}>Decrement</button>
+				<button onClick={() => subCounter.incrementAfter(1, 1000)}>Increment After 1s</button>
+			</div>
 
+			{/* 
       <div>
         <button onClick={() => subCounter2.increment()}>Increment</button>
         <button onClick={() => subCounter2.decrement()}>Decrement</button>

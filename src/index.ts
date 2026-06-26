@@ -1,66 +1,211 @@
-import { createStore, getStore } from "./create-store";
-import { createSlice } from "./create-slice";
-import { StoreProvider } from "./store-provider";
-import { getUtils, setUtils } from "./global-utils";
-import { setReporting, devConsole } from "./helpers/messages";
-import type { Mutations, Obj, Slice, SliceOptions, Store, StoreOptions } from "../types/internal";
-
-let informed = false;
-const prereleasMessage =
-	"[OrcheStore] 🚧 Pre-release Notice\n" +
-	"Thank you for your interest in OrcheStore.\n" +
-	"OrcheStore is currently under active development and is not yet ready for production use.\n" +
-	"APIs, behavior, and internal implementation details may change without notice.\n" +
-	"The first stable release is currently planned for 2026-06-30.\n" +
-	"Stay tuned for updates!\n";
-
-/** Creates and initializes an OrcheStore slice. */
-const createSliceWrapper = <S extends Obj, R extends Mutations<S, C>, M, C>(
-	props: SliceOptions<S, R, M, C>,
-): Slice<S, R, M, C> => {
-	if (!informed) ((informed = true), devConsole.log([prereleasMessage]));
-	return createSlice(props);
-};
-
-/** Creates and initializes an OrcheStore instance. */
-const createStoreWrapper = <T>(props: StoreOptions<T>): Store<T> => {
-	if (!informed) ((informed = true), devConsole.log([prereleasMessage]));
-	const store = getStore(undefined, undefined, true as any);
-	if (store) {
-		devConsole.warn(["[OrcheStore::createStore] createStore(...) was called more than once.\nOrcheStore currently supports only one global store and will return the existing instance."]); // prettier-ignore
-		return store?.node as any;
-	}
-	return createStore(props);
-};
+import { createStore as _ } from "./store/creator";
+import { createSlice as __ } from "./slice/creator";
+import { StoreProvider } from "./store/provider";
+import { getUtils, setUtils } from "./utils/app-wide";
+import { setReporting } from "./helpers/messages";
+import { createSlice, createStore } from "./prerelease";
 
 const defaultExport = {
-	/** Creates and initializes an OrcheStore instance. */
-	createStore: createStoreWrapper,
+	/**
+	 * Creates and initializes an OrcheStore root instance.
+	 *
+	 * This function sets up the application-wide store tree,
+	 * mounts all slices, and connects the runtime to Redux Toolkit.
+	 *
+	 * The resulting store becomes the central access point for:
+	 * - slice instances and their mutations
+	 * - global state inspection
+	 * - React subscriptions via `useSelect`
+	 * - runtime utilities via `utils`
+	 *
+	 * @example
+	 * ```tsx
+	 * import { createStore, createSlice } from "orchestore";
+	 *
+	 * const counterSlice = createSlice({
+	 *   name: "counter",
+	 *
+	 *   state: { value: 0 },
+	 *
+	 *   mutations: {
+	 *     increment(state, amount: number = 1) {
+	 *       state.value += amount;
+	 *     },
+	 *   },
+	 *
+	 *   methods: {
+	 *     async incrementAfter(amount: number, delay: number) {
+	 *       await new Promise((r) => setTimeout(r, delay));
+	 *       this.increment(amount);
+	 *     },
+	 *   },
+	 * });
+	 *
+	 * const store = createStore({
+	 *   slices: {
+	 *     counter: counterSlice,
+	 *   },
+	 * });
+	 *
+	 * // Direct access
+	 * counterSlice.increment(12);
+	 * store.counter.increment(1);
+	 * store.counter.getState(); // { value: 13 }
+	 *
+	 * // React usage
+	 * function App() {
+	 *   const value = store.counter.useSelect((state) => state.value);
+	 *
+	 *   return (
+	 *     <>
+	 *       <div>{value}</div>
+	 *
+	 *       <button onClick={() => store.counter.increment(1)}>
+	 *         Increment
+	 *       </button>
+	 *
+	 *       <button onClick={() => store.counter.incrementAfter(1, 1000)}>
+	 *         Increment later
+	 *       </button>
+	 *     </>
+	 *   );
+	 * }
+	 * ```
+	 *
+	 * @internal
+	 * Bootstraps Redux Toolkit, mounts slice tree, and initializes runtime store graph.
+	 *
+	 * @prerelease
+	 * Calling this function will print a pre-release message in the console.
+	 * This behavior will be removed in the first stable release.
+	 */
+	createStore: createStore,
 
-	/** Creates and initializes an OrcheStore slice. */
-	createSlice: createSliceWrapper,
+	/**
+	 * Creates and initializes a slice runtime instance.
+	 *
+	 * This function constructs a fully functional OrcheStore slice,
+	 * including state, mutations, methods, and nested children.
+	 *
+	 * @example
+	 * ```tsx
+	 * import { createStore, createSlice } from "orchestore";
+	 *
+	 * const counterSlice = createSlice({
+	 *   name: "counter",
+	 *
+	 *   state: { value: 0 },
+	 *
+	 *   mutations: {
+	 *     increment(state, amount: number = 1) {
+	 *       state.value += amount;
+	 *     },
+	 *   },
+	 *
+	 *   methods: {
+	 *     async incrementAfter(amount: number, delay: number) {
+	 *       await new Promise((resolve) => setTimeout(resolve, delay));
+	 *       this.increment(amount);
+	 *     },
+	 *   },
+	 * });
+	 *
+	 * // Create store tree
+	 * const store = createStore({
+	 *   slices: {
+	 *     counter: counterSlice,
+	 *   },
+	 * });
+	 *
+	 * // Direct usage
+	 * counterSlice.increment(12);
+	 * store.counter.increment(1);
+	 * store.counter.getState(); // { value: 13 }
+	 *
+	 * // React usage
+	 * function App() {
+	 *   const count = store.counter.useSelect((state) => state.value);
+	 *
+	 *   return (
+	 *     <>
+	 *       <div>Counter {count}</div>
+	 *
+	 *       <button onClick={() => store.counter.increment(1)}>
+	 *         Increment
+	 *       </button>
+	 *
+	 *       <button onClick={() => store.counter.incrementAfter(1, 1000)}>
+	 *         Increment after 1 second
+	 *       </button>
+	 *     </>
+	 *   );
+	 * }
+	 * ```
+	 *
+	 * @internal
+	 * Integrates Redux Toolkit, builds reducers, and wires runtime context.
+	 *
+	 * @prerelease
+	 * Calling this function will print a pre-release message in the console.
+	 * This behavior will be removed in the first stable release.
+	 */
+	createSlice: createSlice,
 
-	/** Provides an OrcheStore instance to the React component tree. */
+	/**
+	 * Provides an OrcheStore instance to the React component tree.
+	 *
+	 * The slice hook (`useSelect`) rely on this provider being
+	 * present in the component tree.
+	 *
+	 * @example
+	 * ```tsx
+	 * import { StoreProvider, createStore } from "orchestore";
+	 *
+	 * const store = createStore(...);
+	 *
+	 * export function AppWrapper() {
+	 *   return (
+	 *     <StoreProvider store={store}>
+	 *       <App />
+	 *     </StoreProvider>
+	 *   );
+	 * }
+	 * ```
+	 *
+	 * @internal
+	 * Uses React-Redux Provider internally to bind the underlying Redux store
+	 * into React context.
+	 */
 	StoreProvider,
 
-	/** Registers or updates application-wide utilities. */
-	setUtils,
-
-	/** Returns the current utilities object. */
+	/**
+	 * Returns the global utilities registry.
+	 *
+	 * The returned object acts as a shared runtime container for application-wide utilities
+	 * such as navigation, notifications, API clients, and other injected services.
+	 *
+	 * Accessing an unregistered utility will trigger a development warning.
+	 */
 	getUtils,
 
-	/** Enables or disables diagnostic logs, warnings, and errors. */
+	/**
+	 * Registers or updates application-wide utilities.
+	 *
+	 * Utilities are merged into the existing runtime registry and become immediately
+	 * available across all slices and store instances.
+	 *
+	 * This is the core mechanism behind OrcheStore’s global runtime utility system shared across all slices.
+	 */
+	setUtils,
+
+	/**
+	 * Configures runtime diagnostic reporting behavior.
+	 *
+	 * Supports enabling/disabling logs, warnings, and errors globally or individually.
+	 */
 	setReporting,
 };
 
-export {
-	defaultExport as default,
-	createStoreWrapper as createStore,
-	createSliceWrapper as createSlice,
-	StoreProvider,
-	getUtils,
-	setUtils,
-	setReporting,
-};
+export { defaultExport as default, createStore, createSlice, StoreProvider, getUtils, setUtils, setReporting };
 
-export type * from "../types";
+export type * from "./types";

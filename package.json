@@ -1,7 +1,7 @@
 {
   "name": "orchestore",
   "version": "0.1.8",
-  "description": "A function-oriented architecture built on top of Redux Toolkit for simplifying and automating application development.",
+  "description": "A function-oriented architecture built on top of Redux Toolkit, inspired by Vuex, that simplifies, automates, and improves state management.",
   "author": "Oussama Saadaoui",
   "license": "MIT",
   "type": "module",

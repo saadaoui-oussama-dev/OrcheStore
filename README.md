@@ -25,9 +25,9 @@ Stay tuned for updates.
 
 ## About
 
-> 🧩 A function-oriented state orchestration architecture built on top of Redux Toolkit.
+> 🧩 A function-oriented state orchestration architecture built on top of Redux Toolkit, inspired by Vuex.
 
-OrcheStore simplifies and automates common state management patterns in React, Redux Toolkit, and TypeScript applications by unifying state and behavior into directly callable runtime modules.
+OrcheStore brings a Vuex-inspired developer experience to React and Redux Toolkit applications by unifying state and behavior into directly callable runtime modules.
 
 Instead of distributing logic across reducers, actions, thunks, selectors, hooks, middleware, and utility files, OrcheStore organizes related functionality into cohesive slice modules.
 
@@ -35,9 +35,41 @@ The goal is simple:
 
 > ⚡ Spend less time wiring state management infrastructure and more time building application features.
 
+## Installation
+
+With npm:
+
+```bash
+npm install orchestore
+```
+
+Or with Yarn:
+
+```bash
+yarn add orchestore
+```
+
+Or with pnpm:
+
+```bash
+pnpm add orchestore
+```
+
+**Peer Dependencies**
+
+OrcheStore requires:
+
+* React 16.9+
+* React DOM 16.9+
+
+**Included Dependencies**
+
+`@reduxjs/toolkit` and `react-redux` are installed automatically with OrcheStore.
+
 ## Table of Contents
 
 * [Introduction](#orchestore)
+  * [Installation](#installation)
   * [Core Principles](#core-principles)
   * [Why OrcheStore?](#why-orchestore)
   * [Architecture Overview](#architecture-overview)
@@ -902,16 +934,16 @@ Slices can be used in multiple places in the store tree.
 
 When this happens, OrcheStore creates a separate runtime instance for each usage. These instances are called **clones**.
 
-A clone is an independent instance copy of a slice at runtime. It has its own state and runs separately from other clones, while still remaining part of a shared lineage.
+A clone is an independent instance of a slice at runtime. It has its own state and runs separately from other clones, while still remaining part of a shared lineage.
 
-A lineage (or family) is the set of all instances that come from the same slice definition.
+A lineage (or family) is the set of all runtime instances that originate from the same slice definition.
 
 **This means:**
 
 - slices are not singletons
 - a slice can appear multiple times in a tree
 - each clone is fully isolated
-- all instances cloned from the same slice are linked through lineage
+- all instances created from the same definition are linked through lineage
 
 ## Manual Cloning
 
@@ -1063,7 +1095,7 @@ This ensures that both parent and child slices remain fully isolated across all 
 
 **Get All Related Instances:**
 
-Returns every instance in the lineage, **including** the current one.
+Returns every instance in the lineage, **including** the current instance.
 
 ```ts
 const lineage = slice.prototype.getLineage();
@@ -1075,9 +1107,9 @@ Useful for:
 - inspecting mounted instances
 - understanding tree distribution
 
-**Get Clones:**
+**Get Sibling Clones:**
 
-Returns all lineage members **except** the current instance.
+Returns every sibling in the lineage, **except** the current instance.
 
 ```ts
 const siblings = slice.prototype.getClones();
@@ -1090,8 +1122,6 @@ Useful for:
 - comparing mounted instances
 
 ## Definition Type Checking
-
-You can determine whether two slices belong to the same lineage:
 
 You can check whether two slices belong to the same lineage:
 
@@ -1124,7 +1154,7 @@ slice2.prototype.isTypeOf(clone1); // false
 - Every clone is isolated at runtime.
 - All clones from the same definition belong to a shared lineage.
 - `getLineage()` returns all instances in a lineage.
-- `getClones()` returns all related instances except the current one.
+- `getClones()` returns all related instances except the current instance.
 - `isTypeOf()` checks whether two instances belong to the same lineage.
 
 ---
@@ -1186,28 +1216,30 @@ declare module "orchestore" {
 }
 ```
 
-**Note:**
+**Notes:**
 
-`OrcheStore.Slots` can be extended using either `declare module "orchestore"` or `declare global`, depending on your project's type organization preferences.
+* `OrcheStore.Slots` can be extended using either `declare module "orchestore"` or `declare global`, depending on your project's type organization preferences.
+* If your project uses JavaScript without TypeScript, you can still extend these types by creating a separate declaration file (for example, `orchestore.d.ts`). This allows editors and tooling to provide type checking and IntelliSense while keeping your application code in JavaScript.
 
-**Type Safety:**
+**Rules**
 
-```ts
-// Before augmentation
-this.utils; // any
-import type { Utils } from "orchestore"; // any
+* `utils` must resolve to an object type; otherwise, it falls back to `any`.
+* `null` and `undefined` are automatically excluded. For example, `object | null | undefined` resolves to `object`.
 
-// After augmentation
-this.utils; // fully typed
-import type { Utils } from "orchestore"; // fully typed
-```
+**Type Safety**
 
-**Rules:**
+Before extending `OrcheStore.Slots.utils`, all utility-related APIs are typed as `any`.
 
-- `utils` must be an object
-- `null` and `undefined` are excluded automatically
-  - `object | null | undefined` is equivalent to `object`
-- Invalid types fall back to `any`
+After extending `OrcheStore.Slots.utils`, the inferred type is automatically applied throughout the framework, including:
+
+* `store.utils`
+* `slice.utils`
+* `this.utils` inside mutations and methods
+* `getUtils()`
+* `setUtils()`
+* `type Utils`
+
+This provides consistent type safety and IntelliSense across all utility access points without requiring additional type declarations.
 
 ## Providing Runtime Utilities
 

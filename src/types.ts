@@ -1,4 +1,4 @@
-import type { Utils, Mutations, Obj, Slice as slice, SliceOptions as sliceOptions, Store as store, StoreOptions as storeOptions } from "./internal"; // prettier-ignore
+import type { Utils, Mutations, Obj, Slice as slice, SliceOptions as sliceOptions, Store as store, StoreOptions as storeOptions } from "./helpers/types"; // prettier-ignore
 
 declare global {
 	namespace OrcheStore {
