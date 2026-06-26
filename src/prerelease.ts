@@ -19,64 +19,6 @@ const prereleasMessage =
  * This function constructs a fully functional OrcheStore slice,
  * including state, mutations, methods, and nested children.
  *
- * @example
- * ```tsx
- * import { createStore, createSlice } from "orchestore";
- *
- * const counterSlice = createSlice({
- *   name: "counter",
- *
- *   state: { value: 0 },
- *
- *   mutations: {
- *     increment(state, amount: number = 1) {
- *       state.value += amount;
- *     },
- *   },
- *
- *   methods: {
- *     async incrementAfter(amount: number, delay: number) {
- *       await new Promise((resolve) => setTimeout(resolve, delay));
- *       this.increment(amount);
- *     },
- *   },
- * });
- *
- * // Create store tree
- * const store = createStore({
- *   slices: {
- *     counter: counterSlice,
- *   },
- * });
- *
- * // Direct usage
- * counterSlice.increment(12);
- * store.counter.increment(1);
- * store.counter.getState(); // { value: 13 }
- *
- * // React usage
- * function App() {
- *   const count = store.counter.useSelect((state) => state.value);
- *
- *   return (
- *     <>
- *       <div>Counter {count}</div>
- *
- *       <button onClick={() => store.counter.increment(1)}>
- *         Increment
- *       </button>
- *
- *       <button onClick={() => store.counter.incrementAfter(1, 1000)}>
- *         Increment after 1 second
- *       </button>
- *     </>
- *   );
- * }
- * ```
- *
- * @internal
- * Integrates Redux Toolkit, builds reducers, and wires runtime context.
- *
  * @prerelease
  * Calling this function will print a pre-release message in the console.
  * This behavior will be removed in the first stable release.
@@ -99,67 +41,6 @@ const createSliceWrapper = <S extends Obj, R extends Mutations<S, C>, M, C>(
  * - global state inspection
  * - React subscriptions via `useSelect`
  * - runtime utilities via `utils`
- *
- * @example
- * ```tsx
- * import { createStore, createSlice } from "orchestore";
- *
- * const counterSlice = createSlice({
- *   name: "counter",
- *
- *   state: { value: 0 },
- *
- *   mutations: {
- *     increment(state, amount: number = 1) {
- *       state.value += amount;
- *     },
- *   },
- *
- *   methods: {
- *     async incrementAfter(amount: number, delay: number) {
- *       await new Promise((r) => setTimeout(r, delay));
- *       this.increment(amount);
- *     },
- *   },
- * });
- *
- * const store = createStore({
- *   slices: {
- *     counter: counterSlice,
- *   },
- * });
- *
- * // Direct access
- * counterSlice.increment(12);
- * store.counter.increment(1);
- * store.counter.getState(); // { value: 13 }
- *
- * // React usage
- * function App() {
- *   const value = store.counter.useSelect((state) => state.value);
- *
- *   return (
- *     <>
- *       <div>{value}</div>
- *
- *       <button onClick={() => store.counter.increment(1)}>
- *         Increment
- *       </button>
- *
- *       <button onClick={() => store.counter.incrementAfter(1, 1000)}>
- *         Increment later
- *       </button>
- *     </>
- *   );
- * }
- * ```
- *
- * @internal
- * Bootstraps Redux Toolkit, mounts slice tree, and initializes runtime store graph.
- *
- * @prerelease
- * Calling this function will print a pre-release message in the console.
- * This behavior will be removed in the first stable release.
  */
 const createStoreWrapper = <T>(props: StoreOptions<T>): Store<T> => {
 	if (!informed) ((informed = true), devConsole.log([prereleasMessage]));

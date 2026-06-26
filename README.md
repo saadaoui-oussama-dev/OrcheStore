@@ -138,7 +138,7 @@ The goal is to reduce framework plumbing and allow application behavior to remai
 
 | Concern            | Redux Toolkit                            | OrcheStore                                      |
 | ------------------ | ---------------------------------------- | ----------------------------------------------- |
-| State updates      | Actions + dispatch                       | Direct callable mutations                       |
+| State updates      | Reducers + Actions + Dispatch            | Directly callable mutations                     |
 | Mutation arguments | `PayloadAction` wrappers                 | Native function arguments                       |
 | Async logic        | Separate thunks                          | Built-in methods                                |
 | State selection    | Global store selector hooks              | Global + slice-scoped selection hooks           |
@@ -148,7 +148,7 @@ The goal is to reduce framework plumbing and allow application behavior to remai
 | Identity model     | Singleton-like slice definition          | Lineage-based identity system                   |
 | Instance reuse     | Function-level reuse of slice reducers   | Reused slices create isolated runtime instances |
 | Cloning model      | Factory pattern required for re-creation | Built-in cloning with lineage tracking          |
-| Exposed API        | Reducers, actions and some helpers       | Direct usable slice APIs                        |
+| Exposed API        | Reducers, actions and some helpers       | Directly callable slice APIs                    |
 | Type inference     | Strong                                   | Deep end-to-end inference                       |
 | Developer focus    | Connect infrastructure                   | Implement behavior                              |
 
@@ -177,7 +177,7 @@ OrcheStore does not replace Redux Toolkit. It builds on top of it, providing a h
 
 ## Slice Creation
 
-✔️ OrcheStore centrelize unified options API.
+✔️ OrcheStore centralizes state, behavior, and configuration into a unified options API.
 
 ```tsx
 import { createSlice } from "orchestore";
@@ -263,7 +263,7 @@ export const counter = createSlice({
 
 ## Slice Usage
 
-✔️ OrcheStore exposes direct callable mutations and methods.
+✔️ OrcheStore exposes directly callable mutations and methods.
 
 ```ts
 counter.increment(4);
@@ -386,7 +386,7 @@ const counter = createSlice({
 
 	state: {},
 
-	computed: {}, // Planned
+	computed: {},
 
 	mutations: {},
 
@@ -394,7 +394,7 @@ const counter = createSlice({
 
 	children: {},
 
-	subscribe: {}, // Planned
+	subscribe: {},
 });
 ```
 
@@ -544,7 +544,7 @@ Methods should NOT:
 
 - include slice-unrelated logic.
 - include UI layer logic.
-- mutate state directly. use mutations instead.
+- mutate state directly. Use mutations instead, because mutations remain the only place where state transitions occur, making updates predictable and keeping methods focused on orchestration.
 
 **Example:**
 
@@ -576,7 +576,7 @@ const counter = createSlice({
 
 ## Computed State (Planned)
 
-This currently not supported
+This is currently not supported.
 
 ~~The `computed` property provides reusable derived state.~~
 
@@ -647,7 +647,7 @@ console.log(admin.users.permissions.getState());
 
 Every slice instance has a runtime reference to its parent via `slice.parent`.
 
-This allows also child slices to interact with sibling slices through the parent ownership scope.
+This allows slices also to interact with sibling slices through the parent ownership scope.
 
 ```ts
 this.parent.categories.getState().list;

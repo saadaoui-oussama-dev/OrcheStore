@@ -8,25 +8,6 @@ import type { StoreProviderProps } from "../helpers/types";
  *
  * The slice hook (`useSelect`) rely on this provider being
  * present in the component tree.
- *
- * @example
- * ```tsx
- * import { StoreProvider, createStore } from "orchestore";
- *
- * const store = createStore(...);
- *
- * export function AppWrapper() {
- *   return (
- *     <StoreProvider store={store}>
- *       <App />
- *     </StoreProvider>
- *   );
- * }
- * ```
- *
- * @internal
- * Uses React-Redux Provider internally to bind the underlying Redux store
- * into React context.
  */
 export function StoreProvider<T>(props: StoreProviderProps<T>): React.JSX.Element {
 	const { store, ...rest } = { ...(props || {}) };
