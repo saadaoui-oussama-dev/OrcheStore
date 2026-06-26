@@ -26,21 +26,20 @@ export const exposeContext = (name: string, meta: NodeMeta<AnyStore, ExtraMeta>)
  */
 export const validateAndNormalizeProps = (props: AnyStoreOptions) => {
 	const mismatch = { reducer: "'slices'", reducers: "'slices'", devTools: "", duplicateMiddlewareCheck: "", enhancers: "", middleware: "", preloadedState: "" }; // prettier-ignore
-	const options = { ...(props || {}) } as any;
-	const store = options.name;
+	const source = { ...(props || {}) } as any;
+	const output: any = {};
 
-	options.name = validateName("createStore", options, false);
+	output.name = validateName("createStore", source, false);
 
 	["slices"].forEach((prop) => {
-		options[prop] = typeof options[prop] === "object" && options[prop] ? { ...options[prop] } : {};
+		output[prop] = typeof source[prop] === "object" && source[prop] ? { ...source[prop] } : {};
 	});
 
 	Object.entries(mismatch).forEach(([prop, replace]) => {
-		if (options[prop] === undefined) return;
-		if (replace) MESSAGES("createStore", options.name, "Store").ReduxMismatchProp(prop, replace);
-		else MESSAGES("createStore", options.name, "Store").UnsupportedReduxProp(prop);
-		delete options[prop];
+		if (source[prop] === undefined) return;
+		if (replace) MESSAGES("createStore", output.name, "Store").ReduxMismatchProp(prop, replace);
+		else MESSAGES("createStore", output.name, "Store").UnsupportedReduxProp(prop);
 	});
 
-	return options;
+	return output;
 };
