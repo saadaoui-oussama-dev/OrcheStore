@@ -8,16 +8,6 @@ import type { AnyStore, ExtraMeta, NodeMeta } from "../helpers/types";
 export const createStoreGetter = (instances: Map<AnyStore, NodeMeta<AnyStore, ExtraMeta>>) => {
 	return {
 		/**
-		 * Returns the first registered store metadata entry.
-		 *
-		 * Temporary helper used while the runtime supports a single-store assumption.
-		 * This will be removed once multi-store support is fully implemented.
-		 *
-		 * @prerelease
-		 */
-		one: () => [...instances.values()][0],
-
-		/**
 		 * Resolves metadata for a given store instance.
 		 *
 		 * If the store is not found, an optional error callback is invoked.

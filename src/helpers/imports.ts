@@ -1,8 +1,8 @@
-import { createElement as ReactElement } from "react";
+import { createElement as ReactElement, createContext as ReactContext } from "react";
 
 import {
 	Provider as RTKProvider,
-	useSelector as useRTKSelector,
+	createSelectorHook as createRTKSelector,
 	type ProviderProps as RTKProviderProps,
 } from "react-redux";
 
@@ -24,6 +24,14 @@ const configureRTKStore = (options: RTKStoreOptions) => {
 	return RTKConfigureStore(options);
 };
 
-export { createRTKSlice, configureRTKStore, ReactElement, RTKReducerType, RTKProvider, useRTKSelector };
+export {
+	createRTKSelector,
+	createRTKSlice,
+	configureRTKStore,
+	ReactContext,
+	ReactElement,
+	RTKReducerType,
+	RTKProvider,
+};
 
 export type { RTKStoreOptions, RTKSlice, RTKStore, RTKProviderProps, RTKReducer };

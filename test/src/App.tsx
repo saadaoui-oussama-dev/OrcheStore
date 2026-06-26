@@ -1,5 +1,5 @@
 import "./App.css";
-import { store } from "./store";
+import { store, store2 } from "./store";
 import { counter, subCounter, subCounter2, subSubCounter, subSubCounter2 } from "./store/counter";
 import { setUtils } from "orchestore";
 
@@ -20,7 +20,8 @@ setUtils({
 });
 
 function App() {
-	const state = store.useSelect((state) => JSON.stringify(state, null, 2));
+	const state1 = store.useSelect((state) => JSON.stringify(state, null, 2));
+	const state2 = store2.useSelect((state) => JSON.stringify(state, null, 2));
 	// const subCount = subCounter.useSelect((state) => state);
 	// const subCount2 = subCounter2.useSelect((state) => state);
 	// const subSubCount = subSubCounter.useSelect((state) => state);
@@ -28,7 +29,8 @@ function App() {
 
 	return (
 		<>
-			<pre style={{ textAlign: "left" }}>state: {state}</pre>
+			<pre style={{ textAlign: "left" }}>state 1: {state1}</pre>
+			<pre style={{ textAlign: "left" }}>state 2: {state2}</pre>
 			{/* <pre style={{ textAlign: "left" }}>
         subCount: {JSON.stringify(subCount, null, 2)}
       </pre>
@@ -43,16 +45,16 @@ function App() {
       </pre> */}
 
 			<div>
-				<button onClick={() => store.counter.increment()}>Increment</button>
-				<button onClick={() => store.counter.decrement()}>Decrement</button>
-				<button onClick={() => store.counter.incrementAfter(1, 1000)}>Increment After 1s</button>
+				<button onClick={() => store2.counter.subCounter.increment()}>Increment</button>
+				<button onClick={() => store2.counter.subCounter.decrement()}>Decrement</button>
+				<button onClick={() => store2.counter.subCounter.incrementAfter(1, 1000)}>Increment After 1s</button>
 			</div>
 
-			<div>
+			{/* <div>
 				<button onClick={() => store.counter2.increment()}>Increment</button>
 				<button onClick={() => store.counter2.decrement()}>Decrement</button>
 				<button onClick={() => store.counter2.incrementAfter(1, 1000)}>Increment After 1s</button>
-			</div>
+			</div> */}
 
 			<div>
 				<button onClick={() => subCounter.increment()}>Increment</button>

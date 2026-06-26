@@ -13,23 +13,11 @@ export const store = createStore({
 	},
 });
 
-console.log(
-	"subSubCounter",
-	subSubCounter.prototype.getLineage().map((it) => it.getState()),
-);
-console.log(
-	"subSubCounter2",
-	subSubCounter2.prototype.getLineage().map((it) => it.getState()),
-);
-console.log(
-	"subCounter",
-	subCounter.prototype.getLineage().map((it) => it.getState()),
-);
-console.log(
-	"subCounter2",
-	subCounter2.prototype.getLineage().map((it) => it.getState()),
-);
-console.log(
-	"counter",
-	counter.prototype.getLineage().map((it) => it.getState()),
-);
+export const store2 = createStore({
+	slices: {
+		counter: counter.prototype.clone((state) => {
+			state.value = 800;
+			state.subCounter.subValue = 8476;
+		}),
+	},
+});

@@ -163,11 +163,6 @@ const createSliceWrapper = <S extends Obj, R extends Mutations<S, C>, M, C>(
  */
 const createStoreWrapper = <T>(props: StoreOptions<T>): Store<T> => {
 	if (!informed) ((informed = true), devConsole.log([prereleasMessage]));
-	const store = getStore.one();
-	if (store) {
-		devConsole.warn(["[OrcheStore::createStore] createStore(...) was called more than once.\nOrcheStore currently supports only one global store and will return the existing instance."]); // prettier-ignore
-		return store?.node as any;
-	}
 	return createStore(props);
 };
 

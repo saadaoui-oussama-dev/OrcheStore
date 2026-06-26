@@ -1,7 +1,7 @@
 import type { RTKStoreOptions, RTKStore, RTKProviderProps } from "../helpers/imports";
 import type { Slice, SliceState, ReadOnly, OmitNever, Utils, Dict } from "../helpers/types";
 
-export type ExtraMeta = { redux: RTKStore; reducer: Dict };
+export type ExtraMeta = { redux: RTKStore; reducer: Dict; context: any; selector: any };
 
 /**
  * Runtime API returned by `createStore()`.

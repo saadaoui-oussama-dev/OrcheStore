@@ -33,5 +33,5 @@ export function StoreProvider<T>(props: StoreProviderProps<T>): React.JSX.Elemen
 
 	const storeData = getStore.get(store as any, () => MESSAGES("StoreProvider").InvalidStore(store));
 
-	return ReactElement(RTKProvider, { ...rest, store: storeData?.redux! });
+	return ReactElement(RTKProvider, { ...rest, store: storeData?.redux!, context: storeData?.context! });
 }
