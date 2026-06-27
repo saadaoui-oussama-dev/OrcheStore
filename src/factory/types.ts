@@ -2,6 +2,9 @@
  * Shared lineage state for all nodes derived from the same definition.
  */
 type FamilyMeta<N, P> = {
+	/** Original name inherited from the first node created in this lineage. */
+	name: string;
+
 	/** Baseline props used as the source for cloning. */
 	props: P;
 
@@ -20,13 +23,13 @@ type NodeMeta<N, E> = E & {
 	node: N;
 
 	/** Identifier shared across all nodes in the same lineage. */
-	familyId: symbol;
+	family: FamilyMeta<N, any>;
 
 	/** Absolute path from the root of the ownership tree. */
 	path: string;
 
 	/** Ownership chain from closest parent to root. */
-	parents: N[];
+	parents: NodeMeta<N, E>[];
 
 	/** Direct child nodes indexed by key. */
 	children: Map<string, NodeMeta<N, E>>;
@@ -51,17 +54,17 @@ type FactoryErrors<N> = {
  */
 type FactoryInput<N, P = any, E = {}, A = undefined, I = {}> = {
 	/** Instantiates a node and binds it to runtime metadata. */
-	instantiate: (props: P, meta: NodeMeta<N, E>, family: FamilyMeta<N, P>, cloning: boolean) => I;
+	instantiate: (props: P, meta: NodeMeta<N, E>, cloning: boolean) => I;
 
 	/** Finalizes node setup after instantiation and handles composition logic. */
-	afterInstantiate?: (props: P, meta: NodeMeta<N, E>, family: FamilyMeta<N, P>, cloning: boolean, payload: I) => void;
+	afterInstantiate?: (props: P, meta: NodeMeta<N, E>, cloning: boolean, payload: I) => void;
 
 	options?: {
 		/** Prepares and normalizes props before instantiation. */
 		prepare?: (props: P) => P;
 
 		/** Builds clone base props from the original lineage state props. */
-		clone?: (firstRegisteredProps: P, originMeta: NodeMeta<N, E>, family: FamilyMeta<N, P>, payload?: A) => P;
+		clone?: (firstRegisteredProps: P, originMeta: NodeMeta<N, E>, payload?: A) => P;
 
 		/** Reduces cloned props into the subset owned by the current node. */
 		currentCloned?: (props: P) => P;
@@ -90,16 +93,13 @@ type FactoryOutput<N, P = any, E = {}, A = undefined> = {
 	clone: (node: N, errors?: FactoryErrors<N>, payload?: A) => undefined | NodeMeta<N, E>;
 
 	/** Attaches a node under a parent, cloning it if ownership changes. */
-	attach: <U = N, F = E>(
-		key: string,
-		node: N,
-		parent: U,
-		parentMeta?: NodeMeta<U, F>,
-		errors?: FactoryErrors<N>,
-	) => undefined | NodeMeta<N, E>;
+	attach: (key: string, node: N, parentMeta: NodeMeta<N, E>, errors?: FactoryErrors<N>) => undefined | NodeMeta<N, E>;
 };
 
 type NodePrototype<N, A extends any[] = []> = {
+	/** Original name inherited from the first node created in this lineage. */
+	name: string;
+
 	/**
 	 * Creates a new detached instance within the same lineage.
 	 *

@@ -73,12 +73,12 @@ export const composeStateReducer = (_name: string, meta: Meta, children: any) =>
  * Reconstructs state by running the full reducer tree with an initialization action.
  * This ensures cloned instances start from a fully composed state snapshot.
  */
-export const cloneState = (meta: Meta, payload?: CloneArgs) => {
-	if (payload?.object) return payload?.object;
+export const cloneState = (props: AnySliceOptions, meta: Meta, payload?: CloneArgs) => {
+	if (payload?.object) return { ...props, state: payload.object };
 	const originState: any = meta.reducer(undefined, { type: "@@CLONE" });
 	const transformedState = payload?.transform ? payload.transform(originState) : undefined;
 	const clonedState = transformedState === undefined ? originState : transformedState;
-	return normalizeSafeState("slice.clone", payload?.name ?? "", clonedState);
+	return { ...props, state: normalizeSafeState("slice.clone", payload?.name ?? "", clonedState) };
 };
 
 /**

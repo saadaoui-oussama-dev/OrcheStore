@@ -42,11 +42,11 @@ const createNodeFactory = <N, P, E, A, I>(opts: FactoryInput<N, P, E, A, I>): Fa
 	const create: FactoryOutput<N, P, E, A>["create"] = (props) => {
 		// Prepare props and initialize ownership and lineage metadata for the root node.
 		props = options.prepare ? options.prepare(props) : props;
-		const meta = { familyId: Symbol("family"), path: "", children: new Map(), parents: [] } as any;
-		const family = { props, siblings: new Set<N>() };
+		const family = { name: (props as any).name, props, siblings: new Set<N>() };
+		const meta = { path: "", family, children: new Map(), parents: [] } as any;
 
 		// Instantiate the node with access to its runtime metadata.
-		const instantiatePayload = instantiate(props, meta, family, false);
+		const instantiatePayload = instantiate(props, meta, false);
 
 		// Register the node as the first member of its lineage.
 		family.siblings.add(meta.node);
@@ -54,7 +54,7 @@ const createNodeFactory = <N, P, E, A, I>(opts: FactoryInput<N, P, E, A, I>): Fa
 		families.set(meta.familyId, family);
 
 		// Post-instantiation composition and final wiring of the node.
-		if (afterInstantiate) afterInstantiate(props, meta, family, false, instantiatePayload);
+		if (afterInstantiate) afterInstantiate(props, meta, false, instantiatePayload);
 
 		return meta.node;
 	};
@@ -62,37 +62,31 @@ const createNodeFactory = <N, P, E, A, I>(opts: FactoryInput<N, P, E, A, I>): Fa
 	/** Creates a detached sibling instance within the same lineage. */
 	const clone: FactoryOutput<N, P, E, A>["clone"] = (node, errors, payload) => {
 		const meta = instances.get(node)!;
-		const family = (meta ? families.get(meta.familyId) : undefined)!;
-		if (!meta || !family) return void errors?.UnknownNode?.("", node);
-		return updateOwnership("", [], meta, family, true, payload!, () => {});
+		if (!meta) return void errors?.UnknownNode?.("", node);
+		return updateOwnership("", [], meta, true, payload!, () => {});
 	};
 
 	/** Attaches a node under a parent, cloning it if ownership changes. */
-	const attach: FactoryOutput<N, P, E, A>["attach"] = (key, node, parent, parentMetadata, errors) => {
+	const attach: FactoryOutput<N, P, E, A>["attach"] = (key, node, parentMeta, errors) => {
 		const meta = instances.get(node)!;
-		const family = (meta ? families.get(meta.familyId) : undefined)!;
-		if (!meta || !family) return void errors?.UnknownNode?.(key, node);
-
-		// Resolve the parent's ownership metadata.
-		const parentMeta = (parentMetadata || instances.get(parent as any)) as NodeMeta<N, E>;
-		if (!parentMeta) return void errors?.UnknownParent?.(key, node, parent) as any;
+		if (!meta) return void errors?.UnknownNode?.(key, node);
 
 		// Prevent ownership cycles.
-		const parents = [parent, ...(parentMeta.parents || [])] as N[];
-		if (parents.includes(node)) return void errors?.InfiniteOwnership?.(key, node, parent);
+		const parents = [parentMeta, ...(parentMeta.parents || [])];
+		if (parents.includes(meta)) return void errors?.InfiniteOwnership?.(key, node, parentMeta?.node);
 
 		// Reconcile ownership and attach the resulting node.
 		const path = (parentMeta.path ? `${parentMeta.path}.` : "") + key;
-		return updateOwnership(path, parents, meta, family, false, undefined!, (clone) => {
+		return updateOwnership(path, parents, meta, false, undefined!, (clone) => {
 			parentMeta.children?.set(key, clone);
 		});
 	};
 
 	/** Reconciles ownership state and determines whether cloning is required. */
 	function updateOwnership(
-		...args: [string, N[], NodeMeta<N, E>, FamilyMeta<N, P>, boolean, A, (clone: NodeMeta<N, E>) => void]
+		...args: [string, NodeMeta<N, E>[], NodeMeta<N, E>, boolean, A, (clone: NodeMeta<N, E>) => void]
 	) {
-		let [path, parents, meta, family, force, payload, onSetOwnership] = args;
+		let [path, parents, meta, force, payload, onSetOwnership] = args;
 		let instantiation: { executed: boolean; payload: I } = { executed: false, payload: undefined! };
 		let props: [P, P] = [] as any;
 
@@ -107,18 +101,18 @@ const createNodeFactory = <N, P, E, A, I>(opts: FactoryInput<N, P, E, A, I>): Fa
 
 		if (force) {
 			// Prepare metadata and props for a new sibling in the same lineage.
-			const $meta = { familyId: meta.familyId, path, children: new Map(meta.children), parents } as any;
-			props[0] = options.clone ? options.clone(family.props, meta, family, payload) : family.props;
+			const $meta = { family: meta.family, path, children: new Map(meta.children), parents } as any;
+			props[0] = options.clone ? options.clone(meta.family.props, meta, payload) : meta.family.props;
 			props[1] = options.currentCloned ? options.currentCloned(props[0]) : props[0];
 			meta = $meta;
 
 			// Instantiate a sibling within the same lineage with access to its runtime metadata.
-			instantiation.payload = instantiate(props[1], $meta, family, true);
+			instantiation.payload = instantiate(props[1], $meta, true);
 			instantiation.executed = true;
 
 			// Register the sibling in the lineage metadata.
 			instances.set(meta.node, $meta);
-			family.siblings.add(meta.node);
+			meta.family.siblings.add(meta.node);
 		}
 
 		// Update ownership metadata for the node's current location.
@@ -129,17 +123,15 @@ const createNodeFactory = <N, P, E, A, I>(opts: FactoryInput<N, P, E, A, I>): Fa
 		// Propagate ownership reconciliation through the subtree.
 		for (const [key, childMeta] of [...meta.children.entries()]) {
 			const childPath = `${path}${path ? "." : ""}${key}`;
-			const childFamily = families.get(childMeta.familyId)!;
 			const childPayload = options.childCloned && props[0] ? options.childCloned(key, props[0]) : undefined!;
 
-			updateOwnership(childPath, [meta.node, ...parents], childMeta, childFamily, false, childPayload, (clone) => {
+			updateOwnership(childPath, [meta, ...parents], childMeta, false, childPayload, (clone) => {
 				if (clone !== childMeta) meta.children.set(key, clone);
 			});
 		}
 
 		// Post-instantiation composition and final wiring of the node.
-		if (instantiation.executed && afterInstantiate)
-			afterInstantiate(props[1], meta, family, true, instantiation.payload);
+		if (instantiation.executed && afterInstantiate) afterInstantiate(props[1], meta, true, instantiation.payload);
 
 		return meta;
 	}

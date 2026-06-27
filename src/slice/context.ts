@@ -30,7 +30,8 @@ export const exposeContext = (name: string, meta: Meta, instances: Map<AnySlice,
 	});
 
 	defineReadonly(meta.node, "parent", () => {
-		return instances.get(meta.parents[0])?.node;
+		const parentOrRoot = meta.parents[0]?.node;
+		return parentOrRoot ? instances.get(parentOrRoot)?.node : undefined;
 	});
 
 	defineReadonly(meta.node, "utils", () => {

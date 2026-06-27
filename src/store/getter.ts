@@ -34,8 +34,8 @@ export const createStoreGetter = (instances: Map<AnyStore, NodeMeta<AnyStore, Ex
 		 * if the store or metadata cannot be resolved.
 		 */
 		of: (name: string, childMeta: NodeMeta<any, {}>, trigger?: string) => {
-			const store = childMeta.parents?.at?.(-1);
-			const meta = store ? instances.get(store as any) : undefined;
+			const store = childMeta.parents?.at?.(-1)?.node;
+			const meta = store ? instances.get(store) : undefined;
 
 			if (!store) return void (trigger && MESSAGES(trigger).NeverExposed(name));
 			else if (!meta) return void (trigger && MESSAGES(trigger).ParentNeverExposed(name, (store as any).name));

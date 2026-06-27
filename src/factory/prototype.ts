@@ -1,5 +1,5 @@
 import { defineMethod, defineReadonly } from "../helpers/internal";
-import type { FactoryOutput, FamilyMeta, NodeMeta, NodePrototype } from "../helpers/types";
+import type { FactoryOutput, NodeMeta, NodePrototype } from "../helpers/types";
 
 /**
  * Attaches lineage inspection and cloning utilities to a node instance.
@@ -9,14 +9,17 @@ import type { FactoryOutput, FamilyMeta, NodeMeta, NodePrototype } from "../help
  */
 export const exposeLineage = <N extends { prototype: NodePrototype<N, A> }, A extends any[], Args>(
 	meta: NodeMeta<N, {}>,
-	family: FamilyMeta<N, {}>,
 	instances: Map<N, NodeMeta<N, {}>>,
 	clone: FactoryOutput<N, {}, NodeMeta<N, {}>, Args>["clone"],
 	getArgs?: (...args: A) => Args,
 ) => {
 	const prototype = {} as N["prototype"];
 
-	const getLineage = () => [...(family.siblings.values() || [])];
+	const getLineage = () => [...(meta.family.siblings.values() || [])];
+
+	defineReadonly(prototype, "name", () => {
+		return meta.family.name;
+	});
 
 	defineMethod(prototype, "clone", (...args) => {
 		return clone(meta.node, undefined, getArgs?.(...args))!.node;
@@ -31,7 +34,7 @@ export const exposeLineage = <N extends { prototype: NodePrototype<N, A> }, A ex
 	});
 
 	defineMethod(prototype, "isTypeOf", ((other: any) => {
-		return meta.familyId === instances.get(other)?.familyId;
+		return meta.family === instances.get(other)?.family;
 	}) as any);
 
 	defineReadonly(meta.node, "prototype", () => prototype);

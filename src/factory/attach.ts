@@ -28,7 +28,7 @@ export const createAttachHelper = <N, E>(trigger: string, type: string, layer: s
 			const key = validateKey(trigger, name, type, layer, k, reserved)!;
 
 			const child = key
-				? callbacks.attach(key, item as any, meta.node, meta, {
+				? callbacks.attach(key, item as any, meta, {
 						UnknownNode: () => MESSAGES(trigger, name, type).InvalidChild(key, item),
 						InfiniteOwnership: (key) => MESSAGES(trigger, name, type).InfiniteOwnership(key),
 					})

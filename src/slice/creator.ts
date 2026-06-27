@@ -13,8 +13,8 @@ const createSliceFactory = createNodeFactory<AnySlice, AnySliceOptions, Meta, Cl
 
 const { instances, create, attach, clone } = createSliceFactory({
 	options: {
-		prepare: validateAndNormalizeProps,
-		clone: (props, meta, _, payload) => ({ ...props, state: cloneState(meta, payload) }),
+		prepare: (props) => validateAndNormalizeProps(props),
+		clone: (props, meta, payload) => cloneState(props, meta, payload),
 		currentCloned: (props) => excludeChildState(props),
 		childCloned: (key, props) => ({ object: getChildState(key, props) }),
 	},
@@ -25,7 +25,7 @@ const { instances, create, attach, clone } = createSliceFactory({
 	 * Sets up Redux Toolkit integration, state accessors, selectors,
 	 * lineage tracking, mutations, methods, and runtime context.
 	 */
-	instantiate(props, meta, family) {
+	instantiate(props, meta) {
 		// Create the runtime node placeholder before exposing APIs.
 		meta.node = {} as any;
 
@@ -48,7 +48,7 @@ const { instances, create, attach, clone } = createSliceFactory({
 		exposeStateAccessors(props.name, meta);
 
 		// Expose cloning and lineage utilities.
-		exposeLineage(meta, family, instances, clone, (transform?: CloneArgs["transform"]) => {
+		exposeLineage(meta, instances, clone, (transform?: CloneArgs["transform"]) => {
 			return { name: props.name, transform };
 		});
 
@@ -69,7 +69,7 @@ const { instances, create, attach, clone } = createSliceFactory({
 	 * Attaches child slices and composes their reducers into
 	 * the parent reducer tree.
 	 */
-	afterInstantiate(props, meta, _, cloning, reserved) {
+	afterInstantiate(props, meta, cloning, reserved) {
 		// Clone or reuse children and expose them.
 		const reducers = attachSliceChildren(meta.node.name, meta, cloning, props.children, reserved);
 

@@ -39,7 +39,7 @@ const { instances, create } = createStoreFactory({
 	 * Attaches slice trees, composes reducers, and creates the underlying
 	 * Redux Toolkit store instance used at runtime.
 	 */
-	afterInstantiate(props, meta, _family, cloning, reserved) {
+	afterInstantiate(props, meta, cloning, reserved) {
 		// Clone or reuse children and expose them.
 		meta.reducer = Object.fromEntries(attachStoreChildren(props.name!, meta as any, cloning, props.slices, reserved));
 
