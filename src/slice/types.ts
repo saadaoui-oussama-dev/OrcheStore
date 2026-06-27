@@ -58,10 +58,10 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
 	};
 
 	/**
-	 * Runtime utilities for cloning, lineage inspection,
+	 * Runtime utilities for cloning, family inspection,
 	 * and instance identity.
 	 */
-	readonly prototype: NodePrototype<slice<S, R, M, C>, [CloneArgs<S, C>["transform"]]>;
+	readonly family: NodePrototype<slice<S, R, M, C>, [CloneArgs<S, C>["transform"]]>;
 
 	/** Collection of derived state functions. */
 	readonly computed: undefined;
@@ -232,7 +232,7 @@ type ReservedSliceKeys<R = {}, M = {}> =
 			| "computed"
 			| "root"
 			| "parent"
-			| "prototype"
+			| "family"
 			| "utils"
 			| "getState"
 			| "getInitialState"

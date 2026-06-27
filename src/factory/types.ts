@@ -1,28 +1,28 @@
 /**
- * Shared lineage state for all nodes derived from the same definition.
+ * Shared family state for all nodes derived from the same definition.
  */
 type FamilyMeta<N, P> = {
-	/** Original name inherited from the first node created in this lineage. */
+	/** Original name inherited from the first node created in this family. */
 	name: string;
 
 	/** Baseline props used as the source for cloning. */
 	props: P;
 
-	/** All active nodes belonging to this lineage. */
+	/** All active nodes belonging to this family. */
 	siblings: Set<N>;
 };
 
 /**
  * Runtime metadata describing a single node instance within a factory graph.
  *
- * Nodes are always part of a lineage and maintain structural relationships
+ * Nodes are always part of a family and maintain structural relationships
  * to their parent chain and children.
  */
 type NodeMeta<N, E> = E & {
 	/** The runtime node instance associated with this metadata. */
 	node: N;
 
-	/** Identifier shared across all nodes in the same lineage. */
+	/** Identifier shared across all nodes in the same family. */
 	family: FamilyMeta<N, any>;
 
 	/** Absolute path from the root of the ownership tree. */
@@ -63,7 +63,7 @@ type FactoryInput<N, P = any, E = {}, A = undefined, I = {}> = {
 		/** Prepares and normalizes props before instantiation. */
 		prepare?: (props: P) => P;
 
-		/** Builds clone base props from the original lineage state props. */
+		/** Builds clone base props from the original family state props. */
 		clone?: (firstRegisteredProps: P, originMeta: NodeMeta<N, E>, payload?: A) => P;
 
 		/** Reduces cloned props into the subset owned by the current node. */
@@ -77,19 +77,19 @@ type FactoryInput<N, P = any, E = {}, A = undefined, I = {}> = {
 /**
  * Runtime interface exposed by a node factory.
  *
- * Provides creation, cloning, attachment, and lineage introspection.
+ * Provides creation, cloning, attachment, and family introspection.
  */
 type FactoryOutput<N, P = any, E = {}, A = undefined> = {
 	/** All node instances currently managed by the factory. */
 	instances: Map<N, NodeMeta<N, E>>;
 
-	/** All active lineage groups managed by the factory. */
+	/** All active family groups managed by the factory. */
 	families: Map<symbol, FamilyMeta<N, P>>;
 
-	/** Creates the root instance of a new lineage. */
+	/** Creates the root instance of a new family. */
 	create: (props: P) => N;
 
-	/** Creates a detached sibling instance within an existing lineage. */
+	/** Creates a detached sibling instance within an existing family. */
 	clone: (node: N, errors?: FactoryErrors<N>, payload?: A) => undefined | NodeMeta<N, E>;
 
 	/** Attaches a node under a parent, cloning it if ownership changes. */
@@ -97,11 +97,11 @@ type FactoryOutput<N, P = any, E = {}, A = undefined> = {
 };
 
 type NodePrototype<N, A extends any[] = []> = {
-	/** Original name inherited from the first node created in this lineage. */
+	/** Original name inherited from the first node created in this family. */
 	name: string;
 
 	/**
-	 * Creates a new detached instance within the same lineage.
+	 * Creates a new detached instance within the same family.
 	 *
 	 * The cloned instance is fully independent at runtime, but still
 	 * linked to the original definition family.
@@ -109,19 +109,19 @@ type NodePrototype<N, A extends any[] = []> = {
 	readonly clone: (...args: A) => N;
 
 	/**
-	 * Returns all instances that belong to the same lineage family,
+	 * Returns all instances that belong to the same family family,
 	 * including the current instance.
 	 */
-	readonly getLineage: () => N[];
+	readonly getAll: () => N[];
 
 	/**
-	 * Returns all other instances in the same lineage,
+	 * Returns all other instances in the same family,
 	 * excluding the current instance.
 	 */
 	readonly getClones: () => N[];
 
 	/**
-	 * Checks whether another instance belongs to the same lineage.
+	 * Checks whether another instance belongs to the same family.
 	 *
 	 * Useful for verifying whether two slices originate from the same definition,
 	 * even if they are different runtime instances.

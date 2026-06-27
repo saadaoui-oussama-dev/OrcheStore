@@ -99,10 +99,10 @@ OrcheStore requires:
   * [Accessing Slices through Store](#accessing-slices-through-store)
   * [Accessing Store from Slices](#accessing-store-from-slices)
 
-* [Lineage & Clones](#lineage--clones)
+* [Family & Clones](#family--clones)
   * [Manual Cloning](#manual-cloning)
   * [Automatic Cloning](#automatic-cloning)
-  * [Inspecting a Lineage](#inspecting-a-lineage)
+  * [Inspecting a Family](#inspecting-a-family)
   * [Definition Type Checking](#definition-type-checking)
 
 * [Utilities](#utilities)
@@ -145,9 +145,9 @@ The goal is to reduce framework plumbing and allow application behavior to remai
 | Cross-slice access | Imports & wiring                         | Runtime tree access (Root / Parent / Children)  |
 | Shared services    | Manual integration                       | Application-wide utilities                      |
 | State composition  | Manual reducer composition               | Nested slices                                   |
-| Identity model     | Singleton-like slice definition          | Lineage-based identity system                   |
+| Identity model     | Singleton-like slice definition          | Family-based identity system                    |
 | Instance reuse     | Function-level reuse of slice reducers   | Reused slices create isolated runtime instances |
-| Cloning model      | Factory pattern required for re-creation | Built-in cloning with lineage tracking          |
+| Cloning model      | Factory pattern required for re-creation | Built-in cloning with family tracking           |
 | Exposed API        | Reducers, actions and some helpers       | Directly callable slice APIs                    |
 | Type inference     | Strong                                   | Deep end-to-end inference                       |
 | Developer focus    | Connect infrastructure                   | Implement behavior                              |
@@ -156,18 +156,18 @@ OrcheStore does not replace Redux Toolkit. It builds on top of it, providing a h
 
 ## Architecture Overview
 
-| Layer       | Responsibility                           |
-| ----------- | ---------------------------------------- |
-| `name`      | Unique slice identifier                  |
-| `path`      | Hierarchical slice path                  |
-| `state`     | Slice data storage definition            |
-| `mutations` | Synchronous state transitions            |
-| `methods`   | Orchestration and side effects           |
-| `computed`  | Derived and computed state               |
-| `children`  | Nested slice composition                 |
-| `getState`  | Imperative state access                  |
-| `useSelect` | Reactive state subscriptions             |
-| `prototype` | Lineage, cloning, and instance utilities |
+| Layer       | Responsibility                          |
+| ----------- | --------------------------------------- |
+| `name`      | Unique slice identifier                 |
+| `path`      | Hierarchical slice path                 |
+| `state`     | Slice data storage definition           |
+| `mutations` | Synchronous state transitions           |
+| `methods`   | Orchestration and side effects          |
+| `computed`  | Derived and computed state              |
+| `children`  | Nested slice composition                |
+| `getState`  | Imperative state access                 |
+| `useSelect` | Reactive state subscriptions            |
+| `family`    | Family, cloning, and instance utilities |
 
 ---
 
@@ -227,7 +227,7 @@ export const incrementAfter = createAsyncThunk(
 	async ({ amount, delay }: { amount: number; delay: number }) => {
 		await new Promise((resolve) => setTimeout(resolve, delay));
 		return amount;
-	}
+	},
 );
 
 export const counter = createSlice({
@@ -370,7 +370,7 @@ export function CounterComponent() {
 
 > 📌 If the slice is mounted only once, `store.counter` and `counter` refer to the same runtime instance and can be used interchangeably.
 >
-> 🔄 When a slice is mounted multiple times, each mount receives its own isolated instance. See [Reusing Slices](#reusing-slices) and [Lineage & Clones](#lineage--clones) for details.
+> 🔄 When a slice is mounted multiple times, each mount receives its own isolated instance. See [Reusing Slices](#reusing-slices) and [Family & Clones](#family--clones) for details.
 
 ---
 
@@ -697,15 +697,15 @@ Although all mounted slices originate from `paginationSlice`, they are not neces
 ```ts
 paginationSlice === shopSlice.categories; // First mount uses the original instance
 
-paginationSlice !== shopSlice.products;   // Different mount location creates a clone
-paginationSlice !== adminSlice.products;  // Different mount location creates a clone
+paginationSlice !== shopSlice.products;  // Different mount location creates a clone
+paginationSlice !== adminSlice.products; // Different mount location creates a clone
 
 shopSlice.products !== adminSlice.products; // Independent mounted clones
 ```
 
 Every mount location receives its own isolated instance.
 
-For a deeper explanation of how slice reuse works, see [Lineage & Clones](#lineage--clones).
+For a deeper explanation of how slice reuse works, see [Family & Clones](#family--clones).
 
 ### Runtime Paths
 
@@ -924,9 +924,9 @@ this.root.auth.getState().isAuthenticated;
 
 ---
 
-# Lineage & Clones
+# Family & Clones
 
-OrcheStore uses a lineage-based model for slice identity.
+OrcheStore uses a family-based model for slice identity.
 
 **Why?**
 
@@ -934,16 +934,16 @@ Slices can be used in multiple places in the store tree.
 
 When this happens, OrcheStore creates a separate runtime instance for each usage. These instances are called **clones**.
 
-A clone is an independent instance of a slice at runtime. It has its own state and runs separately from other clones, while still remaining part of a shared lineage.
+A clone is an independent instance of a slice at runtime. It has its own state and runs separately from other clones, while still remaining part of a shared family.
 
-A lineage (or family) is the set of all runtime instances that originate from the same slice definition.
+A family is the set of all runtime instances that originate from the same slice definition.
 
 **This means:**
 
-- slices are not singletons
-- a slice can appear multiple times in a tree
-- each clone is fully isolated
-- all instances created from the same definition are linked through lineage
+* slices are not singletons
+* a slice can appear multiple times in a tree
+* each clone is fully isolated
+* all instances created from the same definition are linked through family
 
 ## Manual Cloning
 
@@ -952,31 +952,31 @@ A new detached clone can be created manually from any slice instance.
 ### 1. Clone without state transformation
 
 ```ts
-const clone = slice.prototype.clone();
+const clone = slice.family.clone();
 ```
 
 The new instance:
 
-- belongs to the same lineage
-- starts detached from the tree
-- has no mounted path initially
-- has its own ownership context
-- uses the exact initial state of the source slice
+* belongs to the same family
+* starts detached from the tree
+* has no mounted path initially
+* has its own ownership context
+* uses the exact initial state of the source slice
 
 ### 2. Clone with state transformation
 
 ```ts
-const clone = slice.prototype.clone((state) => newState);
+const clone = slice.family.clone((state) => newState);
 ```
 
 The provided function receives the fully resolved initial state (including nested slices) and returns the modified state for the new instance.
 
 The state transformer:
 
-- does not affect other lineage members
-- supports nested slice state updates
-- supports immutable updates (returning a new state object)
-- supports mutable updates (Immer-style — no return required)
+* does not affect other family members
+* supports nested slice state updates
+* supports immutable updates (returning a new state object)
+* supports mutable updates (Immer-style — no return required)
 
 **Example:**
 
@@ -995,7 +995,7 @@ const crudSlice = createSlice({
 });
 
 // Immutable style (returns new state object)
-const productsSlice = crudSlice.prototype.clone((state) => ({
+const productsSlice = crudSlice.family.clone((state) => ({
 	...state,
 	endpoint: "api/v1/products",
 
@@ -1006,7 +1006,7 @@ const productsSlice = crudSlice.prototype.clone((state) => ({
 }));
 
 // Immer-style mutation (no return needed)
-const categoriesSlice = crudSlice.prototype.clone((state) => {
+const categoriesSlice = crudSlice.family.clone((state) => {
 	state.endpoint = "api/v1/categories";
 	state.pagination.supported = false;
 });
@@ -1079,8 +1079,8 @@ const crudSlice = createSlice({
 	},
 });
 
-const productsSlice = crudSlice.prototype.clone();
-const categoriesSlice = crudSlice.prototype.clone();
+const productsSlice = crudSlice.family.clone();
+const categoriesSlice = crudSlice.family.clone();
 ```
 
 Each clone receives its own independent subtree:
@@ -1091,14 +1091,14 @@ productsSlice.pagination !== categoriesSlice.pagination;
 
 This ensures that both parent and child slices remain fully isolated across all clone instances.
 
-## Inspecting a Lineage
+## Inspecting a Family
 
 **Get All Related Instances:**
 
-Returns every instance in the lineage, **including** the current instance.
+Returns every instance in the family, **including** the current instance.
 
 ```ts
-const lineage = slice.prototype.getLineage();
+const family = slice.family.getAll();
 ```
 
 Useful for:
@@ -1109,10 +1109,10 @@ Useful for:
 
 **Get Sibling Clones:**
 
-Returns every sibling in the lineage, **except** the current instance.
+Returns every sibling clone in the family, **except** the current instance.
 
 ```ts
-const siblings = slice.prototype.getClones();
+const clones = slice.family.getClones();
 ```
 
 Useful for:
@@ -1123,10 +1123,10 @@ Useful for:
 
 ## Definition Type Checking
 
-You can check whether two slices belong to the same lineage:
+You can check whether two slices belong to the same family:
 
 ```ts
-const isSameLineage = slice.prototype.isTypeOf(otherSlice);
+const isSameFamily = slice.family.isTypeOf(otherSlice);
 ```
 
 Returns `true` when both slices originate from the same slice definition, even if they are different runtime instances.
@@ -1135,27 +1135,27 @@ Returns `true` when both slices originate from the same slice definition, even i
 const slice1 = createSlice(...);
 const slice2 = createSlice(...);
 
-const clone1 = slice1.prototype.clone();
-const clone2 = clone1.prototype.clone();
+const clone1 = slice1.family.clone();
+const clone2 = clone1.family.clone();
 
-slice1.prototype.isTypeOf(clone1); // true
-clone1.prototype.isTypeOf(clone2); // true
-clone2.prototype.isTypeOf(slice1); // true
+slice1.family.isTypeOf(clone1); // true
+clone1.family.isTypeOf(clone2); // true
+clone2.family.isTypeOf(slice1); // true
 
-slice1.prototype.isTypeOf(slice2); // false
-slice2.prototype.isTypeOf(clone1); // false
+slice1.family.isTypeOf(slice2); // false
+slice2.family.isTypeOf(clone1); // false
 ```
 
 ## Summary
 
-- `clone()` creates a new detached lineage member.
+- `clone()` creates a new detached family member.
 - `clone(stateTransformer)` allows per-instance state customization at creation time.
 - Reusing a slice automatically creates mounted clones.
 - Every clone is isolated at runtime.
-- All clones from the same definition belong to a shared lineage.
-- `getLineage()` returns all instances in a lineage.
+- All clones from the same definition belong to a shared family.
+- `getAll()` returns all instances in a family.
 - `getClones()` returns all related instances except the current instance.
-- `isTypeOf()` checks whether two instances belong to the same lineage.
+- `isTypeOf()` checks whether two instances belong to the same family.
 
 ---
 

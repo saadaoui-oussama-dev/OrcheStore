@@ -4,7 +4,7 @@ import { exposeStateSelectors } from "./selectors";
 import { exposeMutations, mutationsToReducers } from "./mutations";
 import { createNodeFactory } from "../factory/creator";
 import { createAttachHelper } from "../factory/attach";
-import { exposeLineage } from "../factory/prototype";
+import { exposeFamily } from "../factory/prototype";
 import { createRTKSlice } from "../helpers/imports";
 import { getChildState, composeStateReducer, exposeStateAccessors, excludeChildState, cloneState } from "./state"; // prettier-ignore
 import type { AnySlice, AnySliceOptions, CloneArgs, Mutations, Meta, Obj, Slice, SliceOptions } from "../helpers/types"; // prettier-ignore
@@ -23,14 +23,14 @@ const { instances, create, attach, clone } = createSliceFactory({
 	 * Creates and initializes a slice runtime instance.
 	 *
 	 * Sets up Redux Toolkit integration, state accessors, selectors,
-	 * lineage tracking, mutations, methods, and runtime context.
+	 * family tracking, mutations, methods, and runtime context.
 	 */
 	instantiate(props, meta) {
 		// Create the runtime node placeholder before exposing APIs.
 		meta.node = {} as any;
 
 		// Property names reserved by the framework and unavailable to users.
-		const reserved = ["name", "path", "computed", "root", "parent", "prototype", "utils", "getState", "getInitialState", "useSelect"]; // prettier-ignore
+		const reserved = ["name", "path", "computed", "root", "parent", "family", "utils", "getState", "getInitialState", "useSelect"]; // prettier-ignore
 
 		// Convert mutation functions into Redux reducers.
 		const reducer = mutationsToReducers(props.name, meta, props.mutations, reserved);
@@ -47,8 +47,8 @@ const { instances, create, attach, clone } = createSliceFactory({
 		// Expose imperative state access APIs.
 		exposeStateAccessors(props.name, meta);
 
-		// Expose cloning and lineage utilities.
-		exposeLineage(meta, instances, clone, (transform?: CloneArgs["transform"]) => {
+		// Expose cloning and family utilities.
+		exposeFamily(meta, instances, clone, (transform?: CloneArgs["transform"]) => {
 			return { name: props.name, transform };
 		});
 

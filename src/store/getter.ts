@@ -27,7 +27,7 @@ export const createStoreGetter = (instances: Map<AnyStore, NodeMeta<AnyStore, Ex
 		 *
 		 * Used during runtime execution to resolve:
 		 * - parent store context
-		 * - lineage root access
+		 * - root store state access
 		 * - mutation dispatch routing
 		 *
 		 * Returns `undefined` and optionally triggers a runtime message
