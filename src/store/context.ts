@@ -1,5 +1,5 @@
 import { getUtils } from "../utils/app-wide";
-import { defineReadonly, validateName } from "../helpers/internal";
+import { defineReadonly, ensureObjects, validateName } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
 import type { AnyStore, AnyStoreOptions, ExtraMeta, NodeMeta } from "../helpers/types";
 
@@ -27,13 +27,9 @@ export const exposeContext = (name: string, meta: NodeMeta<AnyStore, ExtraMeta>)
 export const validateAndNormalizeProps = (props: AnyStoreOptions) => {
 	const mismatch = { reducer: "'slices'", reducers: "'slices'", devTools: "", duplicateMiddlewareCheck: "", enhancers: "", middleware: "", preloadedState: "" }; // prettier-ignore
 	const source = { ...(props || {}) } as any;
-	const output: any = {};
 
-	output.name = validateName("createStore", source, false);
-
-	["slices"].forEach((prop) => {
-		output[prop] = typeof source[prop] === "object" && source[prop] ? { ...source[prop] } : {};
-	});
+	const name = validateName("createStore", source, false);
+	const output = ensureObjects({ name }, source, ['slices']);
 
 	Object.entries(mismatch).forEach(([prop, replace]) => {
 		if (source[prop] === undefined) return;

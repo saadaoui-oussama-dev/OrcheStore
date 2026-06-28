@@ -1,4 +1,4 @@
-import { exposeContext, validateAndNormalizeProps } from "./context";
+import { exposeContext, onCloneProps, validateAndNormalizeProps } from "./context";
 import { exposeMethods } from "./methods";
 import { exposeStateSelectors } from "./selectors";
 import { exposeMutations, mutationsToReducers } from "./mutations";
@@ -6,7 +6,7 @@ import { createNodeFactory } from "../factory/creator";
 import { createAttachHelper } from "../factory/attach";
 import { exposeFamily } from "../factory/prototype";
 import { createRTKSlice } from "../helpers/imports";
-import { getChildState, composeStateReducer, exposeStateAccessors, excludeChildState, cloneState } from "./state"; // prettier-ignore
+import { getChildState, composeStateReducer, exposeStateAccessors, excludeChildState } from "./state"; // prettier-ignore
 import type { AnySlice, AnySliceOptions, CloneArgs, Mutations, Meta, Obj, Slice, SliceOptions } from "../helpers/types"; // prettier-ignore
 
 const createSliceFactory = createNodeFactory<AnySlice, AnySliceOptions, Meta, CloneArgs, string[]>;
@@ -14,7 +14,7 @@ const createSliceFactory = createNodeFactory<AnySlice, AnySliceOptions, Meta, Cl
 const { instances, create, attach, clone } = createSliceFactory({
 	options: {
 		prepare: (props) => validateAndNormalizeProps(props),
-		clone: (props, meta, payload) => cloneState(props, meta, payload),
+		clone: (props, meta, payload) => onCloneProps(props, meta, payload),
 		currentCloned: (props) => excludeChildState(props),
 		childCloned: (key, props) => ({ object: getChildState(key, props) }),
 	},

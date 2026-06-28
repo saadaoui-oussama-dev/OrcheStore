@@ -75,3 +75,22 @@ export const validateName = (trigger: string, props: Dict, required: boolean) =>
 
 	return props.name;
 };
+
+/**
+ * Ensures the specified properties exist as shallow-cloned objects.
+ *
+ * Copies each requested property from the source when it is a non-null object,
+ * otherwise initializes it as an empty object. The resulting object is typed to
+ * guarantee the requested properties are present as object values.
+ *
+ * Used to normalize optional configuration sections before runtime processing,
+ * allowing later stages to safely read and mutate these objects without
+ * additional existence checks.
+ */
+export const ensureObjects = <O, T extends object, K extends keyof T>(output: O, source: T, props: readonly K[]) => {
+	props.forEach((prop) => {
+		(output as any)[prop] = typeof source[prop] === "object" && source[prop] ? { ...source[prop] } : {};
+	});
+
+	return output as O & { [P in K]: Dict<any> };
+};

@@ -1,7 +1,7 @@
 import { getStore } from "../store/creator";
 import { defineMethod } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { AnySlice, AnySliceOptions, CloneArgs, Meta } from "../helpers/types";
+import type { AnySlice, AnySliceOptions, Meta } from "../helpers/types";
 
 /**
  * Normalizes a state definition into a safe object value.
@@ -65,20 +65,6 @@ export const composeStateReducer = (_name: string, meta: Meta, children: any) =>
 
 		return nextState;
 	};
-};
-
-/**
- * Produces the initial state for a cloned node.
- *
- * Reconstructs state by running the full reducer tree with an initialization action.
- * This ensures cloned instances start from a fully composed state snapshot.
- */
-export const cloneState = (props: AnySliceOptions, meta: Meta, payload?: CloneArgs) => {
-	if (payload?.object) return { ...props, state: payload.object };
-	const originState: any = meta.reducer(undefined, { type: "@@CLONE" });
-	const transformedState = payload?.transform ? payload.transform(originState) : undefined;
-	const clonedState = transformedState === undefined ? originState : transformedState;
-	return { ...props, state: normalizeSafeState("slice.clone", payload?.name ?? "", clonedState) };
 };
 
 /**

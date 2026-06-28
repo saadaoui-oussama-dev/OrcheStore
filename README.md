@@ -386,7 +386,7 @@ const counter = createSlice({
 
 	state: {},
 
-	computed: {},
+	computed: {}, // planned (equivalent to selectors)
 
 	mutations: {},
 
@@ -394,7 +394,7 @@ const counter = createSlice({
 
 	children: {},
 
-	subscribe: {},
+	listeners: (builder) => void, // planned (equivalent to extraReducers)
 });
 ```
 
@@ -949,7 +949,7 @@ A family is the set of all runtime instances that originate from the same slice 
 
 A new detached clone can be created manually from any slice instance.
 
-### 1. Clone without state transformation
+### 1. Cloning without transformation
 
 ```ts
 const clone = slice.family.clone();
@@ -957,58 +957,151 @@ const clone = slice.family.clone();
 
 The new instance:
 
+* ⚠ shares the same name
 * belongs to the same family
-* starts detached from the tree
+* starts detached from the store tree
 * has no mounted path initially
-* has its own ownership context
-* uses the exact initial state of the source slice
-
-### 2. Clone with state transformation
+* has its own independent runtime context
+* uses the original slice’s initial state
 
 ```ts
-const clone = slice.family.clone((state) => newState);
+const clone = slice.family.clone();
+
+// After being mounted in a store tree
+clone.increment(1);
+
+console.log(clone.getState().value);
+
+// Original slice remains unaffected
+console.log(slice.getState().value);
 ```
 
-The provided function receives the fully resolved initial state (including nested slices) and returns the modified state for the new instance.
-
-The state transformer:
-
-* does not affect other family members
-* supports nested slice state updates
-* supports immutable updates (returning a new state object)
-* supports mutable updates (Immer-style — no return required)
-
-**Example:**
+### 2. Cloning with state transformation
 
 ```ts
-const crudSlice = createSlice({
-	name: "CRUD-Slice",
+const clone = slice.family.clone((state) => newState | void);
+```
 
-	state: {
-		endpoint: "",
-	},
+The transformer receives:
 
-	children: {
-		pagination: paginationSlice,
-		dropdown: searchDropdownSlice,
-	},
+* `state` — the fully resolved initial state (including nested slices)
+
+**State transformation behavior:**
+
+**a. Immer style** (Recommended) — modify state directly without returning
+
+```ts
+const cloneB = slice.family.clone((state) => {
+	state.value = 200;
 });
+```
 
-// Immutable style (returns new state object)
-const productsSlice = crudSlice.family.clone((state) => ({
-	...state,
-	endpoint: "api/v1/products",
+**b. Return style** — return a new state object
 
-	dropdown: {
-		...state.dropdown,
-		supported: false,
-	},
-}));
+```ts
+const cloneA = slice.family.clone((state) => {
+	return {
+		...state,
+		value: 100,
+	};
+});
+```
 
-// Immer-style mutation (no return needed)
-const categoriesSlice = crudSlice.family.clone((state) => {
-	state.endpoint = "api/v1/categories";
-	state.pagination.supported = false;
+**c. No-op transformation** — return nothing and make no changes
+
+```ts
+const cloneC = slice.family.clone(() => {
+	// no state changes
+});
+```
+
+### 3. Cloning with configuration overrides
+
+```ts
+const clone = slice.family.clone((state, next) => newState | void);
+```
+
+The transformer receives:
+
+* `state` — for state transformation.
+* `next` — mutable configuration object for the cloned instance
+
+The return value applies only to state transformation (see previous section).
+
+**Confuguration transformation behavior:**
+
+* `next.name` — supports assigning a new unique name identifier for the cloned instance
+* `next.methods` — supports replacing instance behavior (e.g. API adapters, custom helpers)
+* `next.mutations` — supports replacing state transitions (e.g. domain-specific state handling)
+
+```ts
+const productsSlice = crudSlice.family.clone((state, next) => {
+	// rename instance
+	next.name = "ProductsSlice";
+
+	// transform initial state
+	state.endpoint = "api/v1/products";
+	state.dropdown.supported = false;
+
+	// override instance mutations
+	next.mutations.setEndpoint = (state, value) => {
+		state.endpoint = `api/v2/${value}`;
+	};
+
+	// override instance methods
+	next.methods.getId = function (item) {
+		return item.code;
+	}
+});
+```
+
+### 4. Advanced Runtime Overrides (Unsafe)
+
+**⚠️ Warning**
+
+This section exposes **low-level runtime mutation capabilities that bypass TypeScript safety guarantees**.
+
+At this level, you are fully responsible for ensuring that all accessed properties exist and remain valid at runtime.
+
+Using `any` casts, deleting properties, or conditionally accessing methods and mutations can lead to:
+
+* runtime errors that TypeScript cannot detect
+* broken or partially invalid slice instances
+* inconsistent behavior between cloned instances
+* hard-to-trace state mutations
+* accidental removal of critical logic
+
+These APIs are intended only for advanced infrastructure-level customization or experimental use cases.
+
+```ts
+const clonedSlice = crudSlice.family.clone((state, next) => {
+	// remove state property and mutation at runtime (TypeScript bypass)
+	delete (state as any).cache
+	delete (next.mutations as any).saveCache;
+
+	// override method with optional runtime dependency
+	next.methods.sendList = function (list) {
+		// mutation may or may not exist depending on configuration
+		this.saveCache?.(list);
+
+		axios.post("https://api.example.com/list", { list });
+	};
+});
+```
+
+Instead of mutating structure at runtime, prefer using explicit feature flags inside state, or safe overridable methods such as validators, adapters, or formatters.
+
+This keeps behavior predictable, serializable, and easier to debug.
+
+```ts
+const categoriesSlice = crudSlice.family.clone((state, next) => {
+	// disable feature explicitly instead of deleting runtime methods
+	state.features.cache.supported = false;
+
+	// override instance-specific adapter logic
+	next.methods.adaptItem = function (item) {
+		return { ...item, code: `CTG-${item.id}` };
+	};
 });
 ```
 

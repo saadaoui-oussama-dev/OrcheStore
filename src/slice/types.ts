@@ -61,7 +61,7 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
 	 * Runtime utilities for cloning, family inspection,
 	 * and instance identity.
 	 */
-	readonly family: NodePrototype<slice<S, R, M, C>, [CloneArgs<S, C>["transform"]]>;
+	readonly family: NodePrototype<slice<S, R, M, C>, [CloneArgs<S, R, M, C>["transform"]]>;
 
 	/** Collection of derived state functions. */
 	readonly computed: undefined;
@@ -170,9 +170,6 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	 */
 	methods?: M & ThisType<slice<S, R, M, C>>;
 
-	/** Collection of derived state functions. */
-	// computed?: G & ThisType<Utils & Omit<G, "utils">>;
-
 	/**
 	 * Collection of child slices.
 	 *
@@ -191,6 +188,11 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	 * ```
 	 */
 	children?: C;
+
+	/** Collection of derived state functions. */
+	computed?: "Planned" | "Not Yet Supported";
+
+	listeners?: "Planned" | "Not Yet Supported";
 };
 
 /**
@@ -244,7 +246,7 @@ type AnySlice = slice<any, Mutations<any, any>, any, any>;
 
 type AnySliceOptions = sliceOptions<any, Mutations<any, any>, any, any>;
 
-type CloneArgs<S extends Obj = any, C = any> = {
+type CloneArgs<S extends Obj = any, R extends Mutations<S, C> = any, M = any, C = any> = {
 	/** Optional name used when reporting clone validation errors. */
 	name?: string;
 
@@ -252,7 +254,7 @@ type CloneArgs<S extends Obj = any, C = any> = {
 	object?: Obj;
 
 	/** Receives the cloned state before initialization, allowing it to be customized. */
-	transform?: (state: SliceState.Draft<S, C>) => void | SliceState.Draft<S, C>;
+	transform?: (state: SliceState.Draft<S, C>, next: Pick<sliceOptions<S, R, M, C>, "name" | "mutations" | "methods">) => void | SliceState.Draft<S, C>;
 };
 
 export type Meta = NodeMeta<AnySlice, { redux: RTKSlice; reducer: RTKReducer }>;

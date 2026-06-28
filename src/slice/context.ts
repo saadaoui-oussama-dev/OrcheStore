@@ -1,9 +1,9 @@
 import { normalizeSafeState } from "./state";
 import { getStore } from "../store/creator";
 import { getUtils } from "../utils/app-wide";
-import { defineReadonly, validateName } from "../helpers/internal";
+import { defineReadonly, ensureObjects, validateName } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { AnySlice, AnySliceOptions, Dict, Meta } from "../helpers/types";
+import type { AnySlice, AnySliceOptions, CloneArgs, Meta } from "../helpers/types";
 
 /**
  * Exposes runtime properties on a slice instance.
@@ -46,16 +46,12 @@ export const exposeContext = (name: string, meta: Meta, instances: Map<AnySlice,
  * and reports unsupported or misplaced Redux Toolkit options.
  */
 export const validateAndNormalizeProps = (props: AnySliceOptions) => {
-	const mismatch = { initialState: "'state'", reducer: "'mutations'", reducers: "'mutations'", extraReducers: "'subscribe'", selectors: "'computed'", reducerPath: "nested slices throught 'children'" }; // prettier-ignore
+	const mismatch = { initialState: "'state'", reducer: "'mutations'", reducers: "'mutations'", extraReducers: "'listeners'", selectors: "'computed'", reducerPath: "nested slices throught 'children'" }; // prettier-ignore
 	const source = { ...(props || {}) } as any;
-	const output: any = {};
 
-	output.name = validateName("createSlice", source, true);
-	output.state = normalizeSafeState("createSlice", output.name, source.state, true);
-
-	["mutations", "computed", "methods", "subscribe", "children"].forEach((prop) => {
-		output[prop] = typeof source[prop] === "object" && source[prop] ? { ...source[prop] } : {};
-	});
+	const name = validateName("createSlice", source, true);
+	const state = normalizeSafeState("createSlice", name, source.state, true);
+	const output = ensureObjects({ name, state }, source, ["mutations", "methods", "children"]); // TODO: add "computed"
 
 	Object.entries(mismatch).forEach(([prop, replace]) => {
 		if (source[prop] === undefined) return;
@@ -63,4 +59,23 @@ export const validateAndNormalizeProps = (props: AnySliceOptions) => {
 	});
 
 	return output;
+};
+
+/**
+ * Produces the initial state for a cloned node.
+ *
+ * Reconstructs state by running the full reducer tree with an initialization action.
+ * This ensures cloned instances start from a fully composed state snapshot.
+ */
+export const onCloneProps = (props: AnySliceOptions, meta: Meta, payload?: CloneArgs) => {
+	if (payload?.object) return { ...props, state: payload.object };
+
+	let next = ensureObjects({ name: props.name }, props, ["mutations", "methods"]);
+	const originState: any = meta.reducer(undefined, { type: "@@CLONE" });
+	const transformedState = payload?.transform ? payload.transform(originState, next) : undefined;
+	const clonedState = transformedState === undefined ? originState : transformedState;
+	const state = normalizeSafeState("slice.clone", payload?.name ?? "", clonedState);
+
+	next = ensureObjects({ name: next.name }, next, ["mutations", "methods"]);
+	return { ...props, ...next, state };
 };
