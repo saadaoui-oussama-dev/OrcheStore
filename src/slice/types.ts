@@ -1,6 +1,6 @@
 import type { RTKSlice, RTKReducer } from "../helpers/imports";
 import type { Dict, Utils, Obj, OmitNever, ReadOnly, Store, Tail } from "../helpers/types";
-import type { FamilyMeta, NodeMeta, NodePrototype } from "../helpers/types";
+import type { NodeMeta, NodePrototype } from "../helpers/types";
 
 /** Runtime API returned by `createSlice()`. */
 type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
@@ -257,8 +257,6 @@ type CloneArgs<S extends Obj = any, R extends Mutations<S, C> = any, M = any, C 
 	transform?: (state: SliceState.Draft<S, C>, next: Pick<sliceOptions<S, R, M, C>, "name" | "mutations" | "methods">) => void | SliceState.Draft<S, C>;
 };
 
-export type Meta = NodeMeta<AnySlice, { redux: RTKSlice; reducer: RTKReducer }>;
-
-export type Family = FamilyMeta<AnySlice, AnySliceOptions>;
+export type Meta = NodeMeta<AnySlice, AnySliceOptions, { redux: RTKSlice; reducer: RTKReducer }>;
 
 export type { slice as Slice, sliceOptions as SliceOptions, SliceState, Mutations, AnySlice, AnySliceOptions, CloneArgs }; // prettier-ignore

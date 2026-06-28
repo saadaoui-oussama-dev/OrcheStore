@@ -2,7 +2,7 @@ import { getUtils } from "../utils/app-wide";
 import { defineMethod } from "../helpers/internal";
 import { createRTKSelector, ReactContext, useReactContext } from "../helpers/imports";
 import { MESSAGES } from "../helpers/messages";
-import type { AnyStore, ExtraMeta, NodeMeta } from "../helpers/types";
+import type { StoreMeta } from "../helpers/types";
 
 /**
  * Exposes reactive store-level selector APIs on a store node.
@@ -17,7 +17,7 @@ import type { AnyStore, ExtraMeta, NodeMeta } from "../helpers/types";
  * bound to the store’s internal context, while `useSelect` exposes a
  * user-friendly API that automatically injects OrcheStore runtime context.
  */
-export const exposeStateSelectors = (name: string, meta: NodeMeta<AnyStore, ExtraMeta>) => {
+export const exposeStateSelectors = (name: string, meta: StoreMeta) => {
 	const context = ReactContext(null);
 	const useSelector = createRTKSelector(context as any);
 

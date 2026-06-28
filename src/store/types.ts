@@ -1,5 +1,5 @@
 import type { RTKStoreOptions, RTKStore, RTKProviderProps } from "../helpers/imports";
-import type { Slice, SliceState, ReadOnly, OmitNever, Utils, Dict } from "../helpers/types";
+import type { Slice, SliceState, ReadOnly, OmitNever, Utils, Dict, NodeMeta } from "../helpers/types";
 
 export type ExtraMeta = { redux: RTKStore; reducer: Dict; context: any; selector: any };
 
@@ -120,4 +120,6 @@ type AnyStore = store<any>;
 
 type AnyStoreOptions = storeOptions<any>;
 
-export type { store as Store, storeOptions as StoreOptions, StoreProviderProps, AnyStore, AnyStoreOptions };
+type StoreMeta = NodeMeta<AnyStore, AnyStoreOptions, ExtraMeta>;
+
+export type { store as Store, storeOptions as StoreOptions, StoreProviderProps, AnyStore, AnyStoreOptions, StoreMeta };

@@ -1,38 +1,30 @@
 /**
- * Shared family state for all nodes derived from the same definition.
- */
-type FamilyMeta<N, P> = {
-	/** Original name inherited from the first node created in this family. */
-	name: string;
-
-	/** Baseline props used as the source for cloning. */
-	props: P;
-
-	/** All active nodes belonging to this family. */
-	siblings: Set<N>;
-};
-
-/**
  * Runtime metadata describing a single node instance within a factory graph.
  *
  * Nodes are always part of a family and maintain structural relationships
  * to their parent chain and children.
  */
-type NodeMeta<N, E> = E & {
+type NodeMeta<N, P, E> = E & {
+	/** Original name inherited from the first node created in this family. */
+	family: string;
+
 	/** The runtime node instance associated with this metadata. */
 	node: N;
-
-	/** Identifier shared across all nodes in the same family. */
-	family: FamilyMeta<N, any>;
 
 	/** Absolute path from the root of the ownership tree. */
 	path: string;
 
 	/** Ownership chain from closest parent to root. */
-	parents: NodeMeta<N, E>[];
+	parents: NodeMeta<N, P, E>[];
 
 	/** Direct child nodes indexed by key. */
-	children: Map<string, NodeMeta<N, E>>;
+	children: Map<string, NodeMeta<N, P, E>>;
+
+	/** All active nodes belonging to this family. */
+	siblings: Set<N>;
+
+	/** Cached props used as the source for cloning. */
+	props: P;
 };
 
 /**
@@ -54,17 +46,17 @@ type FactoryErrors<N> = {
  */
 type FactoryInput<N, P = any, E = {}, A = undefined, I = {}> = {
 	/** Instantiates a node and binds it to runtime metadata. */
-	instantiate: (props: P, meta: NodeMeta<N, E>, cloning: boolean) => I;
+	instantiate: (props: P, meta: NodeMeta<N, P, E>, cloning: boolean) => I;
 
 	/** Finalizes node setup after instantiation and handles composition logic. */
-	afterInstantiate?: (props: P, meta: NodeMeta<N, E>, cloning: boolean, payload: I) => void;
+	afterInstantiate?: (props: P, meta: NodeMeta<N, P, E>, cloning: boolean, payload: I) => void;
 
 	options?: {
 		/** Prepares and normalizes props before instantiation. */
 		prepare?: (props: P) => P;
 
 		/** Builds clone base props from the original family state props. */
-		clone?: (firstRegisteredProps: P, originMeta: NodeMeta<N, E>, payload?: A) => P;
+		clone?: (firstRegisteredProps: P, originMeta: NodeMeta<N, P, E>, payload?: A) => P;
 
 		/** Reduces cloned props into the subset owned by the current node. */
 		currentCloned?: (props: P) => P;
@@ -81,19 +73,16 @@ type FactoryInput<N, P = any, E = {}, A = undefined, I = {}> = {
  */
 type FactoryOutput<N, P = any, E = {}, A = undefined> = {
 	/** All node instances currently managed by the factory. */
-	instances: Map<N, NodeMeta<N, E>>;
-
-	/** All active family groups managed by the factory. */
-	families: Map<symbol, FamilyMeta<N, P>>;
+	instances: Map<N, NodeMeta<N, P, E>>;
 
 	/** Creates the root instance of a new family. */
 	create: (props: P) => N;
 
 	/** Creates a detached sibling instance within an existing family. */
-	clone: (node: N, errors?: FactoryErrors<N>, payload?: A) => undefined | NodeMeta<N, E>;
+	clone: (node: N, errors?: FactoryErrors<N>, payload?: A) => undefined | NodeMeta<N, P, E>;
 
 	/** Attaches a node under a parent, cloning it if ownership changes. */
-	attach: (key: string, node: N, parentMeta: NodeMeta<N, E>, errors?: FactoryErrors<N>) => undefined | NodeMeta<N, E>;
+	attach: (key: string, node: N, parent: NodeMeta<N, P, E>, errors?: FactoryErrors<N>) => undefined | NodeMeta<N, P, E>;
 };
 
 type NodePrototype<N, A extends any[] = []> = {
@@ -129,4 +118,4 @@ type NodePrototype<N, A extends any[] = []> = {
 	readonly isTypeOf: (other?: any) => other is N;
 };
 
-export type { FactoryInput, FactoryOutput, FamilyMeta, NodeMeta, NodePrototype };
+export type { FactoryInput, FactoryOutput, NodeMeta, NodePrototype };

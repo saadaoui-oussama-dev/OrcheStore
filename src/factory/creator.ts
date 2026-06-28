@@ -1,4 +1,4 @@
-import type { FactoryInput, FactoryOutput, FamilyMeta, NodeMeta } from "../helpers/types"; // prettier-ignore
+import type { FactoryInput, FactoryOutput, NodeMeta } from "../helpers/types"; // prettier-ignore
 
 /**
  * Creates a hierarchical node factory with family-based ownership reconciliation.
@@ -33,28 +33,23 @@ const createNodeFactory = <N, P, E, A, I>(opts: FactoryInput<N, P, E, A, I>): Fa
 	const { instantiate, afterInstantiate, options = {} } = opts;
 
 	/** Registry of all active node instances managed by this factory. */
-	const instances = new Map<N, NodeMeta<N, E>>();
-
-	/** Registry of family families grouping related node clones. */
-	const families = new Map<symbol, FamilyMeta<N, P>>();
+	const instances = new Map<N, NodeMeta<N, P, E>>();
 
 	/** Creates the root instance of a new family. */
 	const create: FactoryOutput<N, P, E, A>["create"] = (props) => {
 		// Prepare props and initialize ownership and family metadata for the root node.
 		props = options.prepare ? options.prepare(props) : props;
-		const family = { name: (props as any).name, props, siblings: new Set<N>() };
-		const meta = { path: "", family, children: new Map(), parents: [] } as any;
+		const meta = { family: (props as any).name, path: "", children: new Map(), parents: [], props, siblings: new Set<N>() } as any; // prettier-ignore
 
 		// Instantiate the node with access to its runtime metadata.
 		const instantiatePayload = instantiate(props, meta, false);
 
 		// Register the node as the first member of its family.
-		family.siblings.add(meta.node);
+		meta.siblings.add(meta.node);
 		instances.set(meta.node, meta);
-		families.set(meta.familyId, family);
 
 		// Post-instantiation composition and final wiring of the node.
-		if (afterInstantiate) afterInstantiate(props, meta, false, instantiatePayload);
+		if (afterInstantiate) afterInstantiate(meta.props, meta, false, instantiatePayload);
 
 		return meta.node;
 	};
@@ -84,11 +79,11 @@ const createNodeFactory = <N, P, E, A, I>(opts: FactoryInput<N, P, E, A, I>): Fa
 
 	/** Reconciles ownership state and determines whether cloning is required. */
 	function updateOwnership(
-		...args: [string, NodeMeta<N, E>[], NodeMeta<N, E>, boolean, A, (clone: NodeMeta<N, E>) => void]
+		...args: [string, NodeMeta<N, P, E>[], NodeMeta<N, P, E>, boolean, A, (clone: NodeMeta<N, P, E>) => void]
 	) {
 		let [path, parents, meta, force, payload, onSetOwnership] = args;
 		let instantiation: { executed: boolean; payload: I } = { executed: false, payload: undefined! };
-		let props: [P, P] = [] as any;
+		let props: P = undefined!;
 
 		force =
 			force ||
@@ -101,18 +96,18 @@ const createNodeFactory = <N, P, E, A, I>(opts: FactoryInput<N, P, E, A, I>): Fa
 
 		if (force) {
 			// Prepare metadata and props for a new sibling in the same family.
-			const $meta = { family: meta.family, path, children: new Map(meta.children), parents } as any;
-			props[0] = options.clone ? options.clone(meta.family.props, meta, payload) : meta.family.props;
-			props[1] = options.currentCloned ? options.currentCloned(props[0]) : props[0];
+			const $meta = { family: meta.family, path, children: new Map(meta.children), parents, siblings: meta.siblings } as any;
+			props = options.clone ? options.clone(meta.props, meta, payload) : meta.props;
+			$meta.props = options.currentCloned ? options.currentCloned(props) : props;
 			meta = $meta;
 
 			// Instantiate a sibling within the same family with access to its runtime metadata.
-			instantiation.payload = instantiate(props[1], $meta, true);
+			instantiation.payload = instantiate(meta.props, meta, true);
 			instantiation.executed = true;
 
 			// Register the sibling in the family metadata.
-			instances.set(meta.node, $meta);
-			meta.family.siblings.add(meta.node);
+			instances.set(meta.node, meta);
+			meta.siblings.add(meta.node);
 		}
 
 		// Update ownership metadata for the node's current location.
@@ -123,7 +118,7 @@ const createNodeFactory = <N, P, E, A, I>(opts: FactoryInput<N, P, E, A, I>): Fa
 		// Propagate ownership reconciliation through the subtree.
 		for (const [key, childMeta] of [...meta.children.entries()]) {
 			const childPath = `${path}${path ? "." : ""}${key}`;
-			const childPayload = options.childCloned && props[0] ? options.childCloned(key, props[0]) : undefined!;
+			const childPayload = options.childCloned && props ? options.childCloned(key, props) : undefined!;
 
 			updateOwnership(childPath, [meta, ...parents], childMeta, false, childPayload, (clone) => {
 				if (clone !== childMeta) meta.children.set(key, clone);
@@ -131,12 +126,12 @@ const createNodeFactory = <N, P, E, A, I>(opts: FactoryInput<N, P, E, A, I>): Fa
 		}
 
 		// Post-instantiation composition and final wiring of the node.
-		if (instantiation.executed && afterInstantiate) afterInstantiate(props[1], meta, true, instantiation.payload);
+		if (instantiation.executed && afterInstantiate) afterInstantiate(meta.props, meta, true, instantiation.payload);
 
 		return meta;
 	}
 
-	return { families, instances, create, attach, clone };
+	return { instances, create, attach, clone };
 };
 
 export { createNodeFactory };

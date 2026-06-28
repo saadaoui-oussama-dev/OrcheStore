@@ -1,11 +1,11 @@
 import { MESSAGES } from "../helpers/messages";
-import type { AnyStore, ExtraMeta, NodeMeta } from "../helpers/types";
+import type { AnyStore, NodeMeta, StoreMeta } from "../helpers/types";
 
 /**
  * Creates a scoped lookup utility for resolving store metadata
  * from runtime instance maps.
  */
-export const createStoreGetter = (instances: Map<AnyStore, NodeMeta<AnyStore, ExtraMeta>>) => {
+export const createStoreGetter = (instances: Map<AnyStore, StoreMeta>) => {
 	return {
 		/**
 		 * Resolves metadata for a given store instance.
@@ -33,8 +33,8 @@ export const createStoreGetter = (instances: Map<AnyStore, NodeMeta<AnyStore, Ex
 		 * Returns `undefined` and optionally triggers a runtime message
 		 * if the store or metadata cannot be resolved.
 		 */
-		of: (name: string, childMeta: NodeMeta<any, {}>, trigger?: string) => {
-			const store = childMeta.parents?.at?.(-1)?.node;
+		of: (name: string, childMeta: NodeMeta<any, any, any>, trigger?: string) => {
+			const store = childMeta.parents?.at?.(-1)?.node as any;
 			const meta = store ? instances.get(store) : undefined;
 
 			if (!store) return void (trigger && MESSAGES(trigger).NeverExposed(name));

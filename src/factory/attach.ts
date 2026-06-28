@@ -2,7 +2,7 @@ import { MESSAGES } from "../helpers/messages";
 import { validateKey } from "../helpers/internal";
 import type { FactoryOutput, NodeMeta } from "../helpers/types";
 
-type Callbacks<N, E> = { attach: FactoryOutput<N, any, E>["attach"]; respone: (child: NodeMeta<N, E>) => any };
+type Callbacks<N, P, E> = { attach: FactoryOutput<N, any, E>["attach"]; respone: (child: NodeMeta<N, P, E>) => any };
 
 /**
  * Creates a helper that validates, attaches, and exposes child nodes.
@@ -11,10 +11,10 @@ type Callbacks<N, E> = { attach: FactoryOutput<N, any, E>["attach"]; respone: (c
  * transformed into caller-defined results. During cloning, previously attached
  * child nodes are reused instead of being attached again.
  */
-export const createAttachHelper = <N, E>(trigger: string, type: string, layer: string, callbacks: Callbacks<N, E>) => {
-	return (name: string, meta: NodeMeta<N, E>, afterCloning: boolean, children: any, reserved: string[]) => {
+export const createAttachHelper = <N, P, E>(trigger: string, type: string, layer: string, callbacks: Callbacks<N, P, E>) => {
+	return (name: string, meta: NodeMeta<N, P, E>, afterCloning: boolean, children: any, reserved: string[]) => {
 		// Expose children and collect caller-defined results
-		const expose = (key: string, child: NodeMeta<N, E>) => {
+		const expose = (key: string, child: NodeMeta<N, P, E>) => {
 			(meta.node as any)[key] = child.node;
 			reserved.push(key);
 			return [key, callbacks.respone(child)] as const;

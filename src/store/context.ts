@@ -1,14 +1,14 @@
 import { getUtils } from "../utils/app-wide";
 import { defineReadonly, ensureObjects, validateName } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { AnyStore, AnyStoreOptions, ExtraMeta, NodeMeta } from "../helpers/types";
+import type { AnyStoreOptions, StoreMeta } from "../helpers/types";
 
 /**
  * Exposes runtime properties on a store instance.
  *
  * Provides read-only access to the store identity and shared utilities.
  */
-export const exposeContext = (name: string, meta: NodeMeta<AnyStore, ExtraMeta>) => {
+export const exposeContext = (name: string, meta: StoreMeta) => {
 	defineReadonly(meta.node, "name", () => {
 		return name;
 	});
