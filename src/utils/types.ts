@@ -30,7 +30,6 @@ type Utils = {
 	 * Utilities can be updated at runtime using `setUtils`, and all updates are
 	 * immediately reflected across the entire store tree.
 	 *
-	 * @example
 	 * ```ts
 	 * // Register utilities
 	 * setUtils({

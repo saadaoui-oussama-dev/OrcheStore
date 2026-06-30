@@ -18,7 +18,6 @@ const defaultExport = {
 	 * - React subscriptions via `useSelect`
 	 * - runtime utilities via `utils`
 	 *
-	 * @example
 	 * ```tsx
 	 * import { createStore, createSlice } from "orchestore";
 	 *
@@ -87,7 +86,6 @@ const defaultExport = {
 	 * This function constructs a fully functional OrcheStore slice,
 	 * including state, mutations, methods, and nested children.
 	 *
-	 * @example
 	 * ```tsx
 	 * import { createStore, createSlice } from "orchestore";
 	 *
@@ -157,7 +155,6 @@ const defaultExport = {
 	 * The slice hook (`useSelect`) rely on this provider being
 	 * present in the component tree.
 	 *
-	 * @example
 	 * ```tsx
 	 * import { StoreProvider, createStore } from "orchestore";
 	 *

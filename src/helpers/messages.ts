@@ -67,7 +67,6 @@ export function setReporting(level: any, enabled?: boolean) {
 /**
  * Produces a human-readable representation of a value's type and structure.
  *
- * @example
  * ```ts
  * readable(undefined); // ["\nGot: undefined"]
  * readable(12);        // ["\nGot: number (12)"]

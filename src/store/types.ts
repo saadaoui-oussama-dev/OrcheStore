@@ -58,7 +58,6 @@ type storeOptions<C> = Omit<
 	 * Each slice is mounted and becomes available as:
 	 * `store.<sliceKey>`
 	 *
-	 * @example
 	 * ```ts
 	 * const store = createStore({
 	 *   slices: {
