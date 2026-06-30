@@ -21,7 +21,7 @@ import { AnySlice, Slice, Tail } from "../helpers/types";
  *
  * Every selection can be refined further and watched for mutations.
  */
-export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
+export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) & {
 	/**
 	 * Selects the direct parent of the current slice.
 	 *
@@ -45,7 +45,7 @@ export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
 	 * builder.parent.children.filter({ family: "CRUDSlice" });
 	 * ```
 	 */
-	readonly parent: WatchableSelection & ChildrenSelector;
+	readonly parent: WatchableSelection<S> & ChildrenSelector<S>;
 
 	/**
 	 * Selects ancestor slices.
@@ -73,7 +73,7 @@ export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
 	 * builder.parents.find({ family: "ShopSlice" }).children;
 	 * ```
 	 */
-	readonly parents: (WatchableSelection & ChildrenSelector) & {
+	readonly parents: (WatchableSelection<S> & ChildrenSelector<S>) & {
 		/**
 		 * Selects the ancestors at the specified levels.
 		 *
@@ -93,7 +93,7 @@ export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
 		 * Prefer using `builder.slices` or `builder.slice(...)` when the store root
 		 * is the intended starting point, rather than using an arbitrarily large level.
 		 */
-		readonly at: (...levels: number[]) => WatchableSelection & ChildrenSelector;
+		readonly at: (...levels: number[]) => WatchableSelection<S> & ChildrenSelector<S>;
 
 		/**
 		 * Searches the ancestor chain until the first matching slice is found.
@@ -113,7 +113,7 @@ export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
 		 *   and avoids collisions between slices sharing the same runtime name
 		 * - a callback for custom matching logic
 		 */
-		readonly find: SelectionMatcher<ChildrenSelector>;
+		readonly find: SelectionMatcher<ChildrenSelector<S>>;
 
 		/**
 		 * Searches the entire ancestor chain and selects every matching slice.
@@ -134,7 +134,7 @@ export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
 		 *   and avoids collisions between slices sharing the same runtime name
 		 * - a callback for custom matching logic
 		 */
-		readonly filter: SelectionMatcher<ChildrenSelector>;
+		readonly filter: SelectionMatcher<ChildrenSelector<S>>;
 	};
 
 	/**
@@ -171,7 +171,7 @@ export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
 	 * builder.slice("shop", "stock").children.filter({ family: "CRUDSlice" });
 	 * ```
 	 */
-	readonly slice: (...absolutePaths: string[]) => WatchableSelection & ChildrenSelector;
+	readonly slice: (...absolutePaths: string[]) => WatchableSelection<S> & ChildrenSelector<S>;
 
 	/**
 	 * Selects slices from the store root.
@@ -202,7 +202,7 @@ export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
 	 * builder.slices.filter({ family: "CRUDSlice" }).children;
 	 * ```
 	 */
-	readonly slices: (WatchableSelection & ChildrenSelector) & {
+	readonly slices: (WatchableSelection<S> & ChildrenSelector<S>) & {
 		/**
 		 * Selects the slices at the specified absolute paths.
 		 *
@@ -219,7 +219,7 @@ export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
 		 * - Invalid or missing paths are ignored.
 		 * - Equivalent to `builder.slice(...paths)`.
 		 */
-		readonly at: (...absolutePaths: string[]) => WatchableSelection & ChildrenSelector;
+		readonly at: (...absolutePaths: string[]) => WatchableSelection<S> & ChildrenSelector<S>;
 
 		/**
 		 * Filters the currently selected root slices.
@@ -244,7 +244,7 @@ export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
 		 * - Does not support deep search.
 		 * - For deep search, use `builder.slices.deepFilter()`.
 		 */
-		readonly filter: SelectionMatcher<ChildrenSelector>;
+		readonly filter: SelectionMatcher<ChildrenSelector<S>>;
 
 		/**
 		 * Recursively searches the selected root slices and all of their descendants.
@@ -269,11 +269,11 @@ export type ListenersBuilder = (WatchableSelection & ChildrenSelector) & {
 		 * - Includes the currently selected root slices in the search.
 		 * - Use `builder.slices.children.deepFilter()` to exclude the root slices.
 		 */
-		readonly deepFilter: SelectionMatcher<ChildrenSelector>;
+		readonly deepFilter: SelectionMatcher<ChildrenSelector<S>>;
 	};
 };
 
-type ChildrenSelector = {
+type ChildrenSelector<S> = {
 	/**
 	 * Selects child slices at the specified relative paths.
 	 *
@@ -314,7 +314,7 @@ type ChildrenSelector = {
 	 * The singular and plural forms are interchangeable. Both APIs support
 	 * selecting one or more child slices.
 	 */
-	readonly child: (...relativePaths: string[]) => WatchableSelection;
+	readonly child: (...relativePaths: string[]) => WatchableSelection<S>;
 
 	/**
 	 * Selects the direct children of the current selection.
@@ -349,7 +349,7 @@ type ChildrenSelector = {
 	 * builder.slices.children; // or .child
 	 * ```
 	 */
-	readonly children: WatchableSelection & {
+	readonly children: WatchableSelection<S> & {
 		/**
 		 * Selects child slices at the specified relative paths.
 		 *
@@ -367,7 +367,7 @@ type ChildrenSelector = {
 		 * - Invalid or missing paths are ignored.
 		 * - Equivalent to `builder.child(...paths)`.
 		 */
-		readonly at: (...relativePaths: string[]) => WatchableSelection;
+		readonly at: (...relativePaths: string[]) => WatchableSelection<S>;
 
 		/**
 		 * Filters the currently selected child slices.
@@ -392,7 +392,7 @@ type ChildrenSelector = {
 		 * - Does not support deep search.
 		 * - For deep search, use `builder.children.deepFilter()`.
 		 */
-		readonly filter: SelectionMatcher;
+		readonly filter: SelectionMatcher<S>;
 
 		/**
 		 * Recursively searches the selected child slices and all of their descendants.
@@ -412,7 +412,7 @@ type ChildrenSelector = {
 		 *   and avoids collisions between slices sharing the same runtime name
 		 * - a callback for custom matching logic
 		 */
-		readonly deepFilter: SelectionMatcher;
+		readonly deepFilter: SelectionMatcher<S>;
 	};
 };
 
@@ -422,13 +422,13 @@ type ChildrenSelector = {
  * The returned selection preserves the same traversal capabilities as
  * the API it was called from.
  */
-type SelectionMatcher<Selector = {}> = {
+type SelectionMatcher<S, Selector = {}> = {
 	/**
 	 * Matches slices by runtime metadata.
 	 *
 	 * The metadata may contain `name`, `family`, or both.
 	 */
-	(metadata: { name?: string; family?: string }): WatchableSelection & Selector;
+	(metadata: { name?: string; family?: string }): WatchableSelection<S, any> & Selector;
 
 	/**
 	 * Matches a specific slice instance.
@@ -436,20 +436,20 @@ type SelectionMatcher<Selector = {}> = {
 	 * Matching is performed by slice runtime `name` and `family`,
 	 * avoiding collisions between slices sharing the same runtime name.
 	 */
-	<S extends AnySlice>(slice: S): WatchableSelection<S> & Selector;
+	<T extends AnySlice>(slice: T): WatchableSelection<S, T> & Selector;
 
 	/**
 	 * Matches slices using custom logic.
 	 *
 	 * Return `true` to include the slice in the selection.
 	 */
-	<S extends AnySlice>(callback: (slice: S, key: string) => boolean): WatchableSelection<S> & Selector;
+	<T extends AnySlice>(callback: (slice: T, key: string) => boolean): WatchableSelection<S, T> & Selector;
 };
 
 /**
  * Registers a listener for a mutation on the selected slices.
  */
-type WatchableSelection<S extends AnySlice = AnySlice> = {
+type WatchableSelection<S, T = any> = {
 	/**
 	 * Registers a listener that is invoked whenever the specified mutation
 	 * is emitted by any slice in the current selection.
@@ -462,13 +462,14 @@ type WatchableSelection<S extends AnySlice = AnySlice> = {
 	 * @param mutation The mutation name to listen for.
 	 * @param callback Invoked for every matching mutation.
 	 */
-	readonly on: <K extends keyof SliceReducers<S> | string>(
+	readonly on: <K extends keyof SliceReducers<T> | string>(
 		mutation: K,
 		callback: (
-			slice: S,
-			...args: K extends keyof SliceReducers<S> ? Tail<Parameters<SliceReducers<S>[K]>> : any[]
+			state: S,
+			slice: T,
+			...args: K extends keyof SliceReducers<T> ? Tail<Parameters<SliceReducers<T>[K]>> : any[]
 		) => void,
 	) => void;
 };
 
-type SliceReducers<S> = S extends Slice<any, infer R, any, any> ? R : never;
+type SliceReducers<T> = T extends Slice<any, infer R, any, any> ? R : never;

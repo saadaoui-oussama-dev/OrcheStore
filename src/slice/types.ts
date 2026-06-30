@@ -1,5 +1,5 @@
 import type { RTKSlice, RTKReducer } from "../helpers/imports";
-import type { Dict, Utils, Obj, OmitNever, ReadOnly, Store, Tail } from "../helpers/types";
+import type { Dict, Utils, Obj, OmitNever, ReadOnly, Store, Tail, ListenersBuilder } from "../helpers/types";
 import type { NodeMeta, NodePrototype } from "../helpers/types";
 
 /** Runtime API returned by `createSlice()`. */
@@ -95,7 +95,6 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	 *
 	 * May be an object or a lazy initializer returning the initial state.
 	 *
-	 * @example
 	 * ```ts
 	 * const counter = createSlice({
 	 *   name: "counter",
@@ -105,10 +104,7 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	 *     loading: false,
 	 *   },
 	 * });
-	 * ```
 	 *
-	 * @example
-	 * ```ts
 	 * const counter = createSlice({
 	 *   name: "counter",
 	 *
@@ -117,11 +113,8 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	 *     loading: false,
 	 *   }),
 	 * });
-	 * ```
 	 *
-	 * @example
-	 * Runtime usage
-	 * ```ts
+	 * // Runtime usage
 	 * counter.getState(); // current reactive snapshot
 	 * counter.useSelect((state) => state.value); // React subscription
 	 * counter.getInitialState(); // initial state only
@@ -136,7 +129,6 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	 * Each mutation receives an Immer draft of the slice state and is exposed
 	 * as a directly callable method on the created slice instance.
 	 *
-	 * @example
 	 * ```ts
 	 * mutations: {
 	 *   increment(state, amount: number) {
@@ -156,7 +148,6 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	 * Methods are bound to the slice instance and can access:
 	 * state, mutations, children, parent, root, and utils via `this`.
 	 *
-	 * @example
 	 * ```ts
 	 * methods: {
 	 *   log() {
@@ -175,7 +166,6 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	 *
 	 * Each child becomes a mounted runtime node under this slice.
 	 *
-	 * @example
 	 * ```ts
 	 * children: {
 	 *   products: productsSlice,
@@ -192,7 +182,51 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	/** Collection of derived state functions. */
 	computed?: "Planned" | "Not Yet Supported";
 
-	listeners?: "Planned" | "Not Yet Supported";
+	/**
+	 * Registers mutation listeners for other slices.
+	 *
+	 * **Equivalent to:** `extraReducers` in Redux Toolkit, but uses a
+	 * tree-oriented Builder API to first select slices, then register
+	 * the mutations to observe.
+	 *
+	 * ```ts
+	 * listeners(builder) {
+	 *   builder.parent.on("refresh", (parent) => {
+	 *     // ...
+	 *   });
+	 *
+	 *   builder.slice("auth").on("login", (state, authSlice, user: User) => {
+	 *     console.log("User logged in:", user);
+	 *     state.users.active = user;
+	 *   });
+	 * }
+	 * ```
+	 *
+	 * **Selection model**
+	 *
+	 * The `builder` parameter navigates the runtime slice tree in different ways:
+	 *
+	 * - `parent` / `parents` → observe ancestor slices.
+	 * - `slice` / `slices` → observe slices selected by absolute paths.
+	 * - `child` / `children` → observe slices relative to the current slice.
+	 *
+	 * Every selection can be refined through filtering or traversal before
+	 * registering one or more mutation listeners with `.on(...)`.
+	 *
+	 * **Callbacks**
+	 *
+	 * Listener callbacks receive:
+	 *
+	 * - the draft state of the current slice
+	 * - the slice that emitted the mutation
+	 * - the original mutation arguments
+	 *
+	 * **Lifecycle**
+	 *
+	 * Listeners are automatically registered when the slice is mounted and
+	 * automatically removed when the slice is unmounted.
+	 */
+	listeners?: (builder: ListenersBuilder<slice<S, R, M, C>>) => void;
 };
 
 /**
