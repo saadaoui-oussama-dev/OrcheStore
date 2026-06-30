@@ -45,9 +45,9 @@ function App() {
       </pre> */}
 
 			<div>
-				<button onClick={() => store2.counter.subCounter.increment()}>Increment</button>
-				<button onClick={() => store2.counter.subCounter.decrement()}>Decrement</button>
-				<button onClick={() => store2.counter.subCounter.incrementAfter(1, 1000)}>Increment After 1s</button>
+				<button onClick={() => store.counter.increment()}>Increment</button>
+				<button onClick={() => store.counter.decrement()}>Decrement</button>
+				<button onClick={() => store.counter.incrementAfter(1, 1000)}>Increment After 1s</button>
 			</div>
 
 			{/* <div>
@@ -57,9 +57,9 @@ function App() {
 			</div> */}
 
 			<div>
-				<button onClick={() => counter.increment()}>Increment</button>
-				<button onClick={() => counter.decrement()}>Decrement</button>
-				<button onClick={() => counter.incrementAfter(1, 1000)}>Increment After 1s</button>
+				<button onClick={() => store2.counter.increment()}>Increment</button>
+				<button onClick={() => store2.counter.decrement()}>Decrement</button>
+				<button onClick={() => store2.counter.incrementAfter(1, 1000)}>Increment After 1s</button>
 			</div>
 
 			{/* 

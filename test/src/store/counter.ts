@@ -141,6 +141,39 @@ export const counter = createSlice({
 		subCounter,
 		subCounter2,
 	},
+
+	...({
+		listeners(builder: any) {
+			// Current selection
+			builder.on("refresh", noop);
+
+			// Parent selection
+			builder.parent.on("refresh", noop);
+			builder.parents.at(2).on("refresh", noop);
+			builder.parents.find({ family: "CRUDSlice" }).on("refresh", noop);
+
+			// Absolute selection
+			builder.slice("shop.products").on("create", noop);
+			builder.slices.at("auth").on("login", noop);
+			builder.slices.filter({ family: "CRUDSlice" }).on("refresh", noop);
+			builder.slices.deepFilter({ family: "CRUDSlice" }).on("reset", noop);
+
+			// Relative selection
+			builder.child("pagination").on("change", noop);
+			builder.children.on("refresh", noop);
+			builder.children.at("filters.search").on("change", noop);
+			builder.children.filter({ family: "CRUDSlice" }).on("refresh", noop);
+			builder.children.deepFilter({ family: "CRUDSlice" }).on("reset", noop);
+
+			// Chaining
+			builder.parent.children.at("pagination").on("change", noop);
+			builder.parents.find({ family: "ShopSlice" }).children.on("refresh", noop);
+			builder.slice("shop").children.at("products").on("create", noop);
+			builder.slices.at("shop", "stock").children.filter({ family: "CRUDSlice" }).on("refresh", noop);
+		},
+	} as any),
 });
+
+const noop = (state: any) => console.log(state);
 
 // subSubCounter, subSubCounter2, subCounter, subCounter2, counter

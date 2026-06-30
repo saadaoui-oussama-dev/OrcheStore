@@ -17,7 +17,8 @@ export const store = createStore({
 export const store2 = createStore({
 	name: undefined,
 	slices: {
-		counter: counter.family.clone((state) => {
+		counter: counter.family.clone((state, next) => {
+			next.name = "counter2";
 			state.value = 800;
 			state.subCounter.subValue = 8476;
 		}),

@@ -1455,11 +1455,21 @@ OrcheStore is currently experimental and under active development.
 
 Planned features:
 
+### State & Reactivity
+
+- support selectors and computed state (as `computed` or `selectors`)
+- support store subscriptions (`store.subscribe`)
+- support slice listeners (`extraReducers` as `listeners`)
+- optional support for `slice.injectInto`
+- lifecycle hooks
+
+### Store Architecture
+
+- isolated utility containers per store instance
+- store cloning with deep state transitions and utility inheritance
+- enhanced DevTools integration
 - middleware and plugin system
 - persistence utilities
 - SSR support
-- deep readonly enforcement
-- lifecycle hooks
-- enhanced DevTools integration
 
 ---

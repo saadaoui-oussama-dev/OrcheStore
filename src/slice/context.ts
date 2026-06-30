@@ -74,8 +74,10 @@ export const onCloneProps = (props: AnySliceOptions, meta: Meta, payload?: Clone
 	const originState: any = meta.reducer(undefined, { type: "@@CLONE" });
 	const transformedState = payload?.transform ? payload.transform(originState, next) : undefined;
 	const clonedState = transformedState === undefined ? originState : transformedState;
-	const state = normalizeSafeState("slice.clone", payload?.name ?? "", clonedState);
 
 	next = ensureObjects({ name: next.name }, next, ["mutations", "methods"]);
-	return { ...props, ...next, state };
+	const name = validateName("createSlice", next, true);
+	const state = normalizeSafeState("slice.clone", payload?.name ?? "", clonedState);
+
+	return { ...props, ...next, name, state };
 };

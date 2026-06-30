@@ -25,5 +25,6 @@ export type { Dict, Obj, OmitNever, ReadOnly, Tail };
 
 export type * from "../factory/types";
 export type * from "../utils/types";
-export type * from "../slice/types";
 export type * from "../store/types";
+export type * from "../slice/types";
+export type * from "../slice/types-listeners";
