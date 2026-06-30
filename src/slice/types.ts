@@ -226,7 +226,7 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
 	 * Listeners are automatically registered when the slice is mounted and
 	 * automatically removed when the slice is unmounted.
 	 */
-	listeners?: (builder: ListenersBuilder<SliceState.Draft<slice<S, R, M, C>, C>>) => void;
+	listeners?: "Planned" | "Not Yet Supported";
 };
 
 /**

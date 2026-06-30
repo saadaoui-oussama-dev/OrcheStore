@@ -72,7 +72,7 @@ export const onCloneProps = (props: AnySliceOptions, meta: Meta, payload?: Clone
 
 	let next = ensureObjects({ name: props.name }, props, ["mutations", "methods"]);
 	const originState: any = meta.reducer(undefined, { type: "@@CLONE" });
-	const transformedState = payload?.transform ? payload.transform(originState, next) : undefined;
+	const transformedState = payload?.transform ? payload.transform(next, originState) : undefined;
 	const clonedState = transformedState === undefined ? originState : transformedState;
 
 	next = ensureObjects({ name: next.name }, next, ["mutations", "methods"]);
