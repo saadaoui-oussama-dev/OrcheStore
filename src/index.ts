@@ -1,9 +1,8 @@
-import { createStore as _ } from "./store/creator";
-import { createSlice as __ } from "./slice/creator";
+import { createStore as CST } from "./store/creator";
+import { createSlice as CSL } from "./slice/creator";
 import { StoreProvider as SP } from "./store/provider";
 import { getUtils as GU, setUtils as SU } from "./utils/app-wide";
-import { setReporting as SR} from "./helpers/messages";
-import { createSlice as CSL, createStore as CST } from "./prerelease";
+import { setReporting as SR } from "./helpers/messages";
 
 const defaultExport = {
 	/**
@@ -73,10 +72,6 @@ const defaultExport = {
 	 *
 	 * @internal
 	 * Bootstraps Redux Toolkit, mounts slice tree, and initializes runtime store graph.
-	 *
-	 * @prerelease
-	 * Calling this function will print a pre-release message in the console.
-	 * This behavior will be removed in the first stable release.
 	 */
 	createStore: CST,
 
@@ -142,10 +137,6 @@ const defaultExport = {
 	 *
 	 * @internal
 	 * Integrates Redux Toolkit, builds reducers, and wires runtime context.
-	 *
-	 * @prerelease
-	 * Calling this function will print a pre-release message in the console.
-	 * This behavior will be removed in the first stable release.
 	 */
 	createSlice: CSL,
 

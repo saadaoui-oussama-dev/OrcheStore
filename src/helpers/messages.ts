@@ -15,7 +15,7 @@ const informMessage = `[OrcheStore] Warning and error reporting is enabled.\nCon
  * Controls logging, warnings, and errors based on runtime configuration.
  * Also ensures one-time informational output when warnings/errors are enabled.
  */
-export const devConsole = {
+const devConsole = {
 	log(message: any[]) {
 		if (!message?.length || !reportLevel.logs) return;
 		log?.(...message);
