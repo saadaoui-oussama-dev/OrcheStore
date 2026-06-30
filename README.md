@@ -979,19 +979,20 @@ console.log(slice.getState().value);
 ### 2. Cloning with state transformation
 
 ```ts
-const clone = slice.family.clone((state) => newState | void);
+const clone = slice.family.clone((nextProps, state) => newState | void);
 ```
 
 The transformer receives:
 
-* `state` — the fully resolved initial state (including nested slices)
+* `nextProps` — for confuguration transformation.
+* `state` — the fully resolved initial state (including nested slices).
 
 **State transformation behavior:**
 
 **a. Immer style** (Recommended) — modify state directly without returning
 
 ```ts
-const cloneB = slice.family.clone((state) => {
+const cloneB = slice.family.clone((_props, state) => {
 	state.value = 200;
 });
 ```
@@ -999,7 +1000,7 @@ const cloneB = slice.family.clone((state) => {
 **b. Return style** — return a new state object
 
 ```ts
-const cloneA = slice.family.clone((state) => {
+const cloneA = slice.family.clone((_props, state) => {
 	return {
 		...state,
 		value: 100,
@@ -1018,13 +1019,13 @@ const cloneC = slice.family.clone(() => {
 ### 3. Cloning with configuration overrides
 
 ```ts
-const clone = slice.family.clone((state, next) => newState | void);
+const clone = slice.family.clone((nextProps, state) => newState | void);
 ```
 
 The transformer receives:
 
+* `nextProps` — mutable configuration object for the cloned instance.
 * `state` — for state transformation.
-* `next` — mutable configuration object for the cloned instance
 
 The return value applies only to state transformation (see previous section).
 
@@ -1035,21 +1036,21 @@ The return value applies only to state transformation (see previous section).
 * `next.mutations` — supports replacing state transitions (e.g. domain-specific state handling)
 
 ```ts
-const productsSlice = crudSlice.family.clone((state, next) => {
+const productsSlice = crudSlice.family.clone((props, state) => {
 	// rename instance
-	next.name = "ProductsSlice";
+	props.name = "ProductsSlice";
 
 	// transform initial state
 	state.endpoint = "api/v1/products";
 	state.dropdown.supported = false;
 
 	// override instance mutations
-	next.mutations.setEndpoint = (state, value) => {
+	props.mutations.setEndpoint = (state, value) => {
 		state.endpoint = `api/v2/${value}`;
 	};
 
 	// override instance methods
-	next.methods.getId = function (item) {
+	props.methods.getId = function (item) {
 		return item.code;
 	}
 });
@@ -1074,13 +1075,13 @@ Using `any` casts, deleting properties, or conditionally accessing methods and m
 These APIs are intended only for advanced infrastructure-level customization or experimental use cases.
 
 ```ts
-const clonedSlice = crudSlice.family.clone((state, next) => {
+const clonedSlice = crudSlice.family.clone((props, state) => {
 	// remove state property and mutation at runtime (TypeScript bypass)
 	delete (state as any).cache
-	delete (next.mutations as any).saveCache;
+	delete (props.mutations as any).saveCache;
 
 	// override method with optional runtime dependency
-	next.methods.sendList = function (list) {
+	props.methods.sendList = function (list) {
 		// mutation may or may not exist depending on configuration
 		this.saveCache?.(list);
 
@@ -1094,12 +1095,12 @@ Instead of mutating structure at runtime, prefer using explicit feature flags in
 This keeps behavior predictable, serializable, and easier to debug.
 
 ```ts
-const categoriesSlice = crudSlice.family.clone((state, next) => {
+const categoriesSlice = crudSlice.family.clone((props, state) => {
 	// disable feature explicitly instead of deleting runtime methods
 	state.features.cache.supported = false;
 
 	// override instance-specific adapter logic
-	next.methods.adaptItem = function (item) {
+	props.methods.adaptItem = function (item) {
 		return { ...item, code: `CTG-${item.id}` };
 	};
 });

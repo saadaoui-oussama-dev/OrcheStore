@@ -254,7 +254,10 @@ type CloneArgs<S extends Obj = any, R extends Mutations<S, C> = any, M = any, C 
 	object?: Obj;
 
 	/** Receives the cloned state before initialization, allowing it to be customized. */
-	transform?: (state: SliceState.Draft<S, C>, next: Pick<sliceOptions<S, R, M, C>, "name" | "mutations" | "methods">) => void | SliceState.Draft<S, C>;
+	transform?: (
+		nextProps: Pick<sliceOptions<S, R, M, C>, "name" | "mutations" | "methods">,
+		state: SliceState.Draft<S, C>,
+	) => void | SliceState.Draft<S, C>;
 };
 
 export type Meta = NodeMeta<AnySlice, AnySliceOptions, { redux: RTKSlice; reducer: RTKReducer }>;
