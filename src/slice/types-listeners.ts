@@ -113,7 +113,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 		 *   and avoids collisions between slices sharing the same runtime name
 		 * - a callback for custom matching logic
 		 */
-		readonly find: SelectionMatcher<ChildrenSelector<S>>;
+		readonly find: SelectionMatcher<S, ChildrenSelector<S>>;
 
 		/**
 		 * Searches the entire ancestor chain and selects every matching slice.
@@ -134,7 +134,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 		 *   and avoids collisions between slices sharing the same runtime name
 		 * - a callback for custom matching logic
 		 */
-		readonly filter: SelectionMatcher<ChildrenSelector<S>>;
+		readonly filter: SelectionMatcher<S, ChildrenSelector<S>>;
 	};
 
 	/**
@@ -244,7 +244,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 		 * - Does not support deep search.
 		 * - For deep search, use `builder.slices.deepFilter()`.
 		 */
-		readonly filter: SelectionMatcher<ChildrenSelector<S>>;
+		readonly filter: SelectionMatcher<S, ChildrenSelector<S>>;
 
 		/**
 		 * Recursively searches the selected root slices and all of their descendants.
@@ -269,7 +269,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 		 * - Includes the currently selected root slices in the search.
 		 * - Use `builder.slices.children.deepFilter()` to exclude the root slices.
 		 */
-		readonly deepFilter: SelectionMatcher<ChildrenSelector<S>>;
+		readonly deepFilter: SelectionMatcher<S, ChildrenSelector<S>>;
 	};
 };
 
