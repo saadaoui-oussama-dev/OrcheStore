@@ -3,7 +3,7 @@ import type { Dict, Utils, Obj, OmitNever, ReadOnly, Store, Tail, ListenersBuild
 import type { NodeMeta, NodePrototype } from "../helpers/types";
 
 /** Runtime API returned by `createSlice()`. */
-type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
+type slice<S extends Obj, R extends Mutations<S, M, C>, M, C> = Utils & {
 	/** Unique name of the slice. */
 	readonly name: string;
 
@@ -14,7 +14,7 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
 	root: Store<any>;
 
 	/** Parent slice in the runtime tree, or `undefined` if this is a root slice. */
-	parent: slice<any, Mutations<any, any>, any, any> | undefined;
+	parent: slice<any, Mutations<any, any, any>, any, any> | undefined;
 
 	/**
 	 * Subscribes to this slice's state changes inside React components.
@@ -27,14 +27,14 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
 	 *
 	 * The hook rely on utilizing StoreProvider being present in the component tree.
 	 */
-	readonly useSelect: <T>(selector: (this: Utils, state: SliceState.State<S, C>, context: Utils) => T) => T;
+	readonly useSelect: <T>(selector: (this: Utils, state: SliceState<S, R, M, C>, context: Utils) => T) => T;
 
 	/**
 	 * Returns the current immutable state snapshot of the slice.
 	 *
 	 * Includes all mounted child slices and nested state.
 	 */
-	readonly getState: () => SliceState.State<S, C>;
+	readonly getState: () => SliceState<S, R, M, C>;
 
 	/**
 	 * Returns the slice's original initial state.
@@ -47,14 +47,14 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
 		 *
 		 * Does not include runtime updates or mutations.
 		 */
-		(): SliceState.State<S, {}>;
+		(): SliceState<S, R, M, {}>;
 
 		/**
 		 * Returns the complete initial state.
 		 *
 		 * Includes all mounted child slices and nested state.
 		 */
-		readonly deep: () => SliceState.State<S, C>;
+		readonly deep: () => SliceState<S, R, M, C>;
 	};
 
 	/**
@@ -86,7 +86,7 @@ type slice<S extends Obj, R extends Mutations<S, C>, M, C> = Utils & {
 	}>;
 
 /** Configuration used to create a slice definition. */
-type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
+type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	/** Unique name of the slice. */
 	name: string;
 
@@ -235,33 +235,30 @@ type sliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = {
  * Mutations receive an Immer draft and may either mutate it
  * directly or return a replacement state.
  */
-type Mutations<S extends Obj, C> = Dict<
-	(state: SliceState.Draft<S, C>, ...args: any[]) => void | SliceState.Draft<S, C>
+type Mutations<S extends Obj, M, C> = Dict<
+	(state: DraftState<S, {}, M, C>, ...args: any[]) => void | DraftState<S, {}, M, C>
 >;
 
-/** Utilities for deriving the public and mutable state types associated with a slice. */
-namespace SliceState {
-	type InferState<C> = C extends Obj ? C["getState"] extends () => infer S ? S extends Obj ? S : never : never : never; // prettier-ignore
+type SliceState<S extends Obj, R extends Mutations<S, M, C>, M, C> = ReadOnly<
+	Omit<S, keyof OmitNever<{ [K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends AnySlice ? true : never }>> &
+		OmitNever<{
+			[K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends slice<infer S, infer R, infer M, infer C>
+				? SliceState<S, R, M, C>
+				: never;
+		}>
+>;
 
-	export type State<S extends Obj, C> = ReadOnly<
-		Omit<S, "computed" | keyof OmitNever<{ [K in keyof C]: InferState<C[K]> }>> &
-			OmitNever<{ [K in keyof C]: InferState<C[K]> }>
-	>;
+type DraftState<S extends Obj, R extends Mutations<S, M, C>, M, C> = Omit<
+	S,
+	keyof OmitNever<{ [K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends AnySlice ? true : never }>
+> &
+	OmitNever<{
+		[K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends slice<infer S, infer R, infer M, infer C>
+			? DraftState<S, R, M, C>
+			: never;
+	}>;
 
-	export type Draft<S extends Obj, C> = Omit<
-		S,
-		"computed" | keyof OmitNever<{ [K in keyof C]: C[K] extends AnySlice ? true : never }>
-	> &
-		OmitNever<{ [K in keyof C]: C[K] extends slice<infer S, infer _, infer __, infer C> ? Draft<S, C> : never }>;
-}
-
-/**
- * Property names reserved by the framework.
- *
- * These names cannot be used for mutations,
- * methods, or child slices.
- */
-type CloneArgs<S extends Obj = Obj, R extends Mutations<S, C> = Mutations<S, any>, M = any, C = any> = {
+type CloneArgs<S extends Obj = Obj, R extends Mutations<S, M, C> = Mutations<S, any, any>, M = any, C = any> = {
 	/** Optional name used when reporting clone validation errors. */
 	name?: string;
 
@@ -271,8 +268,8 @@ type CloneArgs<S extends Obj = Obj, R extends Mutations<S, C> = Mutations<S, any
 	/** Receives the cloned state before initialization, allowing it to be customized. */
 	transform?: (
 		nextProps: Pick<sliceOptions<S, R, M, C>, "name" | "mutations" | "methods">,
-		state: SliceState.Draft<S, C>,
-	) => void | SliceState.Draft<S, C>;
+		state: DraftState<S, R, M, C>,
+	) => void | DraftState<S, R, M, C>;
 };
 
 /**

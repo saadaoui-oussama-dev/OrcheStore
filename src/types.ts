@@ -9,10 +9,10 @@ declare global {
 		type StoreOptions<C> = storeOptions<C>;
 
 		/** Runtime slice API exposed by createSlice(...). */
-		type Slice<S extends Obj, R extends Mutations<S, C>, M, C> = slice<S, R, M, C>;
+		type Slice<S extends Obj, R extends Mutations<S, M, C>, M, C> = slice<S, R, M, C>;
 
 		/** Configuration object used to create a slice. */
-		type SliceOptions<S extends Obj, R extends Mutations<S, C>, M, C> = sliceOptions<S, R, M, C>;
+		type SliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = sliceOptions<S, R, M, C>;
 	}
 }
 

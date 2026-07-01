@@ -87,7 +87,7 @@ const attachStoreChildren = createAttachHelper("createStore", "Store", "slice", 
  * This function constructs a fully functional OrcheStore slice,
  * including state, mutations, methods, and nested children.
  */
-const createSlice = <S extends Obj, R extends Mutations<S, C>, M, C>(
+const createSlice = <S extends Obj, R extends Mutations<S, M, C>, M, C>(
 	props: SliceOptions<S, R, M, C>,
 ): Slice<S, R, M, C> => (create as any)(props);
 

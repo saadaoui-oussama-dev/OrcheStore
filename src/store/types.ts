@@ -84,13 +84,11 @@ type storeOptions<C> = Omit<
  *
  * Represents the full read-only state tree including all mounted slices.
  */
-type StoreState<C> = ReadOnly<
-	OmitNever<{
-		readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer _, infer __, infer C>
-			? SliceState.State<S, C>
-			: never;
-	}>
->;
+type StoreState<C> = OmitNever<{
+	readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer R, infer M, infer C>
+		? SliceState<S, R, M, C>
+		: never;
+}>;
 
 /**
  * Props for the OrcheStore React provider.
