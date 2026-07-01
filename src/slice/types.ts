@@ -93,7 +93,7 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	/**
 	 * Initial state of the slice.
 	 *
-	 * May be an object or a lazy initializer returning the initial state.
+	 * Can be provided as a plain object:
 	 *
 	 * ```ts
 	 * const counter = createSlice({
@@ -104,21 +104,31 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	 *     loading: false,
 	 *   },
 	 * });
+	 * ```
 	 *
+	 * Or as a factory function, which is invoked once during
+	 * initialization:
+	 *
+	 * ```ts
 	 * const counter = createSlice({
 	 *   name: "counter",
 	 *
-	 *   state: () => ({
-	 *     value: computeInitialValue(),
-	 *     loading: false,
-	 *   }),
+	 *   state: function () {
+	 *     return {
+	 *       value: computeInitialValue(),
+	 *       loading: false,
+	 *     };
+	 *   },
 	 * });
+	 * ```
 	 *
-	 * // Runtime usage
-	 * counter.getState(); // current reactive snapshot
-	 * counter.useSelect((state) => state.value); // React subscription
-	 * counter.getInitialState(); // initial state only
-	 * counter.getInitialState.deep(); // full tree initial state (including children)
+	 * Runtime usage:
+	 *
+	 * ```ts
+	 * counter.getState();             // Current state
+	 * counter.useSelect((state) => state.value); // React selector
+	 * counter.getInitialState();      // Initial slice state
+	 * counter.getInitialState.deep(); // Initial subtree state
 	 * ```
 	 */
 	state?: S | (() => S);
@@ -126,37 +136,76 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	/**
 	 * Collection of state mutation functions.
 	 *
-	 * Each mutation receives an Immer draft of the slice state and is exposed
-	 * as a directly callable method on the created slice instance.
+	 * Mutations define the write operations for the slice. Each mutation
+	 * receives an Immer draft of the slice state and may optionally accept
+	 * additional arguments.
+	 *
+	 * Every mutation is automatically exposed as a method on the created
+	 * slice instance, so no explicit dispatching is required.
 	 *
 	 * ```ts
-	 * mutations: {
-	 *   increment(state, amount: number) {
-	 *     state.value += amount;
-	 *   }
-	 * }
+	 * const counter = createSlice({
+	 *   name: "counter",
 	 *
-	 * // usage: without dispatch
-	 * slice.increment(1);
+	 *   state: { value: 0 },
+	 *
+	 *   mutations: {
+	 *     increment(state, amount: number = 1) {
+	 *       state.value += amount;
+	 *     },
+	 *   },
+	 * });
+	 * ```
+	 *
+	 * Runtime usage:
+	 *
+	 * ```ts
+	 * counter.increment();
+	 * counter.increment(5);
 	 * ```
 	 */
-	mutations?: R & ThisType<Utils>;
+	mutations?: R;
 
 	/**
 	 * Collection of user-defined instance methods.
 	 *
-	 * Methods are bound to the slice instance and can access:
-	 * state, mutations, children, parent, root, and utils via `this`.
+	 * Methods are regular functions attached to the slice instance.
+	 * They can accept arbitrary arguments, encapsulate reusable logic,
+	 * return any value, perform asynchronous work, or even expose
+	 * React hooks.
+	 *
+	 * Each method is bound to the slice instance, providing access to
+	 * its runtime properties and utilities through `this`.
 	 *
 	 * ```ts
-	 * methods: {
-	 *   log() {
-	 *     console.log(this.getState());
-	 *   }
-	 * }
+	 * const counter = createSlice({
+	 *   name: "counter",
 	 *
-	 * // usage:
-	 * slice.log();
+	 *   methods: {
+	 *     isEmpty() {
+	 *       return this.getState().value === 0;
+	 *     },
+	 *
+	 *     async load(force: boolean = false) {
+	 *       if (force || this.isEmpty()) {
+	 *         const value = await fetchCounter();
+	 *         this.set(value);
+	 *       }
+	 *     },
+	 *
+	 *     useValue() {
+	 *       return this.useSelect((state) => state.value);
+	 *     },
+	 *   },
+	 * });
+	 * ```
+	 *
+	 * Runtime usage:
+	 *
+	 * ```ts
+	 * counter.isEmpty(); // boolean
+	 * await counter.load(true); // async
+	 * counter.useValue(); // React hook
 	 * ```
 	 */
 	methods?: M & ThisType<slice<S, R, M, C>>;
@@ -164,22 +213,45 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	/**
 	 * Collection of child slices.
 	 *
-	 * Each child becomes a mounted runtime node under this slice.
+	 * Child slices are automatically mounted beneath the current slice,
+	 * forming a hierarchical runtime tree.
+	 *
+	 * Each child exposes its own state, mutations, methods, listeners,
+	 * and descendants while contributing its state to the parent's state
+	 * object.
 	 *
 	 * ```ts
-	 * children: {
-	 *   products: productsSlice,
-	 *   categories: categoriesSlice,
-	 * }
+	 * const shop = createSlice({
+	 *   children: {
+	 *     products: productsSlice,
+	 *     cart: cartSlice,
+	 *   },
+	 * });
+	 * ```
 	 *
-	 * // usage:
-	 * shop.products.getState(); // access slice instance
-	 * shop.getState().products; // access state subtree
+	 * Runtime usage:
+	 *
+	 * ```ts
+	 * // Child slice instance
+	 * shop.products.increment();
+	 *
+	 * // Child state
+	 * shop.getState().products;
+	 *
+	 * // Entire initial state tree
+	 * shop.getInitialState.deep();
 	 * ```
 	 */
 	children?: C;
 
-	/** Collection of derived state functions. */
+	/**
+	 * Collection of derived state functions.
+	 *
+	 * Computed values are lazily evaluated from the current slice state and
+	 * automatically cached until their dependencies change.
+	 *
+	 * > **Status:** Planned for a future release.
+	 */
 	computed?: "Planned" | "Not Yet Supported";
 
 	/**
