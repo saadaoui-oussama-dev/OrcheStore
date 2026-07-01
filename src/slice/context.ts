@@ -3,7 +3,7 @@ import { getStore } from "../store/creator";
 import { getUtils } from "../utils/app-wide";
 import { defineReadonly, ensureObjects, validateName } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { AnySlice, AnySliceOptions, CloneArgs, Meta } from "../helpers/types";
+import type { AnySlice, AnySliceOptions, CloneArgs, SliceMeta } from "../helpers/types";
 
 /**
  * Exposes runtime properties on a slice instance.
@@ -16,7 +16,7 @@ import type { AnySlice, AnySliceOptions, CloneArgs, Meta } from "../helpers/type
  *
  * This is the core layer behind OrcheStore’s runtime tree model, enabling parent-child traversal.
  */
-export const exposeContext = (name: string, meta: Meta, instances: Map<AnySlice, Meta>) => {
+export const exposeContext = (name: string, meta: SliceMeta, instances: Map<AnySlice, SliceMeta>) => {
 	defineReadonly(meta.node, "name", () => {
 		return name;
 	});
@@ -67,7 +67,7 @@ export const validateAndNormalizeProps = (props: AnySliceOptions) => {
  * Reconstructs state by running the full reducer tree with an initialization action.
  * This ensures cloned instances start from a fully composed state snapshot.
  */
-export const onCloneProps = (props: AnySliceOptions, meta: Meta, payload?: CloneArgs) => {
+export const onCloneProps = (props: AnySliceOptions, meta: SliceMeta, payload?: CloneArgs) => {
 	if (payload?.object) return { ...props, state: payload.object };
 
 	let next = ensureObjects({ name: props.name }, props, ["mutations", "methods"]);

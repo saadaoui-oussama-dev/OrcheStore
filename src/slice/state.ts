@@ -1,7 +1,7 @@
 import { getStore } from "../store/creator";
 import { defineMethod } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { AnySlice, AnySliceOptions, Meta } from "../helpers/types";
+import type { AnySlice, AnySliceOptions, SliceMeta } from "../helpers/types";
 
 /**
  * Normalizes a state definition into a safe object value.
@@ -30,7 +30,7 @@ export const normalizeSafeState = (trigger: string, name: string, state: any, ac
  * Provides methods for reading both the current runtime
  * state and the initial state associated with the node.
  */
-export const exposeStateAccessors = (name: string, meta: Meta) => {
+export const exposeStateAccessors = (name: string, meta: SliceMeta) => {
 	defineMethod(meta.node, "getState", () => {
 		const state = getStore.of(name, meta, "slice.getState")?.redux.getState();
 		return resolveDeepState(meta.path, state);
@@ -53,7 +53,7 @@ export const exposeStateAccessors = (name: string, meta: Meta) => {
  *
  * This is the core mechanism behind OrcheStore’s nested slice system.
  */
-export const composeStateReducer = (_name: string, meta: Meta, children: any) => {
+export const composeStateReducer = (_name: string, meta: SliceMeta, children: any) => {
 	return (state: any, action: any) => {
 		// Run base reducer first
 		const nextState = { ...(meta.redux.reducer(state, action) as any) };

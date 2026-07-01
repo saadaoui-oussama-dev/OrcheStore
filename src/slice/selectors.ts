@@ -2,7 +2,7 @@ import { resolveDeepState } from "./state";
 import { getStore } from "../store/creator";
 import { getUtils } from "../utils/app-wide";
 import { defineMethod, defineReadonly } from "../helpers/internal";
-import type { Meta } from "../helpers/types";
+import type { SliceMeta } from "../helpers/types";
 
 /**
  * Exposes reactive slice-level selector APIs on a slice node.
@@ -10,7 +10,7 @@ import type { Meta } from "../helpers/types";
  * Provides integration points for subscribing to state changes and consuming
  * derived values within reactive environments.
  */
-export const exposeStateSelectors = (name: string, meta: Meta) => {
+export const exposeStateSelectors = (name: string, meta: SliceMeta) => {
 	defineMethod(meta.node, "useSelect", (selector: any) => {
 		const rootStore = getStore.of(name, meta, "slice.useSelect");
 		const context = { utils: getUtils(), root: rootStore?.node };

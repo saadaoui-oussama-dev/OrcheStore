@@ -1,6 +1,6 @@
 import { validateKey } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { Meta } from "../helpers/types";
+import type { SliceMeta } from "../helpers/types";
 
 /**
  * Wraps a raw function into a safe runtime method bound to a slice instance.
@@ -8,7 +8,7 @@ import type { Meta } from "../helpers/types";
  * If the provided value is not a function, a development error is triggered
  * and the method is not exposed.
  */
-const validateMethod = (name: string, meta: Meta, key: string, method: any) => {
+const validateMethod = (name: string, meta: SliceMeta, key: string, method: any) => {
 	return typeof method !== "function"
 		? MESSAGES("createSlice", name).InvalidMethod(key, method)
 		: (...args: any[]) => method.apply(meta.node, args);
@@ -25,7 +25,7 @@ const validateMethod = (name: string, meta: Meta, key: string, method: any) => {
  * This is the core mechanism behind OrcheStore’s function-oriented runtime model,
  * enabling methods to behave as context-aware instance members.
  */
-export const exposeMethods = (name: string, meta: Meta, methods: any, reserved: string[]) => {
+export const exposeMethods = (name: string, meta: SliceMeta, methods: any, reserved: string[]) => {
 	Object.entries(methods).forEach(([k, item]) => {
 		const key = validateKey("createSlice", name, "Slice", "method", k, reserved)!;
 		const method = key ? validateMethod(name, meta, key, item) : undefined;

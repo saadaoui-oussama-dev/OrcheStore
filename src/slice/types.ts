@@ -261,26 +261,7 @@ namespace SliceState {
  * These names cannot be used for mutations,
  * methods, or child slices.
  */
-type ReservedSliceKeys<R = {}, M = {}> =
-	| (
-			| "name"
-			| "path"
-			| "computed"
-			| "root"
-			| "parent"
-			| "family"
-			| "utils"
-			| "getState"
-			| "getInitialState"
-			| "useSelect"
-	  )
-	| (keyof R | keyof M);
-
-type AnySlice = slice<any, Mutations<any, any>, any, any>;
-
-type AnySliceOptions = sliceOptions<any, Mutations<any, any>, any, any>;
-
-type CloneArgs<S extends Obj = any, R extends Mutations<S, C> = any, M = any, C = any> = {
+type CloneArgs<S extends Obj = Obj, R extends Mutations<S, C> = Mutations<S, any>, M = any, C = any> = {
 	/** Optional name used when reporting clone validation errors. */
 	name?: string;
 
@@ -294,6 +275,20 @@ type CloneArgs<S extends Obj = any, R extends Mutations<S, C> = any, M = any, C 
 	) => void | SliceState.Draft<S, C>;
 };
 
-export type Meta = NodeMeta<AnySlice, AnySliceOptions, { redux: RTKSlice; reducer: RTKReducer }>;
+/**
+ * Property names reserved by the framework.
+ *
+ * These names cannot be used for mutations,
+ * methods, or child slices.
+ */
+type ReservedSliceKeys<R = {}, M = {}> =
+	| ("name" | "path" | "computed" | "root" | "parent" | "family" | "utils" | "getState" | "getInitialState" | "useSelect") // prettier-ignore
+	| (keyof R | keyof M);
 
-export type { slice as Slice, sliceOptions as SliceOptions, SliceState, Mutations, AnySlice, AnySliceOptions, CloneArgs }; // prettier-ignore
+type AnySlice = slice<any, Mutations<any, any, any>, any, any>;
+
+type AnySliceOptions = sliceOptions<any, Mutations<any, any, any>, any, any>;
+
+type SliceMeta = NodeMeta<AnySlice, AnySliceOptions, { redux: RTKSlice; reducer: RTKReducer }>;
+
+export type { slice as Slice, sliceOptions as SliceOptions, SliceState, Mutations, CloneArgs, AnySlice, AnySliceOptions, SliceMeta }; // prettier-ignore

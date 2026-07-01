@@ -7,9 +7,9 @@ import { createAttachHelper } from "../factory/attach";
 import { exposeFamily } from "../factory/prototype";
 import { createRTKSlice } from "../helpers/imports";
 import { getChildState, composeStateReducer, exposeStateAccessors, excludeChildState } from "./state"; // prettier-ignore
-import type { AnySlice, AnySliceOptions, CloneArgs, Mutations, Meta, Obj, Slice, SliceOptions } from "../helpers/types"; // prettier-ignore
+import type { AnySlice, AnySliceOptions, CloneArgs, Mutations, SliceMeta, Obj, Slice, SliceOptions } from "../helpers/types"; // prettier-ignore
 
-const createSliceFactory = createNodeFactory<AnySlice, AnySliceOptions, Meta, CloneArgs, string[]>;
+const createSliceFactory = createNodeFactory<AnySlice, AnySliceOptions, SliceMeta, CloneArgs, string[]>;
 
 const { instances, create, attach, clone } = createSliceFactory({
 	options: {

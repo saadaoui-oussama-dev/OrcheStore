@@ -2,7 +2,7 @@ import { getStore } from "../store/creator";
 import { RTKReducerType } from "../helpers/imports";
 import { validateKey } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { Meta } from "../helpers/types";
+import type { SliceMeta } from "../helpers/types";
 
 /**
  * Validates and normalizes a mutation before it is converted into a Redux reducer.
@@ -10,7 +10,7 @@ import type { Meta } from "../helpers/types";
  * Ensures compatibility with Redux Toolkit constraints and wraps valid mutations
  * into a runtime-safe reducer that respects slice ownership boundaries.
  */
-const validateMutation = (name: string, meta: Meta, key: string, mutation: any) => {
+const validateMutation = (name: string, meta: SliceMeta, key: string, mutation: any) => {
 	if ((mutation as any)?._reducerDefinitionType === RTKReducerType.asyncThunk)
 		return MESSAGES("createSlice", name).InvalidThunkReducer(key);
 
@@ -33,7 +33,7 @@ const validateMutation = (name: string, meta: Meta, key: string, mutation: any) 
  * 
  * Mutation names must be unique and must not collide with reserved runtime keys.
  */
-export const mutationsToReducers = (name: string, meta: Meta, mutations: any, reserved: string[]) => {
+export const mutationsToReducers = (name: string, meta: SliceMeta, mutations: any, reserved: string[]) => {
 	const reducer: any = {};
 
 	Object.entries(mutations).forEach(([k, item]) => {
@@ -57,7 +57,7 @@ export const mutationsToReducers = (name: string, meta: Meta, mutations: any, re
  * the direct-call API with Redux’s dispatch-based execution model
  * while preserving slice ownership and isolation within the state tree.
  */
-export const exposeMutations = (name: string, meta: Meta) => {
+export const exposeMutations = (name: string, meta: SliceMeta) => {
 	Object.entries(meta.redux.actions).forEach(([key, action]: [string, any]) => {
 		(meta.node as any)[key] = (...args: any[]) => {
 			const root = getStore.of(name, meta, "slice::mutation");
