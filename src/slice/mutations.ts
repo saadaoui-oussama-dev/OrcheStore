@@ -20,7 +20,7 @@ const validateMutation = (name: string, meta: SliceMeta, key: string, mutation: 
 
 	return (state: any, action: any) => {
 		if (action?.meta?.path !== meta.path) return;
-		return mutation(state, ...(Array.isArray(action?.payload) ? action.payload : []));
+		return mutation.apply(meta.node, [state, ...(Array.isArray(action?.payload) ? action.payload : [])]);
 	};
 };
 

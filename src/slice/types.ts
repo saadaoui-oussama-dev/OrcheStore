@@ -3,65 +3,92 @@ import type { Dict, Utils, Obj, OmitNever, ReadOnly, Store, Tail, ListenersBuild
 import type { NodeMeta, NodePrototype } from "../helpers/types";
 
 /** Runtime API returned by `createSlice()`. */
-type slice<S extends Obj, R extends Mutations<S, M, C>, M, C> = Utils & {
-	/** Unique name of the slice. */
+type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, InsideMutation = false> = Utils & {
+	/**
+	 * Unique name assigned to the slice during creation or cloning.
+	 */
 	readonly name: string;
 
-	/** Dot-separated path of this slice within the mounted store tree. */
+	/**
+	 * Dot-separated path of the slice within the mounted store tree.
+	 *
+	 * The path is automatically assigned when the slice is mounted and
+	 * reflects its runtime location in the hierarchy.
+	 */
 	readonly path: string;
 
-	/** Root store instance that owns this slice. */
-	root: Store<any>;
-
-	/** Parent slice in the runtime tree, or `undefined` if this is a root slice. */
-	parent: slice<any, Mutations<any, any, any>, any, any> | undefined;
+	/**
+	 * Root store instance that owns this slice.
+	 *
+	 * Provides access to global store APIs regardless of the slice's
+	 * position in the runtime tree.
+	 */
+	readonly root: Store<any>;
 
 	/**
-	 * Subscribes to this slice's state changes inside React components.
+	 * Parent slice in the runtime tree.
+	 *
+	 * Returns `undefined` if this slice is mounted as a root slice.
+	 */
+	readonly parent: slice<any, Mutations<any, any, any>, any, any> | undefined;
+
+	/**
+	 * Runtime cloning utilities.
+	 *
+	 * Provides APIs for creating and managing cloned slice instances.
+	 */
+	readonly family: NodePrototype<slice<S, R, M, C>, [CloneArgs<S, R, M, C>["transform"]]>;
+
+	/**
+	 * React hook for selecting values from the current slice state.
 	 *
 	 * The selector receives:
-	 * - full store state
-	 * - runtime utilities context
+	 * - the current immutable slice state
+	 * - the runtime utilities context
 	 *
-	 * The hook is context-bound to the store instance.
+	 * Built on top of React Redux's `useSelector`, with automatic detection
+	 * of the correct store instance when multiple `StoreProvider`s are
+	 * present in the component tree.
 	 *
-	 * The hook rely on utilizing StoreProvider being present in the component tree.
+	 * **Notes:**
+	 * - This is a React custom hook and may only be called from the body of
+	 *   React function components or other custom hooks.
+	 * - Requires the slice to be mounted under a `StoreProvider`.
 	 */
 	readonly useSelect: <T>(selector: (this: Utils, state: SliceState<S, R, M, C>, context: Utils) => T) => T;
 
 	/**
 	 * Returns the current immutable state snapshot of the slice.
 	 *
-	 * Includes all mounted child slices and nested state.
+	 * The returned state includes all mounted child slices and reflects
+	 * the latest runtime updates.
+	 *
+	 * This API is not available inside mutation functions. Use the
+	 * provided draft state instead to read or update state.
 	 */
 	readonly getState: () => SliceState<S, R, M, C>;
 
 	/**
-	 * Returns the slice's original initial state.
+	 * Returns the slice's initial state.
 	 *
-	 * Does not include runtime updates or mutations.
+	 * Call the function directly to retrieve only this slice's initial
+	 * state, or use `deep()` to include all mounted child slices.
 	 */
 	readonly getInitialState: {
 		/**
-		 * Returns the slice's original initial state.
+		 * Returns this slice's original initial state.
 		 *
-		 * Does not include runtime updates or mutations.
+		 * Does not include child slice state or runtime updates.
 		 */
-		(): SliceState<S, R, M, {}>;
+		(): SliceState<S, R, M, C, {}>;
 
 		/**
-		 * Returns the complete initial state.
+		 * Returns the complete initial state of the slice subtree.
 		 *
-		 * Includes all mounted child slices and nested state.
+		 * Includes the initial state of all mounted child slices.
 		 */
 		readonly deep: () => SliceState<S, R, M, C>;
 	};
-
-	/**
-	 * Runtime utilities for cloning, family inspection,
-	 * and instance identity.
-	 */
-	readonly family: NodePrototype<slice<S, R, M, C>, [CloneArgs<S, R, M, C>["transform"]]>;
 
 	/** Collection of derived state functions. */
 	readonly computed: undefined;
@@ -81,7 +108,9 @@ type slice<S extends Obj, R extends Mutations<S, M, C>, M, C> = Utils & {
 	OmitNever<{
 		/** Nested child slice instances. */
 		readonly [K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends slice<infer S, infer R, infer M, infer C>
-			? slice<S, R, M, C>
+			? InsideMutation extends true
+				? Omit<slice<S, {}, M, C, InsideMutation>, "getState" | "useSelect">
+				: slice<S, R, M, C>
 			: never;
 	}>;
 
@@ -107,13 +136,16 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	 * ```
 	 *
 	 * Or as a factory function, which is invoked once during
-	 * initialization:
+	 * initialization with access to the global utilities through
+	 * both `this.utils` and the `utils` parameter:
 	 *
 	 * ```ts
 	 * const counter = createSlice({
 	 *   name: "counter",
 	 *
-	 *   state: function () {
+	 *   state: function (utils) {
+	 *     utils.log("Initializing counter slice");
+	 *
 	 *     return {
 	 *       value: computeInitialValue(),
 	 *       loading: false,
@@ -131,17 +163,24 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	 * counter.getInitialState.deep(); // Initial subtree state
 	 * ```
 	 */
-	state?: S | (() => S);
+	state?: S | ((this: ThisType<Utils>, utils: Utils["utils"]) => S);
 
 	/**
 	 * Collection of state mutation functions.
 	 *
 	 * Mutations define the write operations for the slice. Each mutation
-	 * receives an Immer draft of the slice state and may optionally accept
-	 * additional arguments.
+	 * receives an Immer draft of the slice state as its first argument and
+	 * may accept arbitrary arguments.
 	 *
-	 * Every mutation is automatically exposed as a method on the created
-	 * slice instance, so no explicit dispatching is required.
+	 * Each mutation is bound to the slice instance, providing access to
+	 * its runtime properties and utilities through `this`, except for
+	 * `getState`, `useSelect`, and other mutations.
+	 *
+	 * **Notes:**
+	 * - Use the provided draft state to read and update the current state.
+	 * - Mutate the draft state directly or return a replacement state.
+	 * - Child slice state can be read and updated from the current slice's draft state.
+	 * - State updates in other slices should be coordinated through the `listeners` API.
 	 *
 	 * ```ts
 	 * const counter = createSlice({
@@ -152,6 +191,7 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	 *   mutations: {
 	 *     increment(state, amount: number = 1) {
 	 *       state.value += amount;
+	 *       this.utils.log("Counter updated");
 	 *     },
 	 *   },
 	 * });
@@ -164,7 +204,7 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	 * counter.increment(5);
 	 * ```
 	 */
-	mutations?: R;
+	mutations?: R & ThisType<Omit<slice<S, {}, M, C, true>, "getState" | "useSelect">>;
 
 	/**
 	 * Collection of user-defined instance methods.
@@ -203,8 +243,8 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	 * Runtime usage:
 	 *
 	 * ```ts
-	 * counter.isEmpty(); // boolean
 	 * await counter.load(true); // async
+	 * counter.isEmpty(); // boolean
 	 * counter.useValue(); // React hook
 	 * ```
 	 */
@@ -311,21 +351,18 @@ type Mutations<S extends Obj, M, C> = Dict<
 	(state: DraftState<S, {}, M, C>, ...args: any[]) => void | DraftState<S, {}, M, C>
 >;
 
-type SliceState<S extends Obj, R extends Mutations<S, M, C>, M, C> = ReadOnly<
-	Omit<S, keyof OmitNever<{ [K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends AnySlice ? true : never }>> &
-		OmitNever<{
-			[K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends slice<infer S, infer R, infer M, infer C>
-				? SliceState<S, R, M, C>
-				: never;
-		}>
->;
+type SliceState<S extends Obj, R extends Mutations<S, M, C>, M, C, CC = C> = ReadOnly<DraftState<S, R, M, C, CC>>;
 
-type DraftState<S extends Obj, R extends Mutations<S, M, C>, M, C> = Omit<
+type DraftState<S extends Obj, R extends Mutations<S, M, C>, M, C, CC = C> = Omit<
 	S,
-	keyof OmitNever<{ [K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends AnySlice ? true : never }>
+	keyof OmitNever<{
+		[K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends slice<infer _, infer __, infer ___, infer ____>
+			? true
+			: never;
+	}>
 > &
 	OmitNever<{
-		[K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends slice<infer S, infer R, infer M, infer C>
+		[K in Exclude<keyof CC, ReservedSliceKeys<R, M>>]: CC[K] extends slice<infer S, infer R, infer M, infer C>
 			? DraftState<S, R, M, C>
 			: never;
 	}>;

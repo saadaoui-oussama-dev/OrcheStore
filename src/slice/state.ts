@@ -1,7 +1,10 @@
 import { getStore } from "../store/creator";
 import { defineMethod } from "../helpers/internal";
+import { getUtils } from "../utils/app-wide";
 import { MESSAGES } from "../helpers/messages";
 import type { AnySlice, AnySliceOptions, SliceMeta } from "../helpers/types";
+
+const utils = [{ utils: getUtils() }, [getUtils()]];
 
 /**
  * Normalizes a state definition into a safe object value.
@@ -12,7 +15,7 @@ import type { AnySlice, AnySliceOptions, SliceMeta } from "../helpers/types";
 export const normalizeSafeState = (trigger: string, name: string, state: any, acceptLazy?: boolean) => {
 	// Preserve lazy state initializers.
 	if (typeof state === "function" && acceptLazy) {
-		return () => normalizeSafeState(trigger, name, state(), false);
+		return () => normalizeSafeState(trigger, name, state.apply(...utils), false);
 	}
 
 	// Accept plain object state definitions.
