@@ -1,5 +1,5 @@
 import { MESSAGES } from "../helpers/messages";
-import type { AnyStore, NodeMeta, StoreMeta } from "../helpers/types";
+import type { AnyStore, NodeMeta, StoreMeta } from "../helpers/types"; // prettier-ignore
 
 /**
  * Creates a scoped lookup utility for resolving store metadata

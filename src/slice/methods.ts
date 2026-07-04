@@ -1,6 +1,6 @@
 import { validateKey } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { SliceMeta } from "../helpers/types";
+import type { SliceMeta } from "../helpers/types"; // prettier-ignore
 
 /**
  * Wraps a raw function into a safe runtime method bound to a slice instance.

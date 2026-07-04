@@ -1,7 +1,7 @@
 import { getStore } from "./creator";
 import { ReactElement, RTKProvider } from "../helpers/imports";
 import { MESSAGES } from "../helpers/messages";
-import type { StoreProviderProps } from "../helpers/types";
+import type { StoreProviderProps } from "../helpers/types"; // prettier-ignore
 
 /**
  * Provides an OrcheStore instance to the React component tree.

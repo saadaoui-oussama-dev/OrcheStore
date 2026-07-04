@@ -2,7 +2,7 @@ import { getUtils } from "../utils/app-wide";
 import { defineMethod } from "../helpers/internal";
 import { createRTKSelector, ReactContext, useReactContext } from "../helpers/imports";
 import { MESSAGES } from "../helpers/messages";
-import type { StoreMeta } from "../helpers/types";
+import type { StoreMeta } from "../helpers/types"; // prettier-ignore
 
 /**
  * Exposes reactive store-level selector APIs on a store node.

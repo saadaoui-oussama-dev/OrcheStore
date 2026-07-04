@@ -3,7 +3,7 @@ import { getStore } from "../store/creator";
 import { getUtils } from "../utils/app-wide";
 import { defineReadonly, ensureObjects, validateName } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { AnySlice, AnySliceOptions, CloneArgs, SliceMeta } from "../helpers/types";
+import type { AnySlice, AnySliceOptions, CloneArgs, SliceMeta } from "../helpers/types"; // prettier-ignore
 
 /**
  * Exposes runtime properties on a slice instance.

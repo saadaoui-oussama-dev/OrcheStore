@@ -2,7 +2,7 @@ import { getStore } from "../store/creator";
 import { RTKReducerType } from "../helpers/imports";
 import { validateKey } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { SliceMeta } from "../helpers/types";
+import type { SliceMeta } from "../helpers/types"; // prettier-ignore
 
 /**
  * Validates and normalizes a mutation before it is converted into a Redux reducer.

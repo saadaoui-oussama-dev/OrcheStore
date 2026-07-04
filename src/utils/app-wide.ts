@@ -1,5 +1,5 @@
 import { MESSAGES } from "../helpers/messages";
-import type { Utils } from "../helpers/types";
+import type { Utils } from "../helpers/types"; // prettier-ignore
 
 const props = new Set<string | symbol>(["toJSON", "toString"]);
 

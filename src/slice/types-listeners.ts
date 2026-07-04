@@ -1,4 +1,4 @@
-import { AnySlice, Slice, Tail } from "../helpers/types";
+import type { AnySlice, Slice, Tail } from "../helpers/types"; // prettier-ignore
 
 /**
  * Provides APIs for selecting slices and registering mutation listeners.
@@ -462,14 +462,10 @@ type WatchableSelection<S, T = any> = {
 	 * @param mutation The mutation name to listen for.
 	 * @param callback Invoked for every matching mutation.
 	 */
-	readonly on: <K extends keyof SliceReducers<T> | string>(
+	readonly on: <K extends keyof SliceMutations<T> | string>(
 		mutation: K,
-		callback: (
-			state: S,
-			slice: T,
-			...args: K extends keyof SliceReducers<T> ? Tail<Parameters<SliceReducers<T>[K]>> : any[]
-		) => void,
+		callback: (state: S, slice: T, ...args: Tail<Parameters<SliceMutations<T>[K]>>) => void,
 	) => void;
 };
 
-type SliceReducers<T> = T extends Slice<any, infer R, any, any> ? R : never;
+type SliceMutations<T> = T extends Slice<any, infer R, any, any> ? R : never;

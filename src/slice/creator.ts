@@ -48,7 +48,7 @@ const { instances, create, attach, clone } = createSliceFactory({
 		exposeStateAccessors(props.name, meta);
 
 		// Expose cloning and family utilities.
-		exposeFamily(meta, instances, clone, (transform?: CloneArgs["transform"]) => {
+		exposeFamily(meta, instances, clone, (transform) => {
 			return { name: props.name, transform };
 		});
 

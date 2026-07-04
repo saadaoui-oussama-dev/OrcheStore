@@ -2,7 +2,7 @@ import { getStore } from "../store/creator";
 import { defineMethod } from "../helpers/internal";
 import { getUtils } from "../utils/app-wide";
 import { MESSAGES } from "../helpers/messages";
-import type { AnySlice, AnySliceOptions, SliceMeta } from "../helpers/types";
+import type { AnySlice, AnySliceOptions, SliceMeta } from "../helpers/types"; // prettier-ignore
 
 const utils = [{ utils: getUtils() }, [getUtils()]];
 

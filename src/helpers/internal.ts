@@ -1,5 +1,5 @@
 import { MESSAGES } from "./messages";
-import { Dict } from "./types";
+import type { Obj } from "../helpers/types"; // prettier-ignore
 
 const defineProp = Object.getOwnPropertyDescriptor(Object, "defineProperty")?.value || Object.defineProperty;
 
@@ -63,7 +63,7 @@ export const validateKey = (trigger: string, name: string, type: string, layer: 
  *
  * Returns the normalized node name.
  */
-export const validateName = (trigger: string, props: Dict, required: boolean) => {
+export const validateName = (trigger: string, props: Obj, required: boolean) => {
 	if (!required && (props.name === undefined || props.name === null || props.name === "")) {
 		return "untitled";
 	}
@@ -92,5 +92,5 @@ export const ensureObjects = <O, T extends object, K extends keyof T>(output: O,
 		(output as any)[prop] = typeof source[prop] === "object" && source[prop] ? { ...source[prop] } : {};
 	});
 
-	return output as O & { [P in K]: Dict<any> };
+	return output as O & { [P in K]: Obj };
 };

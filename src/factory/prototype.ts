@@ -1,5 +1,5 @@
 import { defineMethod, defineReadonly } from "../helpers/internal";
-import type { FactoryOutput, NodeMeta, NodePrototype } from "../helpers/types";
+import type { FactoryOutput, NodeMeta, NodePrototype } from "../helpers/types"; // prettier-ignore
 
 /**
  * Attaches family inspection and cloning utilities to a node instance.

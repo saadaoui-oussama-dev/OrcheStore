@@ -2,7 +2,7 @@ import { resolveDeepState } from "./state";
 import { getStore } from "../store/creator";
 import { getUtils } from "../utils/app-wide";
 import { defineMethod, defineReadonly } from "../helpers/internal";
-import type { SliceMeta } from "../helpers/types";
+import type { SliceMeta } from "../helpers/types"; // prettier-ignore
 
 /**
  * Exposes reactive slice-level selector APIs on a slice node.

@@ -1,7 +1,7 @@
 import { getUtils } from "../utils/app-wide";
 import { defineReadonly, ensureObjects, validateName } from "../helpers/internal";
 import { MESSAGES } from "../helpers/messages";
-import type { AnyStoreOptions, StoreMeta } from "../helpers/types";
+import type { AnyStoreOptions, StoreMeta } from "../helpers/types"; // prettier-ignore
 
 /**
  * Exposes runtime properties on a store instance.

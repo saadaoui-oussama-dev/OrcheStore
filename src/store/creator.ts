@@ -5,9 +5,9 @@ import { createNodeFactory } from "../factory/creator";
 import { attachStoreChildren } from "../slice/creator";
 import { defineMethod } from "../helpers/internal";
 import { configureRTKStore } from "../helpers/imports";
-import type { AnyStore, AnyStoreOptions, ExtraMeta, Store, StoreOptions } from "../helpers/types";
+import type { AnyStore, AnyStoreOptions, Store, StoreOptions, StoreMeta } from "../helpers/types"; // prettier-ignore
 
-const createStoreFactory = createNodeFactory<AnyStore, AnyStoreOptions, ExtraMeta, undefined, string[]>;
+const createStoreFactory = createNodeFactory<AnyStore, AnyStoreOptions, StoreMeta, undefined, string[]>;
 
 const { instances, create } = createStoreFactory({
 	options: {

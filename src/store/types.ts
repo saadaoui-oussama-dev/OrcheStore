@@ -1,34 +1,39 @@
 import type { RTKStoreOptions, RTKStore, RTKProviderProps } from "../helpers/imports";
-import type { Slice, SliceState, ReadOnly, OmitNever, Utils, Dict, NodeMeta } from "../helpers/types";
-
-export type ExtraMeta = { redux: RTKStore; reducer: Dict; context: any; selector: any };
+import type { Slice, SliceState, OmitNever, Utils, Obj, NodeMeta } from "../helpers/types"; // prettier-ignore
 
 /**
  * Runtime API returned by `createStore()`.
- *
- * The store represents the root of the OrcheStore runtime tree and provides
- * access to all mounted slices, global state, and shared utilities.
  */
 type store<C> = OmitNever<
 	Utils & {
-		/** Unique name of the store. */
+		/**
+		 * Unique name assigned to the store during creation.
+		 */
 		readonly name: string;
 
 		/**
-		 * Returns the current immutable state snapshot of the entire store tree.
+		 * Returns the current immutable state snapshot of the entire store.
 		 *
-		 * Includes all mounted slices and nested state.
+		 * The returned state includes every mounted slice and reflects the
+		 * latest runtime updates.
 		 */
 		readonly getState: () => StoreState<C>;
 
 		/**
-		 * Subscribes to store state changes inside React components.
+		 * React hook for selecting values from the current store state.
 		 *
-		 * The selector receives the full store state along with a context
-		 * containing shared utilities.
+		 * The selector receives:
+		 * - the current immutable store state
+		 * - the shared runtime utilities context
 		 *
-		 * This hook is bound to the store instance and requires `StoreProvider`
-		 * to be mounted in the React tree.
+		 * Built on top of React Redux's `useSelector`, with automatic detection
+		 * of the correct store instance when multiple `StoreProvider`s are
+		 * present in the component tree.
+		 *
+		 * **Notes:**
+		 * - This is a React custom hook and may only be called from the body of
+		 *   React function components or other custom hooks.
+		 * - Requires the store to be mounted under a `StoreProvider`.
 		 */
 		readonly useSelect: <T>(selector: (this: Utils, state: StoreState<C>, context: Utils) => T) => T;
 	} & {
@@ -40,23 +45,29 @@ type store<C> = OmitNever<
 >;
 
 /**
- * Configuration used to create a store instance.
- *
- * A store is composed of multiple slices that are mounted into a single
- * runtime tree. Each slice becomes accessible directly through the store API.
+ * Configuration used to create a store definition.
  */
 type storeOptions<C> = Omit<
 	RTKStoreOptions,
 	"reducer" | "middleware" | "duplicateMiddlewareCheck" | "preloadedState" | "enhancers"
 > & {
-	/** Unique name of the store. */
+	/**
+	 * Optional name assigned to the store.
+	 *
+	 * Used to identify the store in diagnostics and development tools.
+	 * 
+	 * @default "untitled"
+	 */
 	readonly name?: string;
 
 	/**
-	 * Collection of slices registered in this store.
+	 * Collection of root slices.
 	 *
-	 * Each slice is mounted and becomes available as:
-	 * `store.<sliceKey>`
+	 * Each slice is mounted into the store, becoming a root node of the
+	 * runtime slice tree.
+	 *
+	 * Every mounted slice contributes its state to the store state while
+	 * exposing its runtime API directly on the store instance.
 	 *
 	 * ```ts
 	 * const store = createStore({
@@ -65,13 +76,16 @@ type storeOptions<C> = Omit<
 	 *     user,
 	 *   },
 	 * });
+	 * ```
 	 *
-	 * // Exposed slices access
+	 * Runtime usage:
+	 *
+	 * ```ts
+	 * // Slice instances
 	 * store.user.getState();
 	 * store.counter.increment();
-	 * store.counter.useSelect((state) => state.value);
 	 *
-	 * // State tree access
+	 * // Store state
 	 * store.getState().counter.value;
 	 * store.useSelect((state) => state.counter.value);
 	 * ```
@@ -80,9 +94,10 @@ type storeOptions<C> = Omit<
 };
 
 /**
- * Derived immutable state shape of the store.
+ * Immutable state shape exposed by a store.
  *
- * Represents the full read-only state tree including all mounted slices.
+ * Recursively maps every mounted child slice to its corresponding
+ * immutable slice state, producing the complete runtime state tree.
  */
 type StoreState<C> = OmitNever<{
 	readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer R, infer M, infer C>
@@ -91,32 +106,54 @@ type StoreState<C> = OmitNever<{
 }>;
 
 /**
- * Props for the OrcheStore React provider.
+ * Props accepted by the OrcheStore React provider.
  *
- * Wraps the application and injects the store into React-Redux context.
+ * Based on the React Redux provider props, excluding options that are
+ * either managed internally by the runtime or not currently supported.
  */
 type StoreProviderProps<T = any> = Omit<RTKProviderProps, "store" | "serverState" | "context"> & {
 	/**
-	 * Root store instance created with `createStore()`.
+	 * Root store instance to expose to the React component tree.
 	 *
-	 * This store will be injected into the React component tree.
+	 * Components rendered beneath the provider can access this store
+	 * through OrcheStore's React APIs, including `useSelect()`.
+	 *
+	 * The underlying React-Redux context is managed automatically,
+	 * allowing `useSelect()` to resolve the correct store when
+	 * multiple `StoreProvider`s are nested in the component tree.
 	 */
 	store: store<T>;
 };
 
 /**
- * Property names reserved by the framework.
+ * Union of property names reserved by the store runtime.
  *
- * These names cannot be used for child slices.
+ * Includes the built-in store API together with all declared
+ * method names, preventing collisions with child slice
+ * properties and ensuring a unique public surface.
  */
 type ReservedStoreKeys<R = {}, M = {}> =
 	| ("name" | "computed" | "utils" | "getState" | "useSelect")
 	| (keyof R | keyof M);
 
+/**
+ * Non-generic store type used by internal helpers and utilities.
+ */
 type AnyStore = store<any>;
 
+/**
+ * Non-generic store configuration type used by internal helpers
+ * and utilities.
+ */
 type AnyStoreOptions = storeOptions<any>;
 
-type StoreMeta = NodeMeta<AnyStore, AnyStoreOptions, ExtraMeta>;
+/**
+ * Metadata associated with a store definition.
+ *
+ * Extends the generic node metadata with the Redux Toolkit store,
+ * root reducer, React context, and selector implementation used
+ * by the runtime.
+ */
+type StoreMeta = NodeMeta<AnyStore, AnyStoreOptions, { redux: RTKStore; reducer: Obj; context: any; selector: any }>;
 
 export type { store as Store, storeOptions as StoreOptions, StoreProviderProps, AnyStore, AnyStoreOptions, StoreMeta };

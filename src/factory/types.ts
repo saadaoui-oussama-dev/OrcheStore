@@ -87,7 +87,7 @@ type FactoryOutput<N, P = any, E = {}, A = undefined> = {
 
 type NodePrototype<N, A extends any[] = []> = {
 	/** Original name inherited from the first node created in this family. */
-	name: string;
+	readonly name: string;
 
 	/**
 	 * Creates a new detached instance within the same family.

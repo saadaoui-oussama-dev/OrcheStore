@@ -1,6 +1,6 @@
 import { MESSAGES } from "../helpers/messages";
 import { validateKey } from "../helpers/internal";
-import type { FactoryOutput, NodeMeta } from "../helpers/types";
+import type { FactoryOutput, NodeMeta } from "../helpers/types"; // prettier-ignore
 
 type Callbacks<N, P, E> = { attach: FactoryOutput<N, any, E>["attach"]; respone: (child: NodeMeta<N, P, E>) => any };
 

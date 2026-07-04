@@ -1,7 +1,9 @@
 import type { RTKSlice, RTKReducer } from "../helpers/imports";
-import type { Dict, Utils, Obj, OmitNever, ReadOnly, Store, Tail, ListenersBuilder, NodeMeta, NodePrototype } from "../helpers/types"; // prettier-ignore
+import type { Utils, Obj, OmitNever, ReadOnly, Store, Tail, ListenersBuilder, NodeMeta } from "../helpers/types"; // prettier-ignore
 
-/** Runtime API returned by `createSlice()`. */
+/**
+ * Runtime API returned by `createSlice()`.
+ */
 type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, InsideMutation = false> = Utils & {
 	/**
 	 * Unique name assigned to the slice during creation or cloning.
@@ -30,13 +32,6 @@ type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, InsideMutation = f
 	 * Returns `undefined` if this slice is mounted as a root slice.
 	 */
 	readonly parent: slice<any, Mutations<any, any, any>, any, any> | undefined;
-
-	/**
-	 * Runtime cloning utilities.
-	 *
-	 * Provides APIs for creating and managing cloned slice instances.
-	 */
-	readonly family: NodePrototype<slice<S, R, M, C>, [CloneArgs<S, R, M, C>["transform"]]>;
 
 	/**
 	 * React hook for selecting values from the current slice state.
@@ -68,7 +63,7 @@ type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, InsideMutation = f
 	readonly getState: () => SliceState<S, R, M, C>;
 
 	/**
-	 * Returns the slice's initial state.
+	 * Returns the slice's original initial state.
 	 *
 	 * Call the function directly to retrieve only this slice's initial
 	 * state, or use `deep()` to include all mounted child slices.
@@ -94,6 +89,113 @@ type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, InsideMutation = f
 	// readonly computed: {
 	// 	readonly [K in keyof G]: (...args: Tail<Parameters<G[K]>>) => ReturnType<G[K]>;
 	// };
+
+	/**
+	 * Runtime cloning utilities.
+	 *
+	 * Provides APIs for creating and managing cloned slice instances.
+	 */
+	readonly family: {
+		/**
+		 * Original name of the slice definition.
+		 *
+		 * Shared by every runtime instance created from the same definition.
+		 */
+		readonly name: string;
+
+		/**
+		 * Creates a new detached clone of this slice.
+		 *
+		 * By default, the clone inherits the original configuration and
+		 * initial state while maintaining its own independent runtime
+		 * lifecycle and mounting location.
+		 *
+		 * An optional transformer may be provided to customize the clone's
+		 * name, mutations, methods, and initial state before initialization.
+		 *
+		 * The transformer receives:
+		 *
+		 * - `props` — mutable clone configuration, allowing the runtime
+		 *   `name`, `mutations`, and `methods` to be customized.
+		 * - `state` — mutable initial state of the cloned instance, which
+		 *   follows the same semantics as slice mutations: modify the draft
+		 *   directly or return a replacement state.
+		 *
+		 * ```ts
+		 * const categories = crudSlice.family.clone();
+		 *
+		 * const products = crudSlice.family.clone((props, state) => {
+		 *   props.name = "Products";
+		 *
+		 *   state.endpoint = "/v1/products";
+		 *
+		 *   props.mutations.setEndpointVersion = (state, version) => {
+		 *     state.endpoint = `/v${version}/products`;
+		 *   };
+		 *
+		 *   props.methods.getId = (item) => {
+		 *     return item.code;
+		 *   };
+		 * });
+		 * ```
+		 */
+		readonly clone: (transform?: CloneArgs<S, R, M, C>["transform"]) => slice<S, R, M, C, false>;
+
+		/**
+		 * Returns all runtime instances created from the same slice definition.
+		 *
+		 * Includes the current slice.
+		 *
+		 * ```ts
+		 * const family = slice.family.getAll();
+		 * ```
+		 *
+		 * Useful for:
+		 *
+		 * - inspecting mounted instances
+		 * - debugging clone distribution
+		 */
+		readonly getAll: () => slice<S, R, M, C, false>[];
+
+		/**
+		 * Returns all other runtime instances created from the same slice definition.
+		 *
+		 * Excludes the current slice.
+		 *
+		 * ```ts
+		 * const clones = slice.family.getClones();
+		 * ```
+		 *
+		 * Useful for:
+		 *
+		 * - synchronizing sibling clones
+		 * - broadcasting updates
+		 * - comparing related instances
+		 */
+		readonly getClones: () => slice<S, R, M, C, false>[];
+
+		/**
+		 * Checks whether another slice originates from the same slice definition.
+		 *
+		 * Returns `true` when both slices belong to the same definition family,
+		 * even if they are different runtime instances.
+		 *
+		 * Useful for creating reusable utilities and React components that
+		 * operate on a specific slice definition while accepting any of its
+		 * runtime clones.
+		 *
+		 * ```tsx
+		 * function ReactiveDataTable({ slice }: Props) {
+		 *   if (!crudSlice.family.isTypeOf(slice)) return null;
+		 *
+		 *   const list = slice.useSelect((state) => state.list);
+		 *
+		 *   return <table>...</table>;
+		 * }
+		 * ```
+		 */
+		readonly isTypeOf: (other?: any) => other is slice<S, R, M, C, false>;
+	};
 } & OmitNever<{
 		/** Directly callable state mutation functions. */
 		readonly [K in Exclude<keyof R, ReservedSliceKeys>]: R[K] extends (...args: any[]) => void
@@ -113,9 +215,13 @@ type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, InsideMutation = f
 			: never;
 	}>;
 
-/** Configuration used to create a slice definition. */
+/**
+ * Configuration used to create a slice definition.
+ */
 type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
-	/** Unique name of the slice. */
+	/**
+	 * Unique name of the slice.
+	 */
 	name: string;
 
 	/**
@@ -332,26 +438,48 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	 * - the slice that emitted the mutation
 	 * - the original mutation arguments
 	 *
-	 * **Lifecycle**
+	 * **Execution**
 	 *
-	 * Listeners are automatically registered when the slice is mounted and
-	 * automatically removed when the slice is unmounted.
+	 * Listener callbacks always execute after the observed mutation has
+	 * completed. Unlike Redux Toolkit's `extraReducers`, their execution
+	 * is not affected by slice mounting order and they always observe the
+	 * latest state.
 	 */
 	listeners?: "Planned" | "Not Yet Supported";
 };
 
 /**
- * Collection of functions that update slice state.
+ * Collection of state mutation function signatures.
  *
- * Mutations receive an Immer draft and may either mutate it
- * directly or return a replacement state.
+ * Used to infer the public mutation API, runtime reducers,
+ * and the mutable draft state available within mutations.
+ *
+ * Each mutation receives the current draft state as its first
+ * parameter and may either mutate it directly or return a
+ * replacement state.
  */
-type Mutations<S extends Obj, M, C> = Dict<
+type Mutations<S extends Obj, M, C> = Obj<
 	(state: DraftState<S, {}, M, C>, ...args: any[]) => void | DraftState<S, {}, M, C>
 >;
 
+/**
+ * Immutable runtime state exposed by a slice.
+ *
+ * Derived from {@link DraftState} by recursively applying
+ * readonly semantics to the complete state tree.
+ */
 type SliceState<S extends Obj, R extends Mutations<S, M, C>, M, C, CC = C> = ReadOnly<DraftState<S, R, M, C, CC>>;
 
+/**
+ * Mutable state shape used internally by mutations.
+ *
+ * Starts from the declared slice state, removes any state properties
+ * shadowed by child slices, then recursively replaces those child entries
+ * with the draft state of the corresponding child slices.
+ *
+ * This produces the complete writable state tree available
+ * while a mutation is executing.
+ */
 type DraftState<S extends Obj, R extends Mutations<S, M, C>, M, C, CC = C> = Omit<
 	S,
 	keyof OmitNever<{
@@ -366,14 +494,37 @@ type DraftState<S extends Obj, R extends Mutations<S, M, C>, M, C, CC = C> = Omi
 			: never;
 	}>;
 
+/**
+ * Configuration object describing how a slice clone should be initialized.
+ *
+ * Used by the runtime cloning APIs to optionally override the cloned
+ * state and customize the clone before it is initialized.
+ */
 type CloneArgs<S extends Obj = Obj, R extends Mutations<S, M, C> = Mutations<S, any, any>, M = any, C = any> = {
-	/** Optional name used when reporting clone validation errors. */
+	/**
+	 * Optional name associated with the clone.
+	 *
+	 * Used when reporting validation errors and diagnostics during
+	 * clone creation.
+	 */
 	name?: string;
 
-	/** Explicit state to assign to the cloned slice. */
+	/**
+	 * Explicit state object assigned to the cloned slice before
+	 * initialization.
+	 *
+	 * When omitted, the clone is initialized from the source slice's
+	 * current state.
+	 */
 	object?: Obj;
 
-	/** Receives the cloned state before initialization, allowing it to be customized. */
+	/**
+	 * Callback invoked immediately before the cloned slice is initialized.
+	 *
+	 * Receives the clone's runtime configuration together with the
+	 * mutable cloned state, allowing either in-place modifications or
+	 * replacement of the state object before initialization continues.
+	 */
 	transform?: (
 		nextProps: Pick<sliceOptions<S, R, M, C>, "name" | "mutations" | "methods">,
 		state: DraftState<S, R, M, C>,
@@ -381,19 +532,33 @@ type CloneArgs<S extends Obj = Obj, R extends Mutations<S, M, C> = Mutations<S, 
 };
 
 /**
- * Property names reserved by the framework.
+ * Union of property names reserved by the slice runtime.
  *
- * These names cannot be used for mutations,
- * methods, or child slices.
+ * Includes the built-in slice API together with all declared
+ * mutation and method names, preventing collisions with child
+ * slice properties and ensuring a unique public surface.
  */
 type ReservedSliceKeys<R = {}, M = {}> =
 	| ("name" | "path" | "computed" | "root" | "parent" | "family" | "utils" | "getState" | "getInitialState" | "useSelect") // prettier-ignore
 	| (keyof R | keyof M);
 
+/**
+ * Non-generic slice type used by internal helpers and utilities.
+ */
 type AnySlice = slice<any, Mutations<any, any, any>, any, any>;
 
+/**
+ * Non-generic slice configuration type used by internal helpers
+ * and utilities.
+ */
 type AnySliceOptions = sliceOptions<any, Mutations<any, any, any>, any, any>;
 
+/**
+ * Metadata associated with a slice definition.
+ *
+ * Extends the generic node metadata with the Redux Toolkit slice
+ * instance and reducer generated for the runtime implementation.
+ */
 type SliceMeta = NodeMeta<AnySlice, AnySliceOptions, { redux: RTKSlice; reducer: RTKReducer }>;
 
 export type { slice as Slice, sliceOptions as SliceOptions, SliceState, Mutations, CloneArgs, AnySlice, AnySliceOptions, SliceMeta }; // prettier-ignore
