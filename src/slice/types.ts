@@ -1,6 +1,5 @@
 import type { RTKSlice, RTKReducer } from "../helpers/imports";
-import type { Dict, Utils, Obj, OmitNever, ReadOnly, Store, Tail, ListenersBuilder } from "../helpers/types";
-import type { NodeMeta, NodePrototype } from "../helpers/types";
+import type { Dict, Utils, Obj, OmitNever, ReadOnly, Store, Tail, ListenersBuilder, NodeMeta, NodePrototype } from "../helpers/types"; // prettier-ignore
 
 /** Runtime API returned by `createSlice()`. */
 type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, InsideMutation = false> = Utils & {

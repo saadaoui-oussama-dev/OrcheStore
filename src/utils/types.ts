@@ -15,7 +15,7 @@ type Definition<T, Rule, Default> = T extends keyof OrcheStore.Slots
 	: Default;
 
 /** Resolved type for application-wide utilities. */
-type Utils = {
+type utils = {
 	/**
 	 * Application-wide utilities shared across all slices and the store.
 	 *
@@ -61,4 +61,4 @@ type Utils = {
 	utils: Definition<"utils", Dict, any>;
 };
 
-export type { Utils };
+export type { utils as Utils };
