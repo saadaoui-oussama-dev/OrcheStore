@@ -1,10 +1,10 @@
-import type { AnySlice, Slice, Tail } from "../helpers/types"; // prettier-ignore
+import type { Slice, Tail } from "../helpers/types"; // prettier-ignore
 
 /**
  * Provides APIs for selecting slices and registering mutation listeners.
  *
- * Builder selections are immutable. Every selection method returns a new
- * builder selection, allowing traversal to continue independently.
+ * Builder selections are immutable. Every selection method returns a new selection
+ * without modifying the current one, allowing traversal to continue independently.
  *
  * ```ts
  * builder.parent.on("refresh", listener);
@@ -21,7 +21,7 @@ import type { AnySlice, Slice, Tail } from "../helpers/types"; // prettier-ignor
  *
  * Every selection can be refined further and watched for mutations.
  */
-export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) & {
+export type ListenersBuilder<T, S> = (WatchableSelection<T, S, any> & ChildrenSelector<T, S>) & {
 	/**
 	 * Selects the direct parent of the current slice.
 	 *
@@ -45,7 +45,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 	 * builder.parent.children.filter({ family: "CRUDSlice" });
 	 * ```
 	 */
-	readonly parent: WatchableSelection<S> & ChildrenSelector<S>;
+	readonly parent: WatchableSelection<T, S, any> & ChildrenSelector<T, S>;
 
 	/**
 	 * Selects ancestor slices.
@@ -73,7 +73,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 	 * builder.parents.find({ family: "ShopSlice" }).children;
 	 * ```
 	 */
-	readonly parents: (WatchableSelection<S> & ChildrenSelector<S>) & {
+	readonly parents: (WatchableSelection<T, S, any> & ChildrenSelector<T, S>) & {
 		/**
 		 * Selects the ancestors at the specified levels.
 		 *
@@ -93,7 +93,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 		 * Prefer using `builder.slices` or `builder.slice(...)` when the store root
 		 * is the intended starting point, rather than using an arbitrarily large level.
 		 */
-		readonly at: (...levels: number[]) => WatchableSelection<S> & ChildrenSelector<S>;
+		readonly at: (...levels: number[]) => WatchableSelection<T, S, any> & ChildrenSelector<T, S>;
 
 		/**
 		 * Searches the ancestor chain until the first matching slice is found.
@@ -113,7 +113,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 		 *   and avoids collisions between slices sharing the same runtime name
 		 * - a callback for custom matching logic
 		 */
-		readonly find: SelectionMatcher<S, ChildrenSelector<S>>;
+		readonly find: SelectionMatcher<T, S, ChildrenSelector<T, S>>;
 
 		/**
 		 * Searches the entire ancestor chain and selects every matching slice.
@@ -134,7 +134,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 		 *   and avoids collisions between slices sharing the same runtime name
 		 * - a callback for custom matching logic
 		 */
-		readonly filter: SelectionMatcher<S, ChildrenSelector<S>>;
+		readonly filter: SelectionMatcher<T, S, ChildrenSelector<T, S>>;
 	};
 
 	/**
@@ -171,7 +171,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 	 * builder.slice("shop", "stock").children.filter({ family: "CRUDSlice" });
 	 * ```
 	 */
-	readonly slice: (...absolutePaths: string[]) => WatchableSelection<S> & ChildrenSelector<S>;
+	readonly slice: (...absolutePaths: string[]) => WatchableSelection<T, S, any> & ChildrenSelector<T, S>;
 
 	/**
 	 * Selects slices from the store root.
@@ -202,7 +202,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 	 * builder.slices.filter({ family: "CRUDSlice" }).children;
 	 * ```
 	 */
-	readonly slices: (WatchableSelection<S> & ChildrenSelector<S>) & {
+	readonly slices: (WatchableSelection<T, S, any> & ChildrenSelector<T, S>) & {
 		/**
 		 * Selects the slices at the specified absolute paths.
 		 *
@@ -219,7 +219,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 		 * - Invalid or missing paths are ignored.
 		 * - Equivalent to `builder.slice(...paths)`.
 		 */
-		readonly at: (...absolutePaths: string[]) => WatchableSelection<S> & ChildrenSelector<S>;
+		readonly at: (...absolutePaths: string[]) => WatchableSelection<T, S, any> & ChildrenSelector<T, S>;
 
 		/**
 		 * Filters the currently selected root slices.
@@ -244,7 +244,7 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 		 * - Does not support deep search.
 		 * - For deep search, use `builder.slices.deepFilter()`.
 		 */
-		readonly filter: SelectionMatcher<S, ChildrenSelector<S>>;
+		readonly filter: SelectionMatcher<T, S, ChildrenSelector<T, S>>;
 
 		/**
 		 * Recursively searches the selected root slices and all of their descendants.
@@ -269,11 +269,18 @@ export type ListenersBuilder<S> = (WatchableSelection<S> & ChildrenSelector<S>) 
 		 * - Includes the currently selected root slices in the search.
 		 * - Use `builder.slices.children.deepFilter()` to exclude the root slices.
 		 */
-		readonly deepFilter: SelectionMatcher<S, ChildrenSelector<S>>;
+		readonly deepFilter: SelectionMatcher<T, S, ChildrenSelector<T, S>>;
 	};
 };
 
-type ChildrenSelector<S> = {
+/**
+ * Extends a builder selection with APIs for traversing child slices.
+ *
+ * Implemented separately from {@link ListenersBuilder} so the same
+ * child-selection APIs can be exposed from every builder selection
+ * while preserving the current selection type.
+ */
+type ChildrenSelector<T, S> = {
 	/**
 	 * Selects child slices at the specified relative paths.
 	 *
@@ -292,7 +299,7 @@ type ChildrenSelector<S> = {
 	 * - Path segments are separated by `.` (for example, `products.pagination.filters`).
 	 * - Invalid or missing paths are ignored.
 	 *
-	 * **Continuation**
+	 * **Starting point**
 	 *
 	 * This selector always starts from the children of the current selection,
 	 * whether it originated from `builder`, `parent`, `parents`, `slice`, or `slices`.
@@ -314,7 +321,7 @@ type ChildrenSelector<S> = {
 	 * The singular and plural forms are interchangeable. Both APIs support
 	 * selecting one or more child slices.
 	 */
-	readonly child: (...relativePaths: string[]) => WatchableSelection<S>;
+	readonly child: (...relativePaths: string[]) => WatchableSelection<T, S, any>;
 
 	/**
 	 * Selects the direct children of the current selection.
@@ -336,7 +343,7 @@ type ChildrenSelector<S> = {
 	 * - `filter(...)` → filters the selected children.
 	 * - `deepFilter(...)` → recursively filters the selected children and their descendants.
 	 *
-	 * **Continuation**
+	 * **Starting point**
 	 *
 	 * This selector always starts from the children of the current selection,
 	 * whether it originated from `builder`, `parent`, `parents`, `slice`, or `slices`.
@@ -349,7 +356,7 @@ type ChildrenSelector<S> = {
 	 * builder.slices.children; // or .child
 	 * ```
 	 */
-	readonly children: WatchableSelection<S> & {
+	readonly children: WatchableSelection<T, S, any> & {
 		/**
 		 * Selects child slices at the specified relative paths.
 		 *
@@ -367,7 +374,7 @@ type ChildrenSelector<S> = {
 		 * - Invalid or missing paths are ignored.
 		 * - Equivalent to `builder.child(...paths)`.
 		 */
-		readonly at: (...relativePaths: string[]) => WatchableSelection<S>;
+		readonly at: (...relativePaths: string[]) => WatchableSelection<T, S, any>;
 
 		/**
 		 * Filters the currently selected child slices.
@@ -392,7 +399,7 @@ type ChildrenSelector<S> = {
 		 * - Does not support deep search.
 		 * - For deep search, use `builder.children.deepFilter()`.
 		 */
-		readonly filter: SelectionMatcher<S>;
+		readonly filter: SelectionMatcher<T, S, {}>;
 
 		/**
 		 * Recursively searches the selected child slices and all of their descendants.
@@ -412,7 +419,7 @@ type ChildrenSelector<S> = {
 		 *   and avoids collisions between slices sharing the same runtime name
 		 * - a callback for custom matching logic
 		 */
-		readonly deepFilter: SelectionMatcher<S>;
+		readonly deepFilter: SelectionMatcher<T, S, {}>;
 	};
 };
 
@@ -422,50 +429,59 @@ type ChildrenSelector<S> = {
  * The returned selection preserves the same traversal capabilities as
  * the API it was called from.
  */
-type SelectionMatcher<S, Selector = {}> = {
+type SelectionMatcher<T, S, Selector> = {
 	/**
 	 * Matches slices by runtime metadata.
 	 *
-	 * The metadata may contain `name`, `family`, or both.
+	 * One or more metadata matchers may be provided. A slice is included
+	 * if it matches any metadata matcher.
+	 *
+	 * - Slice instances are matched by reference, avoiding string-based collisions.
+	 * - When both `name` and `family` are provided, both must match (And operation).
+	 * - Multiple metadata matchers are evaluated independently (OR operation).
 	 */
-	(metadata: { name?: string; family?: string }): WatchableSelection<S, any> & Selector;
+	<U>(...metadata: { name?: U | string; family?: U | string }[]): WatchableSelection<T, S, U> & Selector;
 
 	/**
-	 * Matches a specific slice instance.
+	 * Matches one or more specific slice instances.
 	 *
-	 * Matching is performed by slice runtime `name` and `family`,
-	 * avoiding collisions between slices sharing the same runtime name.
+	 * Equivalent to providing `{ name: slice, family: slice }` for each
+	 * slice, matching both its runtime `name` and `family` to avoid
+	 * collisions between slices sharing the same runtime name.
 	 */
-	<T extends AnySlice>(slice: T): WatchableSelection<S, T> & Selector;
+	<U>(...slices: U[]): WatchableSelection<T, S, U> & Selector;
 
 	/**
 	 * Matches slices using custom logic.
 	 *
 	 * Return `true` to include the slice in the selection.
 	 */
-	<T extends AnySlice>(callback: (slice: T, key: string) => boolean): WatchableSelection<S, T> & Selector;
+	<U>(callback: (slice: U, key: string) => boolean): WatchableSelection<T, S, U> & Selector;
 };
 
 /**
  * Registers a listener for a mutation on the selected slices.
  */
-type WatchableSelection<S, T = any> = {
+type WatchableSelection<T, S, U> = {
 	/**
-	 * Registers a listener that is invoked whenever the specified mutation
-	 * is emitted by any slice in the current selection.
+	 * Registers a callback listener that is invoked after the specified
+	 * mutation has completed on any slice in the current selection.
+	 *
+	 * The callback is invoked independently for every selected slice that
+	 * emits the specified mutation, always observing the latest state.
 	 *
 	 * ```ts
 	 * builder.parent.on("refresh", listener);
 	 * builder.slices.filter({ family: "CRUDSlice" }).on("reset", listener);
 	 * ```
-	 *
-	 * @param mutation The mutation name to listen for.
-	 * @param callback Invoked for every matching mutation.
 	 */
-	readonly on: <K extends keyof SliceMutations<T> | string>(
+	readonly on: <K extends U extends Slice<infer _, infer R, infer __, infer ___, infer ____> ? keyof R : string>(
 		mutation: K,
-		callback: (state: S, slice: T, ...args: Tail<Parameters<SliceMutations<T>[K]>>) => void,
+		callback: (
+			this: T,
+			state: S,
+			slice: U,
+			...args: U extends Slice<infer _, infer R, infer __, infer ___, infer ____> ? Tail<Parameters<R[K]>> : any[]
+		) => void,
 	) => void;
 };
-
-type SliceMutations<T> = T extends Slice<any, infer R, any, any> ? R : never;

@@ -4,7 +4,7 @@ import type { Utils, Obj, OmitNever, ReadOnly, Store, Tail, ListenersBuilder, No
 /**
  * Runtime API returned by `createSlice()`.
  */
-type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, InsideMutation = false> = Utils & {
+type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, I = false> = Utils & {
 	/**
 	 * Unique name assigned to the slice during creation or cloning.
 	 */
@@ -24,14 +24,18 @@ type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, InsideMutation = f
 	 * Provides access to global store APIs regardless of the slice's
 	 * position in the runtime tree.
 	 */
-	readonly root: Store<any>;
+	readonly root: (I extends true ? Omit<Store<any, true>, "getState" | "useSelect"> : Store<any, false>);
 
 	/**
 	 * Parent slice in the runtime tree.
 	 *
 	 * Returns `undefined` if this slice is mounted as a root slice.
 	 */
-	readonly parent: slice<any, Mutations<any, any, any>, any, any> | undefined;
+	readonly parent:
+		| (I extends true
+				? Omit<slice<any, Mutations<any, any, any>, any, any, true>, "getState" | "useSelect">
+				: slice<any, Mutations<any, any, any>, any, any, false>)
+		| undefined;
 
 	/**
 	 * React hook for selecting values from the current slice state.
@@ -198,20 +202,20 @@ type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, InsideMutation = f
 	};
 } & OmitNever<{
 		/** Directly callable state mutation functions. */
-		readonly [K in Exclude<keyof R, ReservedSliceKeys>]: R[K] extends (...args: any[]) => void
+		readonly [K in Exclude<keyof R, Reserved>]: R[K] extends (...args: any[]) => void
 			? (...args: Tail<Parameters<R[K]>>) => void
 			: never;
 	}> &
 	OmitNever<{
 		/** User-defined instance methods. */
-		readonly [K in Exclude<keyof M, ReservedSliceKeys<R>>]: M[K] extends (...args: any[]) => void ? M[K] : never;
+		readonly [K in Exclude<keyof M, Reserved<R>>]: M[K] extends (...args: any[]) => void ? M[K] : never;
 	}> &
 	OmitNever<{
 		/** Nested child slice instances. */
-		readonly [K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends slice<infer S, infer R, infer M, infer C>
-			? InsideMutation extends true
-				? Omit<slice<S, {}, M, C, InsideMutation>, "getState" | "useSelect">
-				: slice<S, R, M, C>
+		readonly [K in Exclude<keyof C, Reserved<R, M>>]: C[K] extends slice<infer S, infer R, infer M, infer C, infer _>
+			? I extends true
+				? Omit<slice<S, {}, M, C, true>, "getState" | "useSelect">
+				: slice<S, R, M, C, false>
 			: never;
 	}>;
 
@@ -353,7 +357,7 @@ type sliceOptions<S extends Obj, R extends Mutations<S, M, C>, M, C> = {
 	 * counter.useValue(); // React hook
 	 * ```
 	 */
-	methods?: M & ThisType<slice<S, R, M, C>>;
+	methods?: M & ThisType<slice<S, R, M, C, false>>;
 
 	/**
 	 * Collection of child slices.
@@ -480,19 +484,20 @@ type SliceState<S extends Obj, R extends Mutations<S, M, C>, M, C, CC = C> = Rea
  * This produces the complete writable state tree available
  * while a mutation is executing.
  */
-type DraftState<S extends Obj, R extends Mutations<S, M, C>, M, C, CC = C> = Omit<
-	S,
-	keyof OmitNever<{
-		[K in Exclude<keyof C, ReservedSliceKeys<R, M>>]: C[K] extends slice<infer _, infer __, infer ___, infer ____>
-			? true
-			: never;
-	}>
-> &
-	OmitNever<{
-		[K in Exclude<keyof CC, ReservedSliceKeys<R, M>>]: CC[K] extends slice<infer S, infer R, infer M, infer C>
-			? DraftState<S, R, M, C>
-			: never;
-	}>;
+type DraftState<S extends Obj, R extends Mutations<S, M, C>, M, C, CC = C> = Omit<S, keyof ChildrenState<R, M, C>> &
+	ChildrenState<R, M, CC>;
+
+/**
+ * Maps child slice properties to their corresponding mutable draft state.
+ *
+ * Used internally by {@link DraftState} to replace child slice instances
+ * with their writable state representation.
+ */
+type ChildrenState<R, M, C> = OmitNever<{
+	[K in Exclude<keyof C, Reserved<R, M>>]: C[K] extends slice<infer S, infer R, infer M, infer C, infer _>
+		? DraftState<S, R, M, C>
+		: never;
+}>;
 
 /**
  * Configuration object describing how a slice clone should be initialized.
@@ -538,14 +543,14 @@ type CloneArgs<S extends Obj = Obj, R extends Mutations<S, M, C> = Mutations<S, 
  * mutation and method names, preventing collisions with child
  * slice properties and ensuring a unique public surface.
  */
-type ReservedSliceKeys<R = {}, M = {}> =
+type Reserved<R = {}, M = {}> =
 	| ("name" | "path" | "computed" | "root" | "parent" | "family" | "utils" | "getState" | "getInitialState" | "useSelect") // prettier-ignore
 	| (keyof R | keyof M);
 
 /**
  * Non-generic slice type used by internal helpers and utilities.
  */
-type AnySlice = slice<any, Mutations<any, any, any>, any, any>;
+type AnySlice = slice<any, Mutations<any, any, any>, any, any, boolean>;
 
 /**
  * Non-generic slice configuration type used by internal helpers

@@ -89,6 +89,6 @@ const attachStoreChildren = createAttachHelper("createStore", "Store", "slice", 
  */
 const createSlice = <S extends Obj, R extends Mutations<S, M, C>, M, C>(
 	props: SliceOptions<S, R, M, C>,
-): Slice<S, R, M, C> => (create as any)(props);
+): Slice<S, R, M, C, false> => (create as any)(props);
 
 export { createSlice, attachStoreChildren };

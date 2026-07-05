@@ -1,7 +1,13 @@
-import type { Mutations, Obj, Slice as slice, SliceOptions as sliceOptions, Store as store, StoreOptions as storeOptions, Utils } from "./helpers/types"; // prettier-ignore
+import type { Mutations, Obj, Slice, SliceOptions as sliceOptions, Store, StoreOptions as storeOptions, Utils } from "./helpers/types"; // prettier-ignore
+
+/** Runtime store API exposed by createStore(...). */
+type store<C> = Store<C, false>;
+
+/** Runtime slice API exposed by createSlice(...). */
+type slice<S extends Obj, R extends Mutations<S, M, C>, M, C> = Slice<S, R, M, C, false>;
 
 /** Resolved type for application-wide utilities. */
-type utils = Utils['utils'];
+type utils = Utils["utils"];
 
 declare global {
 	namespace OrcheStore {

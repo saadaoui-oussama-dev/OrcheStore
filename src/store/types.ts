@@ -4,7 +4,7 @@ import type { Slice, SliceState, OmitNever, Utils, Obj, NodeMeta } from "../help
 /**
  * Runtime API returned by `createStore()`.
  */
-type store<C> = OmitNever<
+type store<C, I> = OmitNever<
 	Utils & {
 		/**
 		 * Unique name assigned to the store during creation.
@@ -38,8 +38,10 @@ type store<C> = OmitNever<
 		readonly useSelect: <T>(selector: (this: Utils, state: StoreState<C>, context: Utils) => T) => T;
 	} & {
 		/** Root mounted slice instances. */
-		readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer R, infer M, infer C>
-			? Slice<S, R, M, C>
+		readonly [K in Exclude<keyof C, Reserved>]: C[K] extends Slice<infer S, infer R, infer M, infer C, infer _>
+			? I extends true
+				? Omit<Slice<S, {}, M, C, true>, "getState" | "useSelect">
+				: Slice<S, R, M, C, false>
 			: never;
 	}
 >;
@@ -55,7 +57,7 @@ type storeOptions<C> = Omit<
 	 * Optional name assigned to the store.
 	 *
 	 * Used to identify the store in diagnostics and development tools.
-	 * 
+	 *
 	 * @default "untitled"
 	 */
 	readonly name?: string;
@@ -100,7 +102,7 @@ type storeOptions<C> = Omit<
  * immutable slice state, producing the complete runtime state tree.
  */
 type StoreState<C> = OmitNever<{
-	readonly [K in Exclude<keyof C, ReservedStoreKeys>]: C[K] extends Slice<infer S, infer R, infer M, infer C>
+	readonly [K in Exclude<keyof C, Reserved>]: C[K] extends Slice<infer S, infer R, infer M, infer C, infer _>
 		? SliceState<S, R, M, C>
 		: never;
 }>;
@@ -122,7 +124,7 @@ type StoreProviderProps<T = any> = Omit<RTKProviderProps, "store" | "serverState
 	 * allowing `useSelect()` to resolve the correct store when
 	 * multiple `StoreProvider`s are nested in the component tree.
 	 */
-	store: store<T>;
+	store: store<T, boolean>;
 };
 
 /**
@@ -132,14 +134,12 @@ type StoreProviderProps<T = any> = Omit<RTKProviderProps, "store" | "serverState
  * method names, preventing collisions with child slice
  * properties and ensuring a unique public surface.
  */
-type ReservedStoreKeys<R = {}, M = {}> =
-	| ("name" | "computed" | "utils" | "getState" | "useSelect")
-	| (keyof R | keyof M);
+type Reserved = "name" | "computed" | "utils" | "getState" | "useSelect";
 
 /**
  * Non-generic store type used by internal helpers and utilities.
  */
-type AnyStore = store<any>;
+type AnyStore = store<any, boolean>;
 
 /**
  * Non-generic store configuration type used by internal helpers

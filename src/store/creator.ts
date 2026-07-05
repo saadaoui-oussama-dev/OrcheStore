@@ -60,7 +60,7 @@ const { instances, create } = createStoreFactory({
  * - React subscriptions via `useSelect`
  * - runtime utilities via `utils`
  */
-const createStore = <T>(props: StoreOptions<T>): Store<T> => (create as any)(props);
+const createStore = <T>(props: StoreOptions<T>): Store<T, false> => (create as any)(props);
 
 /**
  * Internal store metadata registry accessor.
