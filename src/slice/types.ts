@@ -24,7 +24,7 @@ type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, I = false> = Utils
 	 * Provides access to global store APIs regardless of the slice's
 	 * position in the runtime tree.
 	 */
-	readonly root: (I extends true ? Omit<Store<any, true>, "getState" | "useSelect"> : Store<any, false>);
+	readonly root: I extends true ? Omit<Store<any, true>, "getState" | "useSelect"> : Store<any, false>;
 
 	/**
 	 * Parent slice in the runtime tree.
@@ -198,7 +198,7 @@ type slice<S extends Obj, R extends Mutations<S, M, C>, M, C, I = false> = Utils
 		 * }
 		 * ```
 		 */
-		readonly isTypeOf: (other?: any) => other is slice<S, R, M, C, false>;
+		readonly isTypeOf: (other?: unknown) => other is slice<S, R, M, C, false>;
 	};
 } & OmitNever<{
 		/** Directly callable state mutation functions. */
