@@ -33,6 +33,8 @@ const utils = new Proxy({} as Utils["utils"], {
  *
  * The returned object acts as a shared runtime container for application-wide utilities
  * such as navigation, notifications, API clients, and other injected services.
+ *
+ * Accessing an unregistered utility will trigger a development warning.
  */
 export function getUtils(): Utils["utils"] {
 	return utils;
@@ -43,6 +45,8 @@ export function getUtils(): Utils["utils"] {
  *
  * Utilities are merged into the existing runtime registry and become immediately
  * available across all slices and store instances.
+ *
+ * This is the core mechanism behind OrcheStore’s global runtime utility system shared across all slices.
  */
 export function setUtils(value: Partial<Utils["utils"]>): Utils["utils"] {
 	if (value && typeof value === "object" && !Array.isArray(value)) {

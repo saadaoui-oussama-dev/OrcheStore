@@ -1,8 +1,8 @@
-import { createStore as CST } from "./store/creator";
-import { createSlice as CSL } from "./slice/creator";
-import { StoreProvider as SP } from "./store/provider";
-import { getUtils as GU, setUtils as SU } from "./utils/app-wide";
-import { setReporting as SR } from "./helpers/messages";
+import { createStore } from "./store/creator";
+import { createSlice } from "./slice/creator";
+import { StoreProvider } from "./store/provider";
+import { getUtils, setUtils } from "./utils/app-wide";
+import { setReporting } from "./helpers/messages";
 
 const defaultExport = {
 	/**
@@ -73,7 +73,7 @@ const defaultExport = {
 	 * @internal
 	 * Bootstraps Redux Toolkit, mounts slice tree, and initializes runtime store graph.
 	 */
-	createStore: CST,
+	createStore,
 
 	/**
 	 * Creates and initializes a slice runtime instance.
@@ -138,7 +138,7 @@ const defaultExport = {
 	 * @internal
 	 * Integrates Redux Toolkit, builds reducers, and wires runtime context.
 	 */
-	createSlice: CSL,
+	createSlice,
 
 	/**
 	 * Provides an OrcheStore instance to the React component tree.
@@ -164,7 +164,7 @@ const defaultExport = {
 	 * Uses React-Redux Provider internally to bind the underlying Redux store
 	 * into React context.
 	 */
-	StoreProvider: SP,
+	StoreProvider,
 
 	/**
 	 * Returns the global utilities registry.
@@ -174,7 +174,7 @@ const defaultExport = {
 	 *
 	 * Accessing an unregistered utility will trigger a development warning.
 	 */
-	getUtils: GU,
+	getUtils,
 
 	/**
 	 * Registers or updates application-wide utilities.
@@ -184,17 +184,15 @@ const defaultExport = {
 	 *
 	 * This is the core mechanism behind OrcheStore’s global runtime utility system shared across all slices.
 	 */
-	setUtils: SU,
+	setUtils,
 
 	/**
 	 * Configures runtime diagnostic reporting behavior.
 	 *
 	 * Supports enabling/disabling logs, warnings, and errors globally or individually.
 	 */
-	setReporting: SR,
+	setReporting,
 };
-
-const { createStore, createSlice, StoreProvider, getUtils, setUtils, setReporting } = defaultExport;
 
 export { defaultExport as default, createStore, createSlice, StoreProvider, getUtils, setUtils, setReporting };
 

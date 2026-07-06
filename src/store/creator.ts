@@ -59,6 +59,62 @@ const { instances, create } = createStoreFactory({
  * - global state inspection
  * - React subscriptions via `useSelect`
  * - runtime utilities via `utils`
+ *
+ * ```tsx
+ * import { createStore, createSlice } from "orchestore";
+ *
+ * const counterSlice = createSlice({
+ *   name: "counter",
+ *
+ *   state: { value: 0 },
+ *
+ *   mutations: {
+ *     increment(state, amount: number = 1) {
+ *       state.value += amount;
+ *     },
+ *   },
+ *
+ *   methods: {
+ *     async incrementAfter(amount: number, delay: number) {
+ *       await new Promise((r) => setTimeout(r, delay));
+ *       this.increment(amount);
+ *     },
+ *   },
+ * });
+ *
+ * const store = createStore({
+ *   slices: {
+ *     counter: counterSlice,
+ *   },
+ * });
+ *
+ * // Direct access
+ * counterSlice.increment(12);
+ * store.counter.increment(1);
+ * store.counter.getState(); // { value: 13 }
+ *
+ * // React usage
+ * function App() {
+ *   const value = store.counter.useSelect((state) => state.value);
+ *
+ *   return (
+ *     <>
+ *       <div>{value}</div>
+ *
+ *       <button onClick={() => store.counter.increment(1)}>
+ *         Increment
+ *       </button>
+ *
+ *       <button onClick={() => store.counter.incrementAfter(1, 1000)}>
+ *         Increment later
+ *       </button>
+ *     </>
+ *   );
+ * }
+ * ```
+ *
+ * @internal
+ * Bootstraps Redux Toolkit, mounts slice tree, and initializes runtime store graph.
  */
 const createStore = <T>(props: StoreOptions<T>): Store<T, false> => (create as any)(props);
 

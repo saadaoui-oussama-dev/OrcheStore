@@ -86,6 +86,63 @@ const attachStoreChildren = createAttachHelper("createStore", "Store", "slice", 
  *
  * This function constructs a fully functional OrcheStore slice,
  * including state, mutations, methods, and nested children.
+ *
+ * ```tsx
+ * import { createStore, createSlice } from "orchestore";
+ *
+ * const counterSlice = createSlice({
+ *   name: "counter",
+ *
+ *   state: { value: 0 },
+ *
+ *   mutations: {
+ *     increment(state, amount: number = 1) {
+ *       state.value += amount;
+ *     },
+ *   },
+ *
+ *   methods: {
+ *     async incrementAfter(amount: number, delay: number) {
+ *       await new Promise((resolve) => setTimeout(resolve, delay));
+ *       this.increment(amount);
+ *     },
+ *   },
+ * });
+ *
+ * // Create store tree
+ * const store = createStore({
+ *   slices: {
+ *     counter: counterSlice,
+ *   },
+ * });
+ *
+ * // Direct usage
+ * counterSlice.increment(12);
+ * store.counter.increment(1);
+ * store.counter.getState(); // { value: 13 }
+ *
+ * // React usage
+ * function App() {
+ *   const count = store.counter.useSelect((state) => state.value);
+ *
+ *   return (
+ *     <>
+ *       <div>Counter {count}</div>
+ *
+ *       <button onClick={() => store.counter.increment(1)}>
+ *         Increment
+ *       </button>
+ *
+ *       <button onClick={() => store.counter.incrementAfter(1, 1000)}>
+ *         Increment after 1 second
+ *       </button>
+ *     </>
+ *   );
+ * }
+ * ```
+ *
+ * @internal
+ * Integrates Redux Toolkit, builds reducers, and wires runtime context.
  */
 const createSlice = <S extends Obj, R extends Mutations<S, M, C>, M, C>(
 	props: SliceOptions<S, R, M, C>,
